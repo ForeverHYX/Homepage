@@ -4,7 +4,7 @@ import os
 import secrets
 import re
 from pathlib import Path
-from typing import List, Optional, Any
+from typing import List, Tuple, Optional, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
@@ -18,7 +18,7 @@ UPLOAD_DIR = Path(os.getenv("HOMEPAGE_UPLOAD_DIR", BASE_DIR / "uploads")).resolv
 CONTENT_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-app = FastAPI(title="Foreverhyx Homepage", version="0.3.0")
+app = FastAPI(title="Yixun Hong's Homepage", version="0.4.0")
 
 # Security
 UPLOAD_USERNAME = os.getenv("HOMEPAGE_UPLOAD_USER", "admin")
@@ -38,12 +38,64 @@ def safe_join(base: Path, target: str) -> Path:
     return candidate
 
 
-def render_markdown_file(filename: str) -> str:
+def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
+    """
+    Parses a markdown file into sections based on H1 headers (# Header).
+    Returns a list of (Title, HTML_Content) tuples.
+    """
     path = CONTENT_DIR / filename
     if not path.exists():
-        return ""
+        return []
+    
     text = path.read_text(encoding="utf-8")
-    return markdown.markdown(text, extensions=["fenced_code", "tables", "toc"])
+    sections = []
+    current_title = ""
+    current_lines = []
+    
+    def flush():
+        if current_title or current_lines:
+            raw_body = "\n".join(current_lines)
+            html_body = markdown.markdown(raw_body, extensions=["fenced_code", "tables", "toc"])
+            sections.append((current_title, html_body))
+
+    for line in text.splitlines():
+        if line.strip().startswith("# "):
+            flush()
+            current_title = line.strip()[2:].strip()
+            current_lines = []
+        else:
+            current_lines.append(line)
+    flush()
+    
+    # Filter out empty sections
+    return [s for s in sections if s[0] or s[1]]
+
+def get_about_info() -> dict:
+    """Parses about.md for structured info."""
+    default = {
+        "email": "#", "github": "#", "location": "Earth", 
+        "name": "Yixun Hong", "role": "Student / Researcher"
+    }
+    path = CONTENT_DIR / "about.md"
+    if not path.exists():
+        return default
+    
+    text = path.read_text(encoding="utf-8")
+    info = default.copy()
+    
+    # Simple regex extraction
+    if match := re.search(r'\((mailto:[^)]+)\)', text): info["email"] = match.group(1)
+    if match := re.search(r'\((https://github[^)]+)\)', text): info["github"] = match.group(1)
+    
+    if "## Location" in text:
+        parts = text.split("## Location")
+        if len(parts) > 1:
+            info["location"] = parts[1].strip().split("\n")[0]
+            
+    # Allow overriding name/role via comments or specific syntax if needed, 
+    # but for now we keep them hardcoded or minimal as requested.
+    
+    return info
 
 
 # --- Auth Logic ---
@@ -73,70 +125,96 @@ ICON_MAP = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vie
 
 STYLES = """
     :root { 
-        --bg: #f8fafc; --text: #0f172a; --primary: #3b82f6; --primary-hover: #2563eb; 
+        --bg: #f8fafc; --text: #334155; --primary: #3b82f6; --primary-hover: #2563eb; 
         --surface: #ffffff; --border: #e2e8f0; --muted: #64748b; 
-        --radius: 16px; --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --radius: 12px; --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     }
     * { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
     
     /* Layout */
-    .container { max-width: 1024px; margin: 0 auto; padding: 0 24px; }
-    header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; margin-bottom: 40px; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; margin-bottom: 40px; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
     .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .brand { font-weight: 800; font-size: 20px; text-decoration: none; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .brand { font-weight: 700; font-size: 18px; text-decoration: none; color: #0f172a; display: flex; align-items: center; gap: 8px; }
     
-    .main-grid { display: grid; gap: 40px; grid-template-columns: 1fr; }
-    @media (min-width: 800px) { .main-grid { grid-template-columns: 280px 1fr; } }
+    .main-grid { display: grid; gap: 48px; grid-template-columns: 1fr; align-items: start; }
+    @media (min-width: 800px) { .main-grid { grid-template-columns: 260px 1fr; } }
     
     /* Sidebar */
-    .sidebar { display: flex; flex-direction: column; gap: 24px; }
-    .profile-card { background: var(--surface); padding: 32px 24px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); text-align: center; }
-    .avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 16px; border: 4px solid #eff6ff; }
-    .contact-links { display: flex; justify-content: center; gap: 16px; margin: 20px 0; }
-    .contact-icon { color: var(--muted); transition: all .2s; padding: 8px; border-radius: 8px; background: #f1f5f9; display: inline-flex; }
-    .contact-icon:hover { color: var(--primary); background: #eff6ff; transform: translateY(-2px); }
-    .location { display: flex; items-align: center; justify-content: center; gap: 6px; color: var(--muted); font-size: 14px; margin-top: 16px; }
+    .sidebar { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 100px; }
+    
+    /* Common Card Style */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+
+    .profile-card { padding: 32px 24px; text-align: center; }
+    .avatar { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; box-shadow: var(--shadow); }
+    
+    .news-card { padding: 24px; }
+    .news-title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+    .news-list { list-style: none; padding: 0; margin: 0; }
+    .news-item { font-size: 14px; color: var(--muted); margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 12px; }
+    .news-item:last-child { border: none; margin: 0; padding: 0; }
+
+    .profile-name { margin: 0; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; }
+    .profile-role { color: var(--muted); margin: 6px 0 0; font-size: 15px; font-weight: 400; }
+    
+    .contact-links { display: flex; justify-content: center; gap: 12px; margin: 24px 0; }
+    .contact-icon { color: var(--muted); transition: all .2s; padding: 8px; border-radius: 50%; background: #f1f5f9; display: inline-flex; width: 36px; height: 36px; align-items: center; justify-content: center; }
+    .contact-icon:hover { color: var(--primary); background: #e0f2fe; }
+    
+    .location { display: flex; align-items: flex-start; justify-content: center; gap: 8px; color: var(--muted); font-size: 14px; margin-top: 20px; text-align: left; line-height: 1.4; padding: 0 10px; }
+    .location svg { flex-shrink: 0; margin-top: 2px; }
 
     /* Content Area */
-    .content-area { background: var(--surface); padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); min-height: 500px; }
-    .prose { max-width: 100%; line-height: 1.75; }
-    .prose h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1.5rem; color: #1e293b; border-bottom: 2px solid #eff6ff; padding-bottom: 16px; }
-    .prose h2 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #1e293b; }
-    .prose p { margin-bottom: 1.25rem; color: #334155; font-size: 16px; }
-    .prose a { color: var(--primary); text-decoration: none; font-weight: 500; border-bottom: 1px solid transparent; transition: border .2s; }
-    .prose a:hover { border-bottom-color: var(--primary); }
-    .prose li { margin-bottom: 0.5rem; color: #334155; }
+    .content-area { display: flex; flex-direction: column; gap: 40px; padding: 40px; }
     
-    /* Upload UI */
+    .cv-section { animation: fadeIn 0.5s ease-out; }
+    .section-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0 0 1.5rem 0; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); letter-spacing: -0.02em; }
+    
+    /* Typography inside sections */
+    .prose { font-size: 15px; color: #475569; }
+    .prose p { margin-bottom: 1rem; }
+    .prose ul { padding-left: 1.25rem; margin-bottom: 1rem; }
+    .prose li { margin-bottom: 0.5rem; }
+    .prose strong { color: #0f172a; font-weight: 600; }
+    .prose em { color: var(--muted); font-style: italic; }
+    
+    .prose h1, .prose h2, .prose h3 { margin-top: 0; } 
+    /* Hide the original H1 if we rendered it as section-title, but markdown parser keeps standard tags usually. 
+       Our parser extracts H1 as title, so content starts with H2 or P usually. */
+    .prose h2 { font-size: 1.1rem; font-weight: 600; color: #334155; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+    .prose a { color: var(--primary); text-decoration: none; font-weight: 500; transition: color .2s; }
+    .prose a:hover { color: var(--primary-hover); text-decoration: underline; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Upload UI (Keep mostly same but clean up) */
     .upload-grid { display: grid; gap: 32px; grid-template-columns: 1fr; margin-top: 32px; }
     @media (min-width: 860px) { .upload-grid { grid-template-columns: 320px 1fr; } }
     
-    .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px 24px; text-align: center; transition: all .2s; cursor: pointer; background: #f8fafc; position: relative; overflow: hidden; }
-    .drop-zone:hover, .drop-zone.drag { border-color: var(--primary); background: #eff6ff; }
+    .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 40px 24px; text-align: center; transition: all .2s; cursor: pointer; background: white; position: relative; overflow: hidden; }
+    .drop-zone:hover, .drop-zone.drag { border-color: var(--primary); background: #f8fafc; }
     .drop-zone input { position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor: pointer; }
     
-    .file-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: white; border-radius: 12px; border: 1px solid var(--border); transition: all .2s; margin-bottom: 12px; }
-    .file-item:hover { border-color: #cbd5e1; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
-    .file-preview { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: var(--muted); flex-shrink: 0; }
+    .file-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: white; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; }
+    .file-preview { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: var(--muted); flex-shrink: 0; }
     
-    /* Components */
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all .2s; font-size: 14px; text-decoration: none; border: none; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all .2s; font-size: 14px; text-decoration: none; border: none; }
     .btn-primary { background: var(--primary); color: white; width: 100%; }
-    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
-    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:hover { background: var(--primary-hover); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
     
-    .action-btn { background: transparent; border: none; padding: 8px; border-radius: 8px; cursor: pointer; color: var(--muted); transition: all .2s; display: inline-flex; }
+    .action-btn { background: transparent; border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: var(--muted); transition: all .2s; display: inline-flex; }
     .action-btn:hover { background: #f1f5f9; color: var(--text); }
     .action-btn.danger:hover { background: #fee2e2; color: #ef4444; }
     
-    .toast { position: fixed; bottom: 32px; right: 32px; background: #1e293b; color: white; padding: 14px 24px; border-radius: 12px; font-weight: 500; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); opacity: 0; transform: translateY(20px); transition: all .3s; pointer-events: none; z-index: 100; }
+    .toast { position: fixed; bottom: 32px; right: 32px; background: #0f172a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; opacity: 0; transform: translateY(20px); transition: all .3s; pointer-events: none; z-index: 100; font-size: 14px; }
     .toast.show { opacity: 1; transform: translateY(0); }
 """
 
 TEMPLATE_BASE = """<!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -148,7 +226,7 @@ TEMPLATE_BASE = """<!doctype html>
     <div class="container nav">
       <a href="/" class="brand">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span>foreverhyx</span>
+        <span>Yixun Hong's Homepage</span>
       </a>
       <div style="display:flex; gap:20px; font-weight:500;">
         <a href="/" style="text-decoration:none; color:var(--text);">Home</a>
@@ -166,63 +244,62 @@ TEMPLATE_BASE = """<!doctype html>
 
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
-    # Read Markdown contents
-    nav_html = render_markdown_file("nav.md")
-    content_html = render_markdown_file("content.md")
-    # Parse about.md manually to extract location and avatar logic roughly
-    # In a real app we might use frontmatter, but here we regex or simple parsing
-    about_text = (CONTENT_DIR / "about.md").read_text(encoding="utf-8") if (CONTENT_DIR / "about.md").exists() else ""
-    
-    # Simple extraction for demo purposes (you can edit about.md to change these)
-    # Looking for lines like "- [Email](...)"
-    
-    email_link = "#"
-    github_link = "#"
-    location = "Earth"
-    
-    if "mailto:" in about_text:
-        match = re.search(r'\((mailto:[^)]+)\)', about_text)
-        if match: email_link = match.group(1)
-        
-    if "github.com" in about_text:
-        match = re.search(r'\((https://github[^)]+)\)', about_text)
-        if match: github_link = match.group(1)
-        
-    if "Location" in about_text:
-        # Get the line after "## Location"
-        parts = about_text.split("## Location")
-        if len(parts) > 1:
-            location = parts[1].strip().split("\n")[0]
-
+    # Get structured info
+    about = get_about_info()
     avatar_url = "/uploads/avatar.png"
+
+    # Parse main content into sections
+    raw_sections = parse_markdown_sections("content.md")
+    
+    # Generate HTML for each section
+    sections_html = ""
+    for title, body in raw_sections:
+        sections_html += f"""
+        <section class="cv-section">
+            <h2 class="section-title">{title}</h2>
+            <div class="prose">
+                {body}
+            </div>
+        </section>
+        """
+
+    # If no sections, just render normally to avoid blank page
+    if not sections_html:
+        raw_html = render_markdown_file("content.md") if (CONTENT_DIR / "content.md").exists() else ""
+        sections_html = f"""<div class="prose">{raw_html}</div>"""
 
     page_content = f"""
     <div class="container main-grid">
       <aside class="sidebar">
-        <div class="profile-card">
-          <img src="{avatar_url}" class="avatar" alt="Avatar" onerror="this.src='https://ui-avatars.com/api/?name=F&background=3b82f6&color=fff&size=128'" />
-          <h2 style="margin:0; font-size:24px;">Foreverhyx</h2>
-          <p style="color:var(--muted); margin:8px 0 0;">Full Stack Developer</p>
+        <div class="card profile-card">
+          <img src="{avatar_url}" class="avatar" alt="Avatar" onerror="this.src='https://ui-avatars.com/api/?name=YH&background=3b82f6&color=fff&size=128'" />
+          <h1 class="profile-name">{about['name']}</h1>
+          <p class="profile-role">{about['role']}</p>
           
           <div class="contact-links">
-            <a href="{email_link}" class="contact-icon" title="Email">{ICON_MAIL}</a>
-            <a href="{github_link}" class="contact-icon" target="_blank" title="GitHub">{ICON_GITHUB}</a>
+            <a href="{about['email']}" class="contact-icon" title="Email">{ICON_MAIL}</a>
+            <a href="{about['github']}" class="contact-icon" target="_blank" title="GitHub">{ICON_GITHUB}</a>
           </div>
           
           <div class="location">
-            {ICON_MAP} <span>{location}</span>
+            {ICON_MAP} <span>{about['location']}</span>
           </div>
+        </div>
+
+        <div class="card news-card">
+            <h3 class="news-title">News</h3>
+            <ul class="news-list">
+              <li class="news-item">Welcome to my new homepage!</li>
+            </ul>
         </div>
       </aside>
       
-      <main class="content-area">
-        <div class="prose">
-          {content_html}
-        </div>
+      <main class="card content-area">
+        {sections_html}
       </main>
     </div>
     """
-    return TEMPLATE_BASE.format(title="Home | foreverhyx", styles=STYLES, content=page_content, script="")
+    return TEMPLATE_BASE.format(title="Home | Yixun Hong", styles=STYLES, content=page_content, script="")
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -233,23 +310,23 @@ def login_page(request: Request) -> Any:
     content = f"""
     <div class="container" style="display:flex; justify-content:center; padding-top:80px;">
       <div style="background:white; padding:40px; border-radius:16px; width:100%; max-width:400px; border:1px solid var(--border); box-shadow:var(--shadow);">
-        <h1 style="margin:0 0 8px;">Welcome Back</h1>
+        <h1 style="margin:0 0 8px; font-size:24px;">Welcome Back</h1>
         <p style="color:var(--muted); margin:0 0 32px;">Sign in to manage your files</p>
         <form action="/login" method="post">
           <div style="margin-bottom:20px;">
             <label style="display:block; margin-bottom:8px; font-weight:500;">Username</label>
-            <input name="username" required autofocus style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px;" />
+            <input name="username" required autofocus style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:16px;" />
           </div>
           <div style="margin-bottom:32px;">
             <label style="display:block; margin-bottom:8px; font-weight:500;">Password</label>
-            <input type="password" name="password" required style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:16px;" />
+            <input type="password" name="password" required style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:16px;" />
           </div>
           <button type="submit" class="btn btn-primary">Sign In</button>
         </form>
       </div>
     </div>
     """
-    return TEMPLATE_BASE.format(title="Login | foreverhyx", styles=STYLES, content=content, script="")
+    return TEMPLATE_BASE.format(title="Login | Yixun Hong", styles=STYLES, content=content, script="")
 
 
 @app.post("/login")
@@ -278,11 +355,11 @@ def upload_page(request: Request) -> Any:
     content = f"""
     <div class="container upload-grid">
       <section>
-        <div style="background:white; padding:24px; border-radius:16px; border:1px solid var(--border); position:sticky; top:100px;">
+        <div style="background:white; padding:24px; border-radius:12px; border:1px solid var(--border); position:sticky; top:100px;">
           <h2 style="margin-top:0; font-size:18px;">Upload Manager</h2>
           <div id="drop" class="drop-zone">
-            <div style="color:var(--primary); margin-bottom:16px;">{ICON_UPLOAD_CLOUD}</div>
-            <p style="margin:0; font-weight:600; color:var(--text);">Click or Drag files</p>
+            <div style="color:var(--primary); margin-bottom:12px;">{ICON_UPLOAD_CLOUD}</div>
+            <p style="margin:0; font-weight:600; color:var(--text); font-size:15px;">Click or Drag files</p>
             <p style="font-size:13px; color:var(--muted); margin:4px 0 0;">Up to 100MB per file</p>
             <input id="fileInput" type="file" multiple />
           </div>
@@ -292,7 +369,7 @@ def upload_page(request: Request) -> Any:
       </section>
       
       <section>
-        <div style="background:white; padding:32px; border-radius:16px; border:1px solid var(--border); min-height:400px;">
+        <div style="background:white; padding:32px; border-radius:12px; border:1px solid var(--border); min-height:400px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
             <h2 style="margin:0; font-size:20px;">Your Files</h2>
             <button id="refreshBtn" class="action-btn">Refresh</button>
@@ -412,7 +489,7 @@ def upload_page(request: Request) -> Any:
       document.getElementById('refreshBtn').addEventListener('click', fetchFiles);
       fetchFiles();
     """
-    return TEMPLATE_BASE.format(title="Upload | foreverhyx", styles=STYLES, content=content, script=script)
+    return TEMPLATE_BASE.format(title="Upload | Yixun Hong", styles=STYLES, content=content, script=script)
 
 
 @app.post("/api/upload")

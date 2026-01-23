@@ -12,11 +12,23 @@ This is a personal homepage built with **FastAPI**.
 
 ## Content Format
 
-### `about.md` parsing rules
-The app looks for specific lines to generate the sidebar:
-- `(mailto:xxx)` -> Email Icon
-- `(https://github.com/xxx)` -> GitHub Icon
-- `## Location` -> The text immediately following this header is used as location.
+### Parsing Rules
+The homepage uses a structured parsing approach for better styling:
+
+- **Sections (content.md)**:
+  - Header 1 (`# Title`) starts a new section (e.g., `# Introduction`, `# Education`).
+  - These sections are rendered as distinct, styled cards on the right column.
+  - Standard Markdown inside sections is supported (lists, links, bold, etc.).
+
+- **Sidebar (about.md)**:
+  - `(mailto:xxx)` -> Email Icon
+  - `(https://github.com/xxx)` -> GitHub Icon
+  - `## Location` -> The text immediately following this header is used as location.
+
+### Tips for formatting
+- Do NOT use `#` for inner headers. Use `##` or `###`. Top-level `#` is reserved for section splitting.
+- Images can be used normally: `![Alt](/uploads/img.png)`.
+
 
 ## Development
 Run locally:
