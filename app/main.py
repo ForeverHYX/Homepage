@@ -170,7 +170,7 @@ STYLES = """
     .content-area { display: flex; flex-direction: column; gap: 40px; padding: 40px; }
     
     .cv-section { animation: fadeIn 0.5s ease-out; }
-    .section-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0 0 1.5rem 0; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); letter-spacing: -0.02em; }
+    .section-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0 0 1.5rem 0; padding-left: 1rem; border-left: 5px solid var(--primary); letter-spacing: -0.02em; }
     
     /* Typography inside sections */
     .prose { font-size: 15px; color: #475569; }
