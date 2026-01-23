@@ -1,34 +1,45 @@
 # Homepage Project
 
-This is a personal homepage built with **FastAPI**.
+A personal academic homepage built with **FastAPI**.
 
-## Directory Structure
-- `app/main.py`: Core application code (FastAPI).
-- `content/`: Markdown files for page content.
-  - `nav.md`: (Optional) Navigation content.
-  - `about.md`: Sidebar profile info (Avatar, Contact links, Location).
-  - `content.md`: Main body text (Right column).
-- `uploads/`: Directory for file uploads.
+## Features
 
-## Content Format
+- **Markdown Content**: Edit `content/content.md` to update main sections (Introduction, Education, etc.).
+- **News**: Update `content/news.md` for manual news items.
+- **Articles**: Add markdown files to `content/articles/` to publish blog posts.
+- **File Upload**: Secure text/image hosting at `/upload`.
 
-### Parsing Rules
-The homepage uses a structured parsing approach for better styling:
+## Article Format Specification
 
-- **Sections (content.md)**:
-  - Header 1 (`# Title`) starts a new section (e.g., `# Introduction`, `# Education`).
-  - These sections are rendered as distinct, styled cards on the right column.
-  - Standard Markdown inside sections is supported (lists, links, bold, etc.).
+To ensure articles display correctly on the `/articles` index page with metadata, please use the following header format at the very top of your markdown files:
 
-- **Sidebar (about.md)**:
-  - `(mailto:xxx)` -> Email Icon
-  - `(https://github.com/xxx)` -> GitHub Icon
-  - `## Location` -> The text immediately following this header is used as location.
+```markdown
+# Your Article Title
+**Date**: YYYY-MM-DD
+**Author**: Your Name
 
-### Tips for formatting
-- Do NOT use `#` for inner headers. Use `##` or `###`. Top-level `#` is reserved for section splitting.
-- Images can be used normally: `![Alt](/uploads/img.png)`.
+Your summary or introduction content goes here. This text will be used for the preview card on the articles listing page. The system captures the first 200 characters.
 
+## Next Heading
+...
+```
+
+- **Title**: The first H1 header (`# ...`) is used as the title.
+- **Date**: Must be in format `**Date**: YYYY-MM-DD` or `Date: YYYY-MM-DD`.
+- **Author**: Must be in format `**Author**: Name` or `Author: Name`.
+- **Summary**: The text immediately following the metadata (before the next header) is used as the preview summary.
+
+## Content Parsing Rules
+
+### Main Content (content.md)
+- Header 1 (`# Title`) starts a new section (e.g., `# Introduction`, `# Education`).
+- These sections are rendered as distinct blocks in the main column.
+- Standard Markdown inside sections is supported (lists, links, bold, etc.).
+
+### Sidebar (about.md)
+- `(mailto:xxx)` -> Auto-detected as Email
+- `(https://github.com/xxx)` -> Auto-detected as GitHub Link
+- `## Location` -> The text immediately following this header is used as location.
 
 ## Development
 Run locally:
