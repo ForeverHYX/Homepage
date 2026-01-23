@@ -101,6 +101,72 @@ def get_all_articles() -> List[dict]:
     return sorted(articles, key=lambda x: x["mtime"], reverse=True)
 
 
+def parse_and_merge_news() -> str:
+    """Parses news.md and merges with articles, sorting by date."""
+    items = []
+    
+    # 1. Parse Manual News (from content.md)
+    news_path = CONTENT_DIR / "news.md"
+    if news_path.exists():
+        text = news_path.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            line = line.strip()
+            if not (line.startswith("- ") or line.startswith("* ")):
+                continue
+            
+            # Remove bullet
+            content = line[2:].strip()
+            
+            # Try to extract date **YYYY-MM**: or **YYYY-MM-DD**:
+            match = re.match(r'\*\*(.*?)\*\*:(.*)', content)
+            if match:
+                date_str = match.group(1).strip()
+                body_raw = match.group(2).strip()
+                
+                # Parse Date
+                dt = datetime.min
+                try:
+                    if len(date_str) == 10: # YYYY-MM-DD
+                        dt = datetime.strptime(date_str, "%Y-%m-%d")
+                    elif len(date_str) == 7: # YYYY-MM
+                        dt = datetime.strptime(date_str, "%Y-%m")
+                except ValueError:
+                    pass
+                
+                # Render Body (handle links etc)
+                # Using markdown for the body part to support [Link](url)
+                body_html = markdown.markdown(body_raw).replace('<p>','').replace('</p>','')
+                
+                items.append({
+                    "date": dt,
+                    "html": f"<strong>{date_str}:</strong> {body_html}"
+                })
+    
+    # 2. Parse Articles
+    for art in get_all_articles():
+        dt = datetime.fromtimestamp(art["mtime"])
+        date_str = dt.strftime("%Y-%m")
+        # Ensure consistent format
+        items.append({
+            "date": dt,
+            "html": f"<strong>{date_str}:</strong> New blog post: <a href=\"/articles/{art['slug']}\">{art['title']}</a>."
+        })
+        
+    # 3. Sort by date desc
+    items.sort(key=lambda x: x["date"], reverse=True)
+    
+    # 4. Render
+    if not items:
+        return '<ul class="news-list"><li class="news-item">No news yet.</li></ul>'
+        
+    html = '<ul class="news-list">'
+    for item in items:
+        html += f'<li class="news-item">{item["html"]}</li>'
+    html += '</ul>'
+    
+    return html
+
+
 def get_about_info() -> dict:
     """Parses about.md for structured info."""
     default = {
@@ -186,6 +252,8 @@ STYLES = """
     .news-title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
     .news-list { list-style: none; padding: 0; margin: 0; }
     .news-item { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+    .news-item a { color: inherit; text-decoration: none; border-bottom: 1px dashed var(--muted); transition: all 0.2s; }
+    .news-item a:hover { color: var(--primary); border-bottom-color: var(--primary); }
     
     .profile-name { margin: 0; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; }
     .profile-role { color: var(--muted); margin: 6px 0 0; font-size: 15px; font-weight: 400; }
@@ -313,35 +381,8 @@ def index() -> str:
         raw_html = render_markdown_file("content.md") if (CONTENT_DIR / "content.md").exists() else ""
         sections_html = f"""<div class="prose">{raw_html}</div>"""
 
-    # Render News (Manual + Articles)
-    news_html = ""
-    # 1. Manual News
-    news_path = CONTENT_DIR / "news.md"
-    if news_path.exists():
-        news_text = news_path.read_text(encoding="utf-8")
-        news_html = markdown.markdown(news_text)
-    
-    # 2. Append latest articles to News if they aren't already there?
-    # User said: "All articles will appear in news... and can be clicked"
-    # We will append a list of article links to the rendered news HTML.
-    articles = get_all_articles()
-    if articles:
-        # Check if we already have a UL. If so, append LI. If not, create UL.
-        article_items = ""
-        for art in articles:
-            # Format: - **YYYY-MM**: New blog post: [Title](Link)
-            # Match style of existing news: <li><strong>2026-01:</strong> Content...</li>
-            date_str = datetime.fromtimestamp(art["mtime"]).strftime("%Y-%m")
-            article_items += f'<li class="news-item"><strong>{date_str}:</strong> New blog post: <a href="/articles/{art["slug"]}">{art["title"]}</a>.</li>'
-        
-        # Naive injection: find closing </ul> and insert, or append new list
-        if "</ul>" in news_html:
-            news_html = news_html.replace("</ul>", f"{article_items}</ul>")
-        else:
-            news_html += f'<ul class="news-list">{article_items}</ul>'
-
-    if not news_html:
-        news_html = """<ul class="news-list"><li class="news-item">No news yet.</li></ul>"""
+    # Render News (Merged & Sorted)
+    news_html = parse_and_merge_news()
 
     page_content = f"""
     <div class="container main-grid">
