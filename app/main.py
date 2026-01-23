@@ -4,6 +4,7 @@ import os
 import secrets
 import re
 from pathlib import Path
+from datetime import datetime
 from typing import List, Tuple, Optional, Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
@@ -184,9 +185,8 @@ STYLES = """
     .news-card { padding: 24px; }
     .news-title { font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
     .news-list { list-style: none; padding: 0; margin: 0; }
-    .news-item { font-size: 14px; color: var(--muted); margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 12px; }
-    .news-item:last-child { border: none; margin: 0; padding: 0; }
-
+    .news-item { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+    
     .profile-name { margin: 0; font-size: 22px; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; }
     .profile-role { color: var(--muted); margin: 6px 0 0; font-size: 15px; font-weight: 400; }
     
@@ -210,9 +210,10 @@ STYLES = """
     .prose ul { padding-left: 1.25rem; margin-bottom: 1rem; }
     /* News Card Markdown Styles override */
     .news-card ul { list-style: none; padding: 0; margin: 0; }
-    .news-card li { font-size: 14px; color: var(--muted); margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 12px; }
-    .news-card li:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .news-card li { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+    .news-card li:last-child { margin-bottom: 0; padding-bottom: 0; }
     .news-card p { margin: 0; } /* Reset p inside li if markdown adds it */
+    .news-card strong { color: #0f172a; font-weight: 600; } /* Ensure date/strong is dark like name/title */
 
     .prose li { margin-bottom: 0.5rem; }
     .prose strong { color: #0f172a; font-weight: 600; }
@@ -328,8 +329,10 @@ def index() -> str:
         # Check if we already have a UL. If so, append LI. If not, create UL.
         article_items = ""
         for art in articles:
-            # Format: - **Title** (Link)
-            article_items += f'<li class="news-item"><strong style="color:var(--primary)">[Article]</strong> <a href="/articles/{art["slug"]}">{art["title"]}</a></li>'
+            # Format: - **YYYY-MM**: New blog post: [Title](Link)
+            # Match style of existing news: <li><strong>2026-01:</strong> Content...</li>
+            date_str = datetime.fromtimestamp(art["mtime"]).strftime("%Y-%m")
+            article_items += f'<li class="news-item"><strong>{date_str}:</strong> New blog post: <a href="/articles/{art["slug"]}">{art["title"]}</a>.</li>'
         
         # Naive injection: find closing </ul> and insert, or append new list
         if "</ul>" in news_html:
