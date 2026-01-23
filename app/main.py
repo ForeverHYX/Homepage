@@ -11,6 +11,8 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, sta
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 import markdown
+from markdown.treeprocessors import Treeprocessor
+from markdown.extensions import Extension
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONTENT_DIR = Path(os.getenv("HOMEPAGE_CONTENT_DIR", BASE_DIR / "content")).resolve()
@@ -30,6 +32,25 @@ SESSION_KEY = "session_token"
 VALID_SESSIONS = set()
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+
+
+# --- Extensions ---
+
+class PdfTreeprocessor(Treeprocessor):
+    def run(self, root):
+        for element in root.iter():
+            if element.tag == 'img':
+                src = element.get('src')
+                if src and src.lower().endswith('.pdf'):
+                    element.tag = 'embed'
+                    element.set('type', 'application/pdf')
+                    element.set('style', 'width:100%; min-height:800px; border:none;')
+                    if 'alt' in element.attrib:
+                        del element.attrib['alt']
+
+class PdfExtension(Extension):
+    def extendMarkdown(self, md):
+        md.treeprocessors.register(PdfTreeprocessor(md), 'pdf_embed', 15)
 
 
 # --- Utilities ---
@@ -58,7 +79,7 @@ def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
     def flush():
         if current_title or current_lines:
             raw_body = "\n".join(current_lines)
-            html_body = markdown.markdown(raw_body, extensions=["fenced_code", "tables", "toc"])
+            html_body = markdown.markdown(raw_body, extensions=["fenced_code", "tables", "toc", PdfExtension()])
             sections.append((current_title, html_body))
 
     for line in text.splitlines():
@@ -564,7 +585,7 @@ def article_detail(slug: str) -> Any:
     clean_body = "\n".join(body_lines)
     
     # Rendering with TOC
-    md = markdown.Markdown(extensions=["fenced_code", "tables", "toc"])
+    md = markdown.Markdown(extensions=["fenced_code", "tables", "toc", PdfExtension()])
     html_body = md.convert(clean_body)
     toc_html = md.toc
     

@@ -1,0 +1,7 @@
+nohup: ignoring input
+INFO:     Will watch for changes in these directories: ['/root/newhomepage']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [399444] using StatReload
+INFO:     Started server process [399497]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

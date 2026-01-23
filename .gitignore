@@ -5,3 +5,5 @@ __pycache__/
 uploads/*
 !uploads/.gitkeep
 content/*.md
+content/articles/*.md
+*.log*.log
