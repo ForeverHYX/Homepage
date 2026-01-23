@@ -332,9 +332,9 @@ STYLES = """
     
     /* Layout for Article Detail */
     .article-container { display: grid; grid-template-columns: 1fr; gap: 40px; position: relative; }
-    @media (min-width: 1000px) { .article-container { grid-template-columns: 1fr 240px; } }
+    @media (min-width: 1000px) { .article-container { grid-template-columns: minmax(0, 1fr) 280px; } }
     
-    .toc { position: sticky; top: 100px; max-height: calc(100vh - 120px); overflow-y: auto; padding-left: 20px; border-left: 1px solid var(--border); }
+    .toc { position: sticky; top: 100px; max-height: calc(100vh - 120px); overflow-y: auto; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
     .toc ul { list-style: none; padding: 0; margin: 0; }
     .toc li { margin-bottom: 8px; font-size: 14px; }
     .toc a { color: var(--muted); text-decoration: none; transition: all .2s; display: block; }
@@ -561,12 +561,12 @@ def article_detail(slug: str) -> Any:
     content = f"""
     <div class="container">
       <div class="card content-area" style="margin:40px auto; padding:40px;">
-        <div style="margin-bottom:30px;">
+        <div style="margin-bottom:20px;">
             <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0;">&larr; Back to Articles</a>
         </div>
         
-        <header style="margin-bottom:40px; border-bottom:1px solid var(--border); padding-bottom:30px;">
-            <h1 style="font-size:2.5rem; font-weight:800; color:#0f172a; margin:0 0 16px 0; padding-left:16px; border-left:6px solid var(--primary); line-height:1.2;">{title}</h1>
+        <header style="margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:24px;">
+            <h1 style="font-size:2.5rem; font-weight:600; color:#0f172a; margin:0 0 12px 0; padding-left:16px; border-left:6px solid var(--primary); line-height:1.2;">{title}</h1>
             <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px;">
                  <span style="display:flex; align-items:center;">{ICON_CALENDAR} {date_str}</span>
                  <span style="display:flex; align-items:center;">{ICON_USER_S} {author}</span>
