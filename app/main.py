@@ -327,8 +327,8 @@ STYLES = """
     /* Typography inside sections */
     .prose { font-size: 15px; color: #475569; }
     .prose p { margin-bottom: 1rem; }
-    .prose ul { padding-left: 1.25rem; margin-bottom: 1rem; }
-    .prose ol { padding-left: 1.25rem; margin-bottom: 1rem; }
+    .prose ul { padding-left: 1.25rem; margin-bottom: 1rem; list-style-type: disc; }
+    .prose ol { padding-left: 1.25rem; margin-bottom: 1rem; list-style-type: decimal; }
     /* News Card Markdown Styles override */
     .news-card ul { list-style: none; padding: 0; margin: 0; }
     .news-card li { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
