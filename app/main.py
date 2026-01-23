@@ -351,10 +351,20 @@ STYLES = """
     .prose strong { color: #0f172a; font-weight: 600; }
     .prose em { color: var(--muted); font-style: italic; }
     
-    .prose h1, .prose h2, .prose h3 { margin-top: 0; } 
-    /* Hide the original H1 if we rendered it as section-title, but markdown parser keeps standard tags usually. 
-       Our parser extracts H1 as title, so content starts with H2 or P usually. */
-    .prose h2 { font-size: 1.1rem; font-weight: 600; color: #334155; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+    /* Article Grid Layout */
+    .article-grid { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: start; }
+    @media (min-width: 1024px) { .article-grid { grid-template-columns: 1fr 300px; } }
+
+    /* Refined Typography for Article Body */
+    .prose h1, .prose h2, .prose h3, .prose h4 { color: #0f172a; line-height: 1.3; font-weight: 700; }
+    /* H1 in body (if any) or large section headers */
+    .prose h1 { font-size: 1.8rem; margin-top: 2rem; margin-bottom: 1rem; letter-spacing: -0.02em; } 
+    /* Standard section headers */
+    .prose h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; letter-spacing: -0.01em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+    .prose h3 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 600; }
+    .prose h4 { font-size: 1.1rem; margin-top: 1.25rem; margin-bottom: 0.5rem; font-weight: 600; }
+    
+    .prose p { margin-bottom: 1.25rem; line-height: 1.75; font-size: 1.05rem; }
     .prose a { color: var(--primary); text-decoration: none; font-weight: 500; transition: color .2s; }
     .prose a:hover { color: var(--primary-hover); text-decoration: underline; }
 
@@ -559,8 +569,9 @@ def article_detail(slug: str) -> Any:
     if not title: title = slug.replace("-", " ").title()
 
     content = f"""
-    <div class="container">
-      <div class="card content-area" style="margin:40px auto; padding:40px;">
+    <div class="container article-grid" style="margin-top:40px; margin-bottom:60px;">
+      <!-- Main Content Card -->
+      <main class="card content-area" style="padding:40px; min-width:0;">
         <div style="margin-bottom:20px;">
             <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0;">&larr; Back to Articles</a>
         </div>
@@ -573,20 +584,19 @@ def article_detail(slug: str) -> Any:
             </div>
         </header>
 
-        <div class="article-container">
-            <article class="prose" style="min-width:0;">
-              {html_body}
-            </article>
-            
-            <aside class="toc-sidebar">
-                <div class="toc">
-                    <p style="font-weight:700; color:#0f172a; margin-top:0; margin-bottom:12px; font-size:14px; text-transform:uppercase; letter-spacing:0.05em;">Contents</p>
-                    {toc_html}
-                </div>
-            </aside>
-        </div>
+        <article class="prose">
+          {html_body}
+        </article>
+      </main>
 
-      </div>
+      <!-- Right Sidebar (TOC) -->
+      <aside>
+          <div class="toc" style="position:sticky; top:100px;">
+              <p style="font-weight:700; color:#0f172a; margin-top:0; margin-bottom:12px; font-size:14px; text-transform:uppercase; letter-spacing:0.05em;">Contents</p>
+              {toc_html}
+          </div>
+      </aside>
+
     </div>
     """
     return TEMPLATE_BASE.format(title=f"{title} | Yixun Hong", styles=STYLES, content=content, script="")
