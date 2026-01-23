@@ -1,41 +1,29 @@
-# Foreverhyx Homepage (Lightweight)
+# Homepage Project
 
-## Features
-- Markdown-driven homepage (edit `content/index.md` to update)
-- Upload center at `/upload` with login protection
-- Local disk storage for uploaded files
+This is a personal homepage built with **FastAPI**.
 
-## Quick Start
+## Directory Structure
+- `app/main.py`: Core application code (FastAPI).
+- `content/`: Markdown files for page content.
+  - `nav.md`: (Optional) Navigation content.
+  - `about.md`: Sidebar profile info (Avatar, Contact links, Location).
+  - `content.md`: Main body text (Right column).
+- `uploads/`: Directory for file uploads.
 
+## Content Format
+
+### `about.md` parsing rules
+The app looks for specific lines to generate the sidebar:
+- `(mailto:xxx)` -> Email Icon
+- `(https://github.com/xxx)` -> GitHub Icon
+- `## Location` -> The text immediately following this header is used as location.
+
+## Development
+Run locally:
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload
 ```
 
-Visit:
-- Home: http://localhost:8000/
-- Upload UI (requires login): http://localhost:8000/upload
-- Upload API: `POST /api/upload`
-- File list: `GET /api/files`
-- File access: `/uploads/{filename}`
-
-## Environment Variables
-- `HOMEPAGE_CONTENT_DIR`: Markdown directory (default `./content`)
-- `HOMEPAGE_UPLOAD_DIR`: Upload directory (default `./uploads`)
-- `HOMEPAGE_UPLOAD_USER`: Upload UI username (default `admin`)
-- `HOMEPAGE_UPLOAD_PASS`: Upload UI password (default `changeme`)
-
-## Structure
-```
-app/
-  main.py
-content/
-  index.md
-uploads/
-requirements.txt
-```
-
-## Notes
-The upload UI uses HTTP Basic Auth for simplicity. Use a strong password and consider adding IP allow-lists or a VPN if exposed publicly.
+## Deployment
+Service is managed by systemd: `foreverhyx-homepage`.
+Configuration in `/etc/systemd/system/foreverhyx-homepage.service`.
