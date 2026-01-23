@@ -41,15 +41,15 @@ def render_markdown(md_path: Path) -> str:
     return markdown.markdown(text, extensions=["fenced_code", "tables", "toc"])
 
 
-  def require_upload_auth(credentials: HTTPBasicCredentials = Depends(security)) -> None:
+def require_upload_auth(credentials: HTTPBasicCredentials = Depends(security)) -> None:
     is_user = secrets.compare_digest(credentials.username, UPLOAD_USERNAME)
     is_pass = secrets.compare_digest(credentials.password, UPLOAD_PASSWORD)
     if not (is_user and is_pass):
-      raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Unauthorized",
-        headers={"WWW-Authenticate": "Basic"},
-      )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 
 @app.get("/", response_class=HTMLResponse)
