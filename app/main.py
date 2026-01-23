@@ -117,6 +117,7 @@ def require_login(request: Request) -> None:
 ICON_USER = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
 ICON_UPLOAD_CLOUD = """<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>"""
 ICON_FILE = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>"""
+ICON_OPEN = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>"""
 ICON_TRASH = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>"""
 ICON_COPY = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>"""
 ICON_MAIL = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>"""
@@ -170,8 +171,6 @@ STYLES = """
     .content-area { display: flex; flex-direction: column; gap: 40px; padding: 40px; }
     
     .cv-section { animation: fadeIn 0.5s ease-out; }
-    /* Add separator after the first section (usually Introduction/ABout) */
-    .cv-section.with-separator { border-bottom: 2px dashed var(--border); padding-bottom: 40px; margin-bottom: 40px; }
     
     .section-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0 0 1.5rem 0; padding-left: 1rem; border-left: 5px solid var(--primary); letter-spacing: -0.02em; }
     
@@ -260,17 +259,16 @@ def index() -> str:
     # Parse main content into sections
     raw_sections = parse_markdown_sections("content.md")
     
-    # Section Colors (Blue Palette)
-    section_colors = ['#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#172554']
+    # Section Colors (Light Blue to Primary Blue)
+    section_colors = ['#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6']
 
     # Generate HTML for each section
     sections_html = ""
     for i, (title, body) in enumerate(raw_sections):
         color = section_colors[i % len(section_colors)]
-        extra_class = " with-separator" if i == 0 else ""
         
         sections_html += f"""
-        <section class="cv-section{extra_class}">
+        <section class="cv-section">
             <h2 class="section-title" style="border-left-color: {color}">{title}</h2>
             <div class="prose">
                 {body}
@@ -473,7 +471,7 @@ def upload_page(request: Request) -> Any:
                </div>
              </div>
              <div style="display:flex; gap:4px;">
-                <a href="${{f.url}}" target="_blank" class="action-btn" title="Open">{ICON_FILE}</a>
+                <a href="${{f.url}}" target="_blank" class="action-btn" title="Open">{ICON_OPEN}</a>
                 <button class="action-btn" onclick="copyUrl('${{f.url}}')" title="Copy Link">{ICON_COPY}</button>
                 <button class="action-btn danger" onclick="deleteFile('${{f.name}}')" title="Delete">{ICON_TRASH}</button>
              </div>
