@@ -13,9 +13,11 @@ import markdown
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONTENT_DIR = Path(os.getenv("HOMEPAGE_CONTENT_DIR", BASE_DIR / "content")).resolve()
+ARTICLES_DIR = CONTENT_DIR / "articles"
 UPLOAD_DIR = Path(os.getenv("HOMEPAGE_UPLOAD_DIR", BASE_DIR / "uploads")).resolve()
 
 CONTENT_DIR.mkdir(parents=True, exist_ok=True)
+ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Yixun Hong's Homepage", version="0.4.0")
@@ -69,6 +71,34 @@ def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
     
     # Filter out empty sections
     return [s for s in sections if s[0] or s[1]]
+
+
+def get_all_articles() -> List[dict]:
+    """Scans ARTICLES_DIR for markdown files and returns sorting info."""
+    if not ARTICLES_DIR.exists():
+        return []
+    
+    articles = []
+    for f in ARTICLES_DIR.glob("*.md"):
+        stats = f.stat()
+        text = f.read_text(encoding="utf-8")
+        title = f.stem.replace("-", " ").title()
+        
+        # Try to find first H1
+        for line in text.splitlines():
+            if line.startswith("# "):
+                title = line[2:].strip()
+                break
+        
+        articles.append({
+            "slug": f.stem,
+            "title": title,
+            "mtime": stats.st_mtime
+        })
+    
+    # Sort by time desc
+    return sorted(articles, key=lambda x: x["mtime"], reverse=True)
+
 
 def get_about_info() -> dict:
     """Parses about.md for structured info."""
@@ -238,6 +268,7 @@ TEMPLATE_BASE = """<!doctype html>
       </a>
       <div style="display:flex; gap:20px; font-weight:500;">
         <a href="/" style="text-decoration:none; color:var(--text);">Home</a>
+        <a href="/articles" style="text-decoration:none; color:var(--text);">Articles</a>
         <a href="/upload" style="text-decoration:none; color:var(--text);">Upload</a>
       </div>
     </div>
@@ -281,13 +312,32 @@ def index() -> str:
         raw_html = render_markdown_file("content.md") if (CONTENT_DIR / "content.md").exists() else ""
         sections_html = f"""<div class="prose">{raw_html}</div>"""
 
-    # Render News
+    # Render News (Manual + Articles)
     news_html = ""
+    # 1. Manual News
     news_path = CONTENT_DIR / "news.md"
     if news_path.exists():
         news_text = news_path.read_text(encoding="utf-8")
         news_html = markdown.markdown(news_text)
-    else:
+    
+    # 2. Append latest articles to News if they aren't already there?
+    # User said: "All articles will appear in news... and can be clicked"
+    # We will append a list of article links to the rendered news HTML.
+    articles = get_all_articles()
+    if articles:
+        # Check if we already have a UL. If so, append LI. If not, create UL.
+        article_items = ""
+        for art in articles:
+            # Format: - **Title** (Link)
+            article_items += f'<li class="news-item"><strong style="color:var(--primary)">[Article]</strong> <a href="/articles/{art["slug"]}">{art["title"]}</a></li>'
+        
+        # Naive injection: find closing </ul> and insert, or append new list
+        if "</ul>" in news_html:
+            news_html = news_html.replace("</ul>", f"{article_items}</ul>")
+        else:
+            news_html += f'<ul class="news-list">{article_items}</ul>'
+
+    if not news_html:
         news_html = """<ul class="news-list"><li class="news-item">No news yet.</li></ul>"""
 
     page_content = f"""
@@ -320,6 +370,54 @@ def index() -> str:
     </div>
     """
     return TEMPLATE_BASE.format(title="Home | Yixun Hong", styles=STYLES, content=page_content, script="")
+
+
+@app.get("/articles", response_class=HTMLResponse)
+def articles_index() -> str:
+    articles = get_all_articles()
+    
+    list_items = ""
+    for art in articles:
+        list_items += f'<li style="margin-bottom:12px;"><a href="/articles/{art["slug"]}" style="font-size:18px; font-weight:600; text-decoration:none; color:var(--primary);">{art["title"]}</a></li>'
+    
+    content_html = f"""
+    <div class="container">
+        <div class="card content-area" style="max-width:800px; margin:0 auto;">
+            <h1 class="section-title" style="border-left-color: var(--primary)">Articles</h1>
+            <div class="prose">
+                <ul style="list-style:none; padding:0;">
+                    {list_items if articles else "<p>No articles yet.</p>"}
+                </ul>
+            </div>
+        </div>
+    </div>
+    """
+    return TEMPLATE_BASE.format(title="Articles | Yixun Hong", styles=STYLES, content=content_html, script="")
+
+
+@app.get("/articles/{slug}", response_class=HTMLResponse)
+def article_detail(slug: str) -> Any:
+    path = ARTICLES_DIR / f"{slug}.md"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    text = path.read_text(encoding="utf-8")
+    # Rendering
+    html_body = markdown.markdown(text, extensions=["fenced_code", "tables", "toc"])
+    
+    content = f"""
+    <div class="container">
+      <div class="card content-area" style="max-width:800px; margin:0 auto;">
+        <div style="margin-bottom:20px;">
+            <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0;">&larr; Back to Articles</a>
+        </div>
+        <article class="prose">
+          {html_body}
+        </article>
+      </div>
+    </div>
+    """
+    return TEMPLATE_BASE.format(title=f"Article | Yixun Hong", styles=STYLES, content=content, script="")
 
 
 @app.get("/login", response_class=HTMLResponse)
