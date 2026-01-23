@@ -352,8 +352,8 @@ STYLES = """
     .prose em { color: var(--muted); font-style: italic; }
     
     /* Article Grid Layout */
-    .article-grid { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: start; }
-    @media (min-width: 1024px) { .article-grid { grid-template-columns: 1fr 300px; } }
+    .article-grid { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: stretch; }
+    @media (min-width: 1024px) { .article-grid { grid-template-columns: 1fr 240px; } }
 
     /* Refined Typography for Article Body */
     .prose h1, .prose h2, .prose h3, .prose h4 { color: #0f172a; line-height: 1.3; font-weight: 700; }
