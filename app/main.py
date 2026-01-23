@@ -328,6 +328,7 @@ STYLES = """
     .prose { font-size: 15px; color: #475569; }
     .prose p { margin-bottom: 1rem; }
     .prose ul { padding-left: 1.25rem; margin-bottom: 1rem; }
+    .prose ol { padding-left: 1.25rem; margin-bottom: 1rem; }
     /* News Card Markdown Styles override */
     .news-card ul { list-style: none; padding: 0; margin: 0; }
     .news-card li { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
@@ -476,7 +477,7 @@ def articles_index() -> str:
     for art in articles:
         # Create a card for each article
         list_items += f"""
-        <div class="card" style="padding:24px; margin-bottom:24px; transition: transform 0.2s;">
+        <div class="card" style="padding:24px; margin-bottom:12px; transition: transform 0.2s;">
             <h2 style="margin:0 0 12px 0; font-size:1.5rem;">
                 <a href="/articles/{art["slug"]}" style="text-decoration:none; color:#0f172a;">{art["title"]}</a>
             </h2>
@@ -496,7 +497,7 @@ def articles_index() -> str:
     content_html = f"""
     <div class="container">
         <div class="content-area" style="max-width:800px; margin:0 auto; padding:40px 0; background:transparent;">
-            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:32px;">Articles</h1>
+            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:32px; font-size: 2.5rem;">Articles</h1>
             {list_items if articles else "<p>No articles yet.</p>"}
         </div>
     </div>
