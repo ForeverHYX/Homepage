@@ -84,17 +84,64 @@ def get_all_articles() -> List[dict]:
         stats = f.stat()
         text = f.read_text(encoding="utf-8")
         title = f.stem.replace("-", " ").title()
+        date_str = ""
+        author = "Yixun Hong"
+        summary = ""
         
-        # Try to find first H1
-        for line in text.splitlines():
-            if line.startswith("# "):
-                title = line[2:].strip()
-                break
+        # Parse Frontmatter-like lines (or just top lines)
+        lines = text.splitlines()
+        content_lines = []
         
+        for line in lines:
+            line_strip = line.strip()
+            # Title
+            if not title or title == f.stem.replace("-", " ").title():
+                if line_strip.startswith("# "):
+                    title = line_strip[2:].strip()
+                    continue
+            
+            # Metadata
+            if line_strip.lower().startswith("**date**:") or line_strip.lower().startswith("date:"):
+                date_str = line_strip.split(":", 1)[1].strip()
+                continue
+            
+            if line_strip.lower().startswith("**author**:") or line_strip.lower().startswith("author:"):
+                author = line_strip.split(":", 1)[1].strip()
+                continue
+                
+            # Content for summary (skip headers and empty lines)
+            if not line_strip or line_strip.startswith("#") or line_strip.startswith("!"):
+                continue
+            content_lines.append(line_strip)
+            
+        # Generate Summary (first ~200 chars)
+        full_content = " ".join(content_lines)
+        if len(full_content) > 200:
+            summary = full_content[:200] + "..."
+        else:
+            summary = full_content
+
+        # Fallback date from mtime if not in file
+        mtime = stats.st_mtime
+        if date_str:
+            try:
+                # Try parse YYYY-MM-DD
+                dt = datetime.strptime(date_str, "%Y-%m-%d")
+                mtime = dt.timestamp()
+            except ValueError:
+                try: 
+                    dt = datetime.strptime(date_str, "%Y-%m")
+                    mtime = dt.timestamp()
+                except ValueError:
+                    pass
+
         articles.append({
             "slug": f.stem,
             "title": title,
-            "mtime": stats.st_mtime
+            "date": datetime.fromtimestamp(mtime).strftime("%Y-%m-%d"),
+            "author": author,
+            "summary": summary,
+            "mtime": mtime
         })
     
     # Sort by time desc
@@ -155,7 +202,10 @@ def parse_and_merge_news() -> str:
     # 3. Sort by date desc
     items.sort(key=lambda x: x["date"], reverse=True)
     
-    # 4. Render
+    # 4. Limit to max 5 items
+    items = items[:5]
+    
+    # 5. Render
     if not items:
         return '<ul class="news-list"><li class="news-item">No news yet.</li></ul>'
         
@@ -220,6 +270,8 @@ ICON_COPY = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vi
 ICON_MAIL = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>"""
 ICON_GITHUB = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>"""
 ICON_MAP = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>"""
+ICON_CALENDAR = """<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; position:relative; top:2px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>"""
+ICON_USER_S = """<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; position:relative; top:2px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>"""
 
 STYLES = """
     :root { 
@@ -422,17 +474,30 @@ def articles_index() -> str:
     
     list_items = ""
     for art in articles:
-        list_items += f'<li style="margin-bottom:12px;"><a href="/articles/{art["slug"]}" style="font-size:18px; font-weight:600; text-decoration:none; color:var(--primary);">{art["title"]}</a></li>'
+        # Create a card for each article
+        list_items += f"""
+        <div class="card" style="padding:24px; margin-bottom:24px; transition: transform 0.2s;">
+            <h2 style="margin:0 0 12px 0; font-size:1.5rem;">
+                <a href="/articles/{art["slug"]}" style="text-decoration:none; color:#0f172a;">{art["title"]}</a>
+            </h2>
+            <div style="font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px;">
+                 <span>{ICON_CALENDAR} {art["date"]}</span>
+                 <span>{ICON_USER_S} {art["author"]}</span>
+            </div>
+            <p style="color:#475569; font-size:15px; margin:0; line-height:1.6;">
+                {art["summary"]}
+            </p>
+            <div style="margin-top:16px;">
+                <a href="/articles/{art["slug"]}" style="font-weight:600; font-size:14px; color:var(--primary); text-decoration:none;">Read more &rarr;</a>
+            </div>
+        </div>
+        """
     
     content_html = f"""
     <div class="container">
-        <div class="card content-area" style="max-width:800px; margin:0 auto;">
-            <h1 class="section-title" style="border-left-color: var(--primary)">Articles</h1>
-            <div class="prose">
-                <ul style="list-style:none; padding:0;">
-                    {list_items if articles else "<p>No articles yet.</p>"}
-                </ul>
-            </div>
+        <div class="content-area" style="max-width:800px; margin:0 auto; padding:40px 0; background:transparent;">
+            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:32px;">Articles</h1>
+            {list_items if articles else "<p>No articles yet.</p>"}
         </div>
     </div>
     """
