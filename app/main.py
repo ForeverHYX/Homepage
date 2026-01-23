@@ -170,12 +170,21 @@ STYLES = """
     .content-area { display: flex; flex-direction: column; gap: 40px; padding: 40px; }
     
     .cv-section { animation: fadeIn 0.5s ease-out; }
+    /* Add separator after the first section (usually Introduction/ABout) */
+    .cv-section.with-separator { border-bottom: 2px dashed var(--border); padding-bottom: 40px; margin-bottom: 40px; }
+    
     .section-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0 0 1.5rem 0; padding-left: 1rem; border-left: 5px solid var(--primary); letter-spacing: -0.02em; }
     
     /* Typography inside sections */
     .prose { font-size: 15px; color: #475569; }
     .prose p { margin-bottom: 1rem; }
     .prose ul { padding-left: 1.25rem; margin-bottom: 1rem; }
+    /* News Card Markdown Styles override */
+    .news-card ul { list-style: none; padding: 0; margin: 0; }
+    .news-card li { font-size: 14px; color: var(--muted); margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 12px; }
+    .news-card li:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .news-card p { margin: 0; } /* Reset p inside li if markdown adds it */
+
     .prose li { margin-bottom: 0.5rem; }
     .prose strong { color: #0f172a; font-weight: 600; }
     .prose em { color: var(--muted); font-style: italic; }
@@ -251,12 +260,18 @@ def index() -> str:
     # Parse main content into sections
     raw_sections = parse_markdown_sections("content.md")
     
+    # Section Colors (Blue Palette)
+    section_colors = ['#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#172554']
+
     # Generate HTML for each section
     sections_html = ""
-    for title, body in raw_sections:
+    for i, (title, body) in enumerate(raw_sections):
+        color = section_colors[i % len(section_colors)]
+        extra_class = " with-separator" if i == 0 else ""
+        
         sections_html += f"""
-        <section class="cv-section">
-            <h2 class="section-title">{title}</h2>
+        <section class="cv-section{extra_class}">
+            <h2 class="section-title" style="border-left-color: {color}">{title}</h2>
             <div class="prose">
                 {body}
             </div>
@@ -267,6 +282,15 @@ def index() -> str:
     if not sections_html:
         raw_html = render_markdown_file("content.md") if (CONTENT_DIR / "content.md").exists() else ""
         sections_html = f"""<div class="prose">{raw_html}</div>"""
+
+    # Render News
+    news_html = ""
+    news_path = CONTENT_DIR / "news.md"
+    if news_path.exists():
+        news_text = news_path.read_text(encoding="utf-8")
+        news_html = markdown.markdown(news_text)
+    else:
+        news_html = """<ul class="news-list"><li class="news-item">No news yet.</li></ul>"""
 
     page_content = f"""
     <div class="container main-grid">
@@ -288,9 +312,7 @@ def index() -> str:
 
         <div class="card news-card">
             <h3 class="news-title">News</h3>
-            <ul class="news-list">
-              <li class="news-item">Welcome to my new homepage!</li>
-            </ul>
+            {news_html}
         </div>
       </aside>
       
