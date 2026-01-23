@@ -413,6 +413,7 @@ TEMPLATE_BASE = """<!doctype html>
       <div style="display:flex; gap:20px; font-weight:500;">
         <a href="/" style="text-decoration:none; color:var(--text);">Home</a>
         <a href="/articles" style="text-decoration:none; color:var(--text);">Articles</a>
+        <a href="/uploads/transcript.pdf" target="_blank" style="text-decoration:none; color:var(--text);">Resume</a>
         <a href="/upload" style="text-decoration:none; color:var(--text);">Upload</a>
       </div>
     </div>
