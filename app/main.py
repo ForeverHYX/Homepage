@@ -365,6 +365,7 @@ STYLES = """
     .prose h4 { font-size: 1.1rem; margin-top: 1.25rem; margin-bottom: 0.5rem; font-weight: 600; }
     
     .prose p { margin-bottom: 1.25rem; line-height: 1.75; font-size: 1.05rem; }
+    .prose > *:first-child { margin-top: 0; }
     .prose a { color: var(--primary); text-decoration: none; font-weight: 500; transition: color .2s; }
     .prose a:hover { color: var(--primary-hover); text-decoration: underline; }
 
@@ -576,7 +577,7 @@ def article_detail(slug: str) -> Any:
             <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0;">&larr; Back to Articles</a>
         </div>
         
-        <header style="margin-bottom:24px; border-bottom:1px solid var(--border); padding-bottom:24px;">
+        <header style="margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px;">
             <h1 style="font-size:2.5rem; font-weight:600; color:#0f172a; margin:0 0 12px 0; padding-left:16px; border-left:6px solid var(--primary); line-height:1.2;">{title}</h1>
             <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px;">
                  <span style="display:flex; align-items:center;">{ICON_CALENDAR} {date_str}</span>
