@@ -577,8 +577,8 @@ def article_detail(slug: str) -> Any:
             <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0;">&larr; Back to Articles</a>
         </div>
         
-        <header style="margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-            <h1 style="font-size:2.5rem; font-weight:600; color:#0f172a; margin:0 0 12px 0; padding-left:16px; border-left:6px solid var(--primary); line-height:1.2;">{title}</h1>
+        <header style="margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+            <h1 style="font-size:2.5rem; font-weight:600; color:#0f172a; margin:0 0 8px 0; padding-left:16px; border-left:6px solid var(--primary); line-height:1.2;">{title}</h1>
             <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px;">
                  <span style="display:flex; align-items:center;">{ICON_CALENDAR} {date_str}</span>
                  <span style="display:flex; align-items:center;">{ICON_USER_S} {author}</span>
