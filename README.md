@@ -2,7 +2,8 @@
 
 ## Features
 - Markdown-driven homepage (edit `content/index.md` to update)
-- Simple upload backend with local disk storage
+- Upload center at `/upload` with login protection
+- Local disk storage for uploaded files
 
 ## Quick Start
 
@@ -15,6 +16,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 Visit:
 - Home: http://localhost:8000/
+- Upload UI (requires login): http://localhost:8000/upload
 - Upload API: `POST /api/upload`
 - File list: `GET /api/files`
 - File access: `/uploads/{filename}`
@@ -22,6 +24,8 @@ Visit:
 ## Environment Variables
 - `HOMEPAGE_CONTENT_DIR`: Markdown directory (default `./content`)
 - `HOMEPAGE_UPLOAD_DIR`: Upload directory (default `./uploads`)
+- `HOMEPAGE_UPLOAD_USER`: Upload UI username (default `admin`)
+- `HOMEPAGE_UPLOAD_PASS`: Upload UI password (default `changeme`)
 
 ## Structure
 ```
@@ -34,4 +38,4 @@ requirements.txt
 ```
 
 ## Notes
-This is the minimal runnable version. Next steps could include auth, admin UI, image optimization, and CDN.
+The upload UI uses HTTP Basic Auth for simplicity. Use a strong password and consider adding IP allow-lists or a VPN if exposed publicly.
