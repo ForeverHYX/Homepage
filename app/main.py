@@ -329,6 +329,17 @@ STYLES = """
     .prose p { margin-bottom: 1rem; }
     .prose ul { padding-left: 1.25rem; margin-bottom: 1rem; list-style-type: disc; }
     .prose ol { padding-left: 1.25rem; margin-bottom: 1rem; list-style-type: decimal; }
+    
+    /* Layout for Article Detail */
+    .article-container { display: grid; grid-template-columns: 1fr; gap: 40px; position: relative; }
+    @media (min-width: 1000px) { .article-container { grid-template-columns: 1fr 240px; } }
+    
+    .toc { position: sticky; top: 100px; max-height: calc(100vh - 120px); overflow-y: auto; padding-left: 20px; border-left: 1px solid var(--border); }
+    .toc ul { list-style: none; padding: 0; margin: 0; }
+    .toc li { margin-bottom: 8px; font-size: 14px; }
+    .toc a { color: var(--muted); text-decoration: none; transition: all .2s; display: block; }
+    .toc a:hover { color: var(--primary); }
+    
     /* News Card Markdown Styles override */
     .news-card ul { list-style: none; padding: 0; margin: 0; }
     .news-card li { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
@@ -477,7 +488,7 @@ def articles_index() -> str:
     for art in articles:
         # Create a card for each article
         list_items += f"""
-        <div class="card" style="padding:24px; margin-bottom:12px; transition: transform 0.2s;">
+        <div class="card" style="padding:24px; margin-bottom:0px; transition: transform 0.2s;">
             <h2 style="margin:0 0 12px 0; font-size:1.5rem;">
                 <a href="/articles/{art["slug"]}" style="text-decoration:none; color:#0f172a;">{art["title"]}</a>
             </h2>
@@ -497,8 +508,10 @@ def articles_index() -> str:
     content_html = f"""
     <div class="container">
         <div class="content-area" style="max-width:800px; margin:0 auto; padding:40px 0; background:transparent;">
-            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:32px; font-size: 2.5rem;">Articles</h1>
-            {list_items if articles else "<p>No articles yet.</p>"}
+            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Articles</h1>
+            <div style="display:flex; flex-direction:column; gap:24px;">
+                {list_items if articles else "<p>No articles yet.</p>"}
+            </div>
         </div>
     </div>
     """
@@ -512,22 +525,71 @@ def article_detail(slug: str) -> Any:
         raise HTTPException(status_code=404, detail="Article not found")
     
     text = path.read_text(encoding="utf-8")
-    # Rendering
-    html_body = markdown.markdown(text, extensions=["fenced_code", "tables", "toc"])
     
+    # Parse Metadata manually to separate it from body
+    lines = text.splitlines()
+    body_lines = []
+    
+    title = ""
+    author = "Yixun Hong"
+    date_str = ""
+    
+    # Simple state parsers
+    for line in lines:
+        sline = line.strip()
+        if not title and sline.startswith("# "):
+            title = sline[2:].strip()
+            continue
+        if sline.lower().startswith("**date**:") or sline.lower().startswith("date:"):
+            date_str = sline.split(":", 1)[1].strip()
+            continue
+        if sline.lower().startswith("**author**:") or sline.lower().startswith("author:"):
+            author = sline.split(":", 1)[1].strip()
+            continue
+        
+        body_lines.append(line)
+    
+    clean_body = "\n".join(body_lines)
+    
+    # Rendering with TOC
+    md = markdown.Markdown(extensions=["fenced_code", "tables", "toc"])
+    html_body = md.convert(clean_body)
+    toc_html = md.toc
+    
+    if not title: title = slug.replace("-", " ").title()
+
     content = f"""
     <div class="container">
-      <div class="card content-area" style="max-width:800px; margin:0 auto;">
-        <div style="margin-bottom:20px;">
+      <div class="card content-area" style="margin:40px auto; padding:40px;">
+        <div style="margin-bottom:30px;">
             <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0;">&larr; Back to Articles</a>
         </div>
-        <article class="prose">
-          {html_body}
-        </article>
+        
+        <header style="margin-bottom:40px; border-bottom:1px solid var(--border); padding-bottom:30px;">
+            <h1 style="font-size:2.5rem; font-weight:800; color:#0f172a; margin:0 0 16px 0; padding-left:16px; border-left:6px solid var(--primary); line-height:1.2;">{title}</h1>
+            <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px;">
+                 <span style="display:flex; align-items:center;">{ICON_CALENDAR} {date_str}</span>
+                 <span style="display:flex; align-items:center;">{ICON_USER_S} {author}</span>
+            </div>
+        </header>
+
+        <div class="article-container">
+            <article class="prose" style="min-width:0;">
+              {html_body}
+            </article>
+            
+            <aside class="toc-sidebar">
+                <div class="toc">
+                    <p style="font-weight:700; color:#0f172a; margin-top:0; margin-bottom:12px; font-size:14px; text-transform:uppercase; letter-spacing:0.05em;">Contents</p>
+                    {toc_html}
+                </div>
+            </aside>
+        </div>
+
       </div>
     </div>
     """
-    return TEMPLATE_BASE.format(title=f"Article | Yixun Hong", styles=STYLES, content=content, script="")
+    return TEMPLATE_BASE.format(title=f"{title} | Yixun Hong", styles=STYLES, content=content, script="")
 
 
 @app.get("/login", response_class=HTMLResponse)
