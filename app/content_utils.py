@@ -210,6 +210,14 @@ def get_about_info() -> dict:
         if len(parts) > 1:
             info["location"] = parts[1].strip().split("\n")[0]
             
+    if "## Role" in text:
+        parts = text.split("## Role")
+        if len(parts) > 1:
+            # Take the first non-empty line after the header
+            lines = parts[1].strip().split("\n")
+            if lines:
+                info["role"] = lines[0].strip()
+
     # Allow overriding name/role via comments or specific syntax if needed, 
     # but for now we keep them hardcoded or minimal as requested.
     
