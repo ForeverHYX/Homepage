@@ -10,11 +10,11 @@ A modern, highly customizable personal homepage and portfolio system built with 
 - **CSS Variables**: Easy theming system (modifying `STYLES` in `app/config.py`).
 
 ### 📝 Content Management
-- **Markdown-Driven**: all content is stored in simple Markdown files.
-- **Static Content Blocks**:
-    - `content/content.md`: Main homepage sections (Introduction, Education, etc.).
-    - `content/news.md`: Sidebar news updates.
-    - `content/about.md`: Sidebar profile information.
+- **Markdown-Driven**: All content is stored in simple Markdown files.
+- **Unified News Feed**: Automatically aggregates and sorts updates from:
+    - Manual news entries (`content/news.md`).
+    - New blog posts (`content/articles/*.md`).
+    - New gallery albums (sorted by shoot date).
 - **Article System**:
     - Dedicated blog/article section (`/articles`).
     - Smart metadata parsing (Title, Date, Author) from Markdown headers.
@@ -77,6 +77,7 @@ Visit http://127.0.0.1:8000
 │   ├── config.py        # Settings & Templates
 │   ├── auth.py          # Authentication Logic
 │   ├── utils.py         # Helper functions
+│   ├── content_utils.py # Content parsing & aggregation
 │   └── routers/         # API & Page Routes
 ├── content/             # Your Markdown Content
 ├── uploads/             # User uploaded files
@@ -93,7 +94,7 @@ This project acts as a standard ASGI application.
 2. Nginx configuration for proxy_pass:
    ```nginx
    location / {
-       proxy_pass http://127.0.0.1:8000;
+       proxy_pass http://127.0.0.1:8000\;
        proxy_set_header Host $host;
        proxy_set_header X-Real-IP $remote_addr;
    }
@@ -102,4 +103,8 @@ This project acts as a standard ASGI application.
 
 ## 🔒 Security
 - Credentials are managed via `.env` file.
-- **Ensure `.env` is listed in `.gitignore`** (default behavior) to prevent leaking secrets.
+- **Ensure `.env` is listed in `.gitignore`** to prevent leaking secrets.
+
+## 📄 Attribution / Framework
+This website is built on [Yixun's Homepage Framework](https://github.com/ForeverHYX/Homepage).  
+Copyright &copy; Yixun Hong.

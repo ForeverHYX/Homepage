@@ -7,11 +7,11 @@ from typing import List, Tuple
 import json
 
 import markdown
-from app.config import ARTICLES_DIR, CONTENT_DIR
+from app.config import ARTICLES_DIR, CONTENT_DIR, UPLOAD_DIR
 
 # Re-import from existing utility to avoid circular issues or duplication if needed
 # But for clarity, we can assume these stand alone or import dependencies
-from app.utils import PdfExtension
+from app.utils import PdfExtension, get_gallery_folders, get_folder_meta, safe_join
 
 def get_all_articles() -> List[dict]:
     """Scans ARTICLES_DIR for markdown files and returns sorting info."""
@@ -137,14 +137,46 @@ def parse_and_merge_news() -> str:
             "date": dt,
             "html": f"<strong>{date_str}:</strong> New blog post: <a href=\"/articles/{art['slug']}\">{art['title']}</a>."
         })
+
+    # 3. Parse Galleries
+    for rel_path in get_gallery_folders():
+        try:
+            folder_path = safe_join(UPLOAD_DIR, rel_path)
+            if not folder_path.exists():
+                continue
+            meta = get_folder_meta(folder_path)
+            # Use date from meta, fallback to empty
+            date_val = meta.get("date", "")
+            
+            dt = datetime.min
+            if date_val:
+                try:
+                    # Try various formats
+                    if len(date_val) == 10:
+                        dt = datetime.strptime(date_val, "%Y-%m-%d")
+                    elif len(date_val) == 7:
+                        dt = datetime.strptime(date_val, "%Y-%m")
+                except ValueError:
+                    pass
+            
+            # Only add if we have a valid date parsed (assuming news feed is date-driven)
+            if dt != datetime.min:
+                date_str = dt.strftime("%Y-%m")
+                title = meta.get("title", rel_path)
+                items.append({
+                    "date": dt,
+                    "html": f"<strong>{date_str}:</strong> New album released: <a href=\"/gallery?focus={rel_path}\">{title}</a>."
+                })
+        except Exception:
+            pass
         
-    # 3. Sort by date desc
+    # 4. Sort by date desc
     items.sort(key=lambda x: x["date"], reverse=True)
     
-    # 4. Limit to max 5 items
-    items = items[:5]
+    # 5. Limit to max 6 items
+    items = items[:6]
     
-    # 5. Render
+    # 6. Render
     if not items:
         return '<ul class="news-list"><li class="news-item">No news yet.</li></ul>'
         
