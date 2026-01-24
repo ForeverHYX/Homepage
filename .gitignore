@@ -8,3 +8,5 @@ content/*.md
 content/articles/*.md
 *.log
 *.txt
+uvicorn.log
+
