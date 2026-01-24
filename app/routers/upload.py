@@ -81,6 +81,10 @@ def upload_page(request: Request) -> Any:
                 <label style="display:block; margin-bottom:4px; font-weight:500;">Shoot Date</label>
                 <input id="metaDate" type="date" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text);">
             </div>
+            <div style="margin-bottom:12px;">
+                <label style="display:block; margin-bottom:4px; font-weight:500;">Author</label>
+                <input id="metaAuthor" type="text" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text);" placeholder="Yixun Hong">
+            </div>
             <div style="margin-bottom:20px;">
                 <label style="display:block; margin-bottom:4px; font-weight:500;">Description</label>
                 <textarea id="metaDesc" rows="3" style="width:100%; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-family:inherit;"></textarea>
@@ -106,6 +110,7 @@ def upload_page(request: Request) -> Any:
       const metaTitle = document.getElementById('metaTitle');
       const metaDesc = document.getElementById('metaDesc');
       const metaDate = document.getElementById('metaDate');
+      const metaAuthor = document.getElementById('metaAuthor');
       let currentEditPath = "";
       
       let queue = [];
@@ -123,11 +128,12 @@ def upload_page(request: Request) -> Any:
         setTimeout(() => toast.classList.remove('show'), 2000);
       }}
       
-      window.openMetaModal = (path, title, desc, date) => {{
+      window.openMetaModal = (path, title, desc, date, author) => {{
           currentEditPath = path;
           metaTitle.value = title || "";
           metaDesc.value = desc || "";
           metaDate.value = date || "";
+          metaAuthor.value = author || "Yixun Hong";
           metaModal.style.display = 'flex';
       }};
       
@@ -141,6 +147,7 @@ def upload_page(request: Request) -> Any:
           form.append('title', metaTitle.value);
           form.append('description', metaDesc.value);
           form.append('date', metaDate.value);
+          form.append('author', metaAuthor.value);
           
           try {{
             await fetch('/api/folder/meta', {{ method: 'POST', body: form }});
@@ -201,12 +208,14 @@ def upload_page(request: Request) -> Any:
            if (f.type === 'dir') {{
                const isGal = f.is_gallery;
                // Escaping for JS string safety
-               const safeTitle = (f.title || f.name).replace(/'/g, "\\'");
-               const safeDesc = (f.description || "").replace(/'/g, "\\'");
+               const safeTitle = (f.title || f.name).replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
+               const safeDesc = (f.description || "").replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
                const safeDate = (f.date || "");
+               const safeAuthor = (f.author || "Yixun Hong").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+               const safePath = f.path.replace(/'/g, "\\'");
                
                div.innerHTML = `
-                 <div style="display:flex; align-items:center; gap:16px; flex:1; cursor:pointer;" onclick="openPath('${{f.path}}')">
+                 <div style="display:flex; align-items:center; gap:16px; flex:1; cursor:pointer;" onclick="openPath('${{safePath}}')">
                    <div class="file-preview" style="background:var(--surface-highlight); color:var(--primary); display:flex; align-items:center; justify-content:center;">{ICON_FOLDER}</div>
                    <div>
                        <div style="font-weight:600;">${{f.title || f.name}}</div>
@@ -214,8 +223,8 @@ def upload_page(request: Request) -> Any:
                    </div>
                  </div>
                  <div style="display:flex; gap:4px; align-items:center;">
-                    <button class="action-btn" onclick="openMetaModal('${{f.path}}', '${{safeTitle}}', '${{safeDesc}}', '${{safeDate}}')" title="Edit Info">✎</button>
-                    <button class="action-btn" onclick="toggleGallery('${{f.path}}', ${{!isGal}})" title="Toggle Gallery">
+                    <button class="action-btn" onclick="openMetaModal('${{safePath}}', '${{safeTitle}}', '${{safeDesc}}', '${{safeDate}}', '${{safeAuthor}}')" title="Edit Info">✎</button>
+                    <button class="action-btn" onclick="toggleGallery('${{safePath}}', ${{!isGal}})" title="Toggle Gallery">
                         ${{isGal ? `{ICON_STAR_FILLED}` : `{ICON_STAR}`}}
                     </button>
                     <button class="action-btn danger" onclick="deleteFile('${{f.path}}')" title="Delete">{ICON_TRASH}</button>
@@ -372,13 +381,13 @@ def create_folder_api(request: Request, name: str = Form(...), path: str = Form(
 
 
 @router.post("/api/folder/meta")
-def update_folder_meta(request: Request, path: str = Form(...), title: str = Form(...), description: str = Form(...), date: str = Form("")) -> JSONResponse:
+def update_folder_meta(request: Request, path: str = Form(...), title: str = Form(...), description: str = Form(...), date: str = Form(""), author: str = Form("Yixun Hong")) -> JSONResponse:
     require_login(request)
     target = safe_join(UPLOAD_DIR, path)
     if not target.exists() or not target.is_dir():
          raise HTTPException(status_code=404, detail="Folder not found")
     
-    save_folder_meta(target, title, description, date)
+    save_folder_meta(target, title, description, date, author)
     return JSONResponse({"detail": "Updated"})
 
 
@@ -430,7 +439,8 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
                 "path": rel_path,
                 "title": meta.get("title", p.name),
                 "description": meta.get("description", ""),
-                "date": meta.get("date", "")
+                "date": meta.get("date", ""),
+                "author": meta.get("author", "Yixun Hong")
             })
         else:
             items.append({
