@@ -335,13 +335,19 @@ def gallery_index(focus: Optional[str] = None) -> str:
          
          wrapper_class = "carousel-wrapper focused" if is_focused else "carousel-wrapper"
          
+         # Title Styling: Large with border if focused, smaller (Article-list like) if not
+         if is_focused:
+             title_style = "font-size:2.5rem; font-weight:600; margin:0; text-transform:capitalize; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
+         else:
+             title_style = "font-size:1.5rem; font-weight:700; margin:0; text-transform:capitalize; line-height: 1.2; color:var(--heading);"
+
          albums_html_inner += f"""
          <section class="gallery-album mb-12 card" style="padding:40px;">
              {back_btn}
              <div style="margin-bottom:24px; display:flex; align-items:center;">
                 <div style="flex:1;">
                     <div style="display:flex; align-items:center;">
-                        <h2 style="font-size:2.5rem; font-weight:600; margin:0; text-transform:capitalize; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2;">{album['title']}</h2>
+                        <h2 style="{title_style}">{album['title']}</h2>
                         {zoom_btn}
                     </div>
                     <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-top:8px;">
