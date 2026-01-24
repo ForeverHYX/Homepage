@@ -171,6 +171,49 @@ STYLES = """
     
     .toast { position: fixed; bottom: 32px; right: 32px; background: #0f172a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; opacity: 0; transform: translateY(20px); transition: all .3s; pointer-events: none; z-index: 100; font-size: 14px; }
     .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Lightbox Styles (Moved from pages.py) */
+    .lightbox-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .lightbox-overlay.active { display: flex; opacity: 1; }
+    .lightbox-content {
+        max-width: 95vw;
+        max-height: 95vh;
+        border-radius: 4px;
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        transform: scale(0.95);
+        transition: transform 0.3s ease;
+    }
+    .lightbox-overlay.active .lightbox-content { transform: scale(1); }
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 50px;
+        cursor: pointer;
+        z-index: 10001;
+        line-height: 0.8;
+        background: transparent;
+        border: none;
+        padding: 0;
+        font-family: serif; 
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+    .lightbox-close:hover { opacity: 1; }
 """
 
 TEMPLATE_BASE = """<!doctype html>

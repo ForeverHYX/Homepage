@@ -87,8 +87,8 @@ def get_all_articles() -> List[dict]:
     return sorted(articles, key=lambda x: x["mtime"], reverse=True)
 
 
-def parse_and_merge_news() -> str:
-    """Parses news.md and merges with articles, sorting by date."""
+def parse_and_merge_news(limit: int = 6) -> str:
+    """Parses news.md and merges with articles and galleries, sorting by date."""
     items = []
     
     # 1. Parse Manual News (from content.md)
@@ -173,15 +173,16 @@ def parse_and_merge_news() -> str:
     # 4. Sort by date desc
     items.sort(key=lambda x: x["date"], reverse=True)
     
-    # 5. Limit to max 6 items
-    items = items[:6]
+    # 5. Limit 
+    # Use limit currently passed
+    visible_items = items[:limit]
     
     # 6. Render
     if not items:
         return '<ul class="news-list"><li class="news-item">No news yet.</li></ul>'
         
     html = '<ul class="news-list">'
-    for item in items:
+    for item in visible_items:
         html += f'<li class="news-item">{item["html"]}</li>'
     html += '</ul>'
     

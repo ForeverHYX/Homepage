@@ -54,7 +54,8 @@ def index() -> str:
         sections_html = f"""<div class="prose">{raw_html}</div>"""
 
     # Render News (Merged & Sorted)
-    news_html = parse_and_merge_news()
+    news_html = parse_and_merge_news(limit=6)
+    all_news_html = parse_and_merge_news(limit=100) # For modal
 
     page_content = f"""
     <div class="container main-grid">
@@ -75,7 +76,12 @@ def index() -> str:
         </div>
 
         <div class="card news-card">
-            <h3 class="news-title">News</h3>
+            <h3 class="news-title" style="display:flex; align-items:center;">
+                News 
+                <button type="button" onclick="openNewsModal()" style="display:inline-flex; align-items:center; justify-content:center; background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; margin-left:8px;" title="View All">
+                    {ICON_MAXIMIZE}
+                </button>
+            </h3>
             {news_html}
         </div>
       </aside>
@@ -84,6 +90,26 @@ def index() -> str:
         {sections_html}
       </main>
     </div>
+
+    <!-- News Modal -->
+    <div id="newsModal" class="lightbox-overlay" onclick="closeNewsModal()">
+        <div class="card" style="padding:40px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; position:relative;" onclick="event.stopPropagation()">
+            <button onclick="closeNewsModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer;">&times;</button>
+            <h2 style="margin-top:0; border-left: 5px solid var(--primary); padding-left: 12px;">All News</h2>
+            {all_news_html}
+        </div>
+    </div>
+    
+    <script>
+    function openNewsModal() {{
+        document.getElementById('newsModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }}
+    function closeNewsModal() {{
+        document.getElementById('newsModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }}
+    </script>
     """
     return TEMPLATE_BASE.format(title="Home | Yixun Hong", styles=STYLES, content=page_content, script="")
 
@@ -117,8 +143,8 @@ def articles_index() -> str:
     <div class="container">
         <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
             <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Articles</h1>
-            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px; padding-left:14px;">Thoughts, tutorials, and updates.</p>
-            <div style="max-width:800px; display:flex; flex-direction:column; gap:24px;">
+            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Thoughts, tutorials, and updates.</p>
+            <div style="display:flex; flex-direction:column; gap:24px;">
                 {list_items if articles else "<p>No articles yet.</p>"}
             </div>
         </div>
@@ -248,7 +274,7 @@ def gallery_index(focus: Optional[str] = None) -> str:
     <div class="container">
         <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
             <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Gallery</h1>
-            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px; padding-left:14px;">A collection of moments.</p>
+            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">A collection of moments.</p>
             <div style="display:flex; flex-direction:column; gap:24px;">
                 {albums_html_inner if albums_data else "<p>No albums found.</p>"}
             </div>
@@ -258,56 +284,6 @@ def gallery_index(focus: Optional[str] = None) -> str:
 
     extra_styles = """
     .gallery-album { margin-bottom: 60px; }
-    
-    /* Lightbox Styles */
-    .lightbox-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.95);
-        z-index: 10000;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    .lightbox-overlay.active {
-        display: flex;
-        opacity: 1;
-    }
-    .lightbox-content {
-        max-width: 95vw;
-        max-height: 95vh;
-        border-radius: 4px;
-        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        transform: scale(0.95);
-        transition: transform 0.3s ease;
-    }
-    .lightbox-overlay.active .lightbox-content {
-        transform: scale(1);
-    }
-    .lightbox-close {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-        color: white;
-        font-size: 50px;
-        cursor: pointer;
-        z-index: 10001;
-        line-height: 0.8;
-        background: transparent;
-        border: none;
-        padding: 0;
-        font-family: serif; 
-        opacity: 0.8;
-        transition: opacity 0.2s;
-    }
-    .lightbox-close:hover {
-        opacity: 1;
-    }
 
     /* Carousel / Filmstrip Styles */
     .carousel-wrapper {
