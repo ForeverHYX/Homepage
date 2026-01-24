@@ -26,6 +26,7 @@ def get_all_articles() -> List[dict]:
         date_str = ""
         author = "Yixun Hong"
         summary = ""
+        tags = []
         
         # Parse Frontmatter-like lines (or just top lines)
         lines = text.splitlines()
@@ -46,6 +47,12 @@ def get_all_articles() -> List[dict]:
             
             if line_strip.lower().startswith("**author**:") or line_strip.lower().startswith("author:"):
                 author = line_strip.split(":", 1)[1].strip()
+                continue
+
+            if line_strip.lower().startswith("**tags**:") or line_strip.lower().startswith("tags:") or line_strip.lower().startswith("tag:"):
+                tag_str = line_strip.split(":", 1)[1].strip()
+                # Split by comma
+                tags = [t.strip() for t in tag_str.split(",") if t.strip()]
                 continue
                 
             # Content for summary (skip headers and empty lines)
@@ -80,6 +87,7 @@ def get_all_articles() -> List[dict]:
             "date": datetime.fromtimestamp(mtime).strftime("%Y-%m-%d"),
             "author": author,
             "summary": summary,
+            "tags": tags,
             "mtime": mtime
         })
     

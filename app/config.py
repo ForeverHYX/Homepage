@@ -36,6 +36,7 @@ ICON_STAR = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vi
 ICON_STAR_FILLED = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>"""
 ICON_MAXIMIZE = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>"""
 ICON_ARROW_LEFT = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>"""
+ICON_SEARCH = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>"""
 ICON_MOON = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>"""
 ICON_SUN = """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>"""
 
@@ -67,6 +68,9 @@ STYLES = """
     
     .main-grid { display: grid; gap: 48px; grid-template-columns: 1fr; align-items: start; }
     @media (min-width: 800px) { .main-grid { grid-template-columns: 260px 1fr; } }
+    
+    .right-sidebar-grid { display: grid; gap: 48px; grid-template-columns: 1fr; align-items: start; }
+    @media (min-width: 800px) { .right-sidebar-grid { grid-template-columns: 1fr 280px; } }
     
     /* Sidebar */
     .sidebar { display: flex; flex-direction: column; gap: 24px; position: sticky; top: 100px; }
@@ -249,7 +253,11 @@ TEMPLATE_BASE = """<!doctype html>
         <a href="/gallery" style="text-decoration:none; color:var(--text);">Gallery</a>
         <a href="/uploads/transcript.pdf" target="_blank" style="text-decoration:none; color:var(--text);">Resume</a>
         <a href="/upload" style="text-decoration:none; color:var(--text);">Upload</a>
-        <button id="themeToggle" class="action-btn" title="Toggle Theme" style="margin-left:8px;" onclick="toggleTheme()">
+        <div style="width:1px; height:24px; background:var(--border); margin:0 4px;"></div>
+        <button class="action-btn" title="Search" onclick="openSearch()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+        <button id="themeToggle" class="action-btn" title="Toggle Theme" style="margin-left:0px;" onclick="toggleTheme()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
       </div>
@@ -261,6 +269,21 @@ TEMPLATE_BASE = """<!doctype html>
       &copy; <span id="copyright-year"></span> Yixun Hong. Powered by <a href="https://github.com/ForeverHYX/Homepage" style="color: inherit; text-decoration: underline;">Yixun's Homepage</a>.
     </div>
   </footer>
+  
+  <!-- Search Modal -->
+  <div id="searchModal" class="lightbox-overlay" onclick="closeSearch()">
+      <div class="card" style="padding:24px; max-width:600px; width:90%; max-height:80vh; display:flex; flex-direction:column; margin: 40px auto;" onclick="event.stopPropagation()">
+        <div style="border-bottom:1px solid var(--border); padding-bottom:16px; margin-bottom:16px; display:flex; align-items:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted); margin-right:12px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="searchInput" placeholder="Search articles & albums..." style="border:none; outline:none; font-size:18px; width:100%; background:transparent; color:var(--text);" oninput="doSearch()" autocomplete="off">
+            <button onclick="closeSearch()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:24px;">&times;</button>
+        </div>
+        <div id="searchResults" style="overflow-y:auto; flex:1;">
+            <p style="color:var(--muted); text-align:center; padding-top:20px;">Type to search...</p>
+        </div>
+      </div>
+  </div>
+
   <script>
     document.getElementById('copyright-year').textContent = new Date().getFullYear();
     const ICON_MOON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
@@ -281,6 +304,63 @@ TEMPLATE_BASE = """<!doctype html>
         else btn.innerHTML = ICON_MOON;
     }}
     
+    // Search Logic
+    let searchIndex = null;
+    function openSearch() {{
+        document.getElementById('searchModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('searchInput').focus(), 100);
+        
+        if (!searchIndex) {{
+            fetch('/api/search-index')
+                .then(r => r.json())
+                .then(data => {{ searchIndex = data; }})
+                .catch(e => console.error("Search failed", e));
+        }}
+    }}
+    
+    function closeSearch() {{
+        document.getElementById('searchModal').classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => {{
+             document.getElementById('searchInput').value = '';
+             document.getElementById('searchResults').innerHTML = '<p style="color:var(--muted); text-align:center; padding-top:20px;">Type to search...</p>';
+        }}, 200);
+    }}
+    
+    function doSearch() {{
+        const q = document.getElementById('searchInput').value.toLowerCase().trim();
+        const res = document.getElementById('searchResults');
+        
+        if (q.length < 1) {{ 
+            res.innerHTML = '<p style="color:var(--muted); text-align:center; padding-top:20px;">Type to search...</p>'; 
+            return; 
+        }}
+        
+        if (!searchIndex) return;
+        
+        const hits = searchIndex.filter(item => 
+            (item.title && item.title.toLowerCase().includes(q)) || 
+            (item.desc && item.desc.toLowerCase().includes(q)) ||
+            (item.tags && item.tags.some(t => t.toLowerCase().includes(q)))
+        );
+        
+        if (hits.length === 0) {{
+            res.innerHTML = '<p style="text-align:center; color:var(--muted); padding-top:20px;">No results found.</p>';
+            return;
+        }}
+        
+        res.innerHTML = hits.map(h => `
+            <a href="${{h.url}}" onclick="closeSearch()" style="display:block; text-decoration:none; padding:12px; border-bottom:1px solid var(--border); transition:background .2s;" onmouseover="this.style.background='var(--surface-highlight)'" onmouseout="this.style.background='transparent'">
+                <div style="color:var(--heading); font-weight:600; display:flex; align-items:center;">
+                    <span style="font-size:12px; background:var(--surface-highlight); color:var(--primary); padding:2px 6px; border-radius:4px; margin-right:8px;">${{h.type}}</span>
+                    ${{h.title}}
+                </div>
+                <div style="color:var(--muted); font-size:13px; margin-top:4px; margin-left:55px;">${{h.date || ''}}</div>
+            </a>
+        `).join('');
+    }}
+
     // Init correct icon on load
     updateThemeIcon(document.documentElement.getAttribute('data-theme'));
   

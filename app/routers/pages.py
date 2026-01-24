@@ -6,7 +6,7 @@ from pathlib import Path
 import markdown
 
 from fastapi import APIRouter, Request, Form, status, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 
 from app.config import (
     TEMPLATE_BASE, STYLES, UPLOAD_DIR, ARTICLES_DIR,
@@ -114,21 +114,71 @@ def index() -> str:
     return TEMPLATE_BASE.format(title="Home | Yixun Hong", styles=STYLES, content=page_content, script="")
 
 
+@router.get("/api/search-index")
+def search_api():
+    data = []
+    # Articles
+    for a in get_all_articles():
+        data.append({
+            "type": "Article",
+            "title": a['title'],
+            "desc": a['summary'],
+            "tags": a.get('tags', []),
+            "date": a['date'],
+            "url": f"/articles/{a['slug']}"
+        })
+    # Galleries
+    for rel_path in get_gallery_folders():
+         path = safe_join(UPLOAD_DIR, rel_path)
+         if not path.exists(): continue
+         meta = get_folder_meta(path)
+         title = meta.get("title", path.name)
+         desc = meta.get("description", "")
+         data.append({
+             "type": "Album",
+             "title": title,
+             "desc": desc,
+             "tags": [],
+             "date": meta.get("date", ""),
+             "url": f"/gallery?focus={rel_path}"
+         })
+         
+    return JSONResponse(data)
+
+
 @router.get("/articles", response_class=HTMLResponse)
-def articles_index() -> str:
+def articles_index(tag: Optional[str] = None) -> str:
     articles = get_all_articles()
+    
+    # Calculate Tag Counts (from full list)
+    all_tags = {}
+    for a in articles:
+        for t in a.get('tags', []):
+            if t: all_tags[t] = all_tags.get(t, 0) + 1
+            
+    # Filter
+    if tag:
+        articles = [a for a in articles if tag in a.get('tags', [])]
+    
+    # Sort tags by count
+    sorted_tags = sorted(all_tags.items(), key=lambda x: x[1], reverse=True)
     
     list_items = ""
     for art in articles:
+        tags_html = ""
+        for t in art.get('tags', []):
+             tags_html += f'<span style="background:var(--surface-highlight); color:var(--muted); font-size:11px; padding:2px 6px; border-radius:4px; margin-right:6px;">{t}</span>'
+
         # Create a card for each article
         list_items += f"""
         <div class="card" style="padding:24px; margin-bottom:0px; transition: transform 0.2s;">
             <h2 style="margin:0 0 12px 0; font-size:1.5rem;">
                 <a href="/articles/{art["slug"]}" style="text-decoration:none; color:var(--heading);">{art["title"]}</a>
             </h2>
-            <div style="font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px;">
+            <div style="font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
                  <span>{ICON_CALENDAR} {art["date"]}</span>
                  <span>{ICON_USER_S} {art["author"]}</span>
+                 <div style="display:flex; align-items:center;">{tags_html}</div>
             </div>
             <p style="color:var(--text); font-size:15px; margin:0; line-height:1.6;">
                 {art["summary"]}
@@ -139,13 +189,36 @@ def articles_index() -> str:
         </div>
         """
     
+    tag_cloud_html = ""
+    for t, count in sorted_tags:
+         active_style = "background:var(--primary); color:white;" if tag == t else "background:var(--surface); color:var(--text); border:1px solid var(--border);"
+         tag_cloud_html += f"""
+         <a href="/articles?tag={t}" style="display:inline-block; padding:4px 10px; border-radius:16px; font-size:13px; text-decoration:none; margin-bottom:8px; margin-right:6px; transition:all .2s; {active_style}">
+            {t} <span style="opacity:0.6; font-size:0.9em;">({count})</span>
+         </a>
+         """
+
     content_html = f"""
     <div class="container">
         <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
             <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Articles</h1>
             <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Thoughts, tutorials, and updates.</p>
-            <div style="display:flex; flex-direction:column; gap:24px;">
-                {list_items if articles else "<p>No articles yet.</p>"}
+            
+            <div class="right-sidebar-grid">
+                <div style="display:flex; flex-direction:column; gap:24px;">
+                    {f'<div class="card" style="padding:16px; display:flex; align-items:center; justify-content:space-between;"><span>Filtered by tag: <strong>{tag}</strong></span> <a href="/articles" style="text-decoration:none; color:var(--primary);">Clear x</a></div>' if tag else ''}
+                    {list_items if articles else "<p>No articles found.</p>"}
+                </div>
+                
+                <aside class="sidebar" style="position:sticky; top:100px;">
+                    <div class="card" style="padding:24px;">
+                        <h3 style="margin-top:0; font-size:18px; margin-bottom:16px;">Tags</h3>
+                        <div>
+                             <a href="/articles" style="display:inline-block; padding:4px 10px; border-radius:16px; font-size:13px; text-decoration:none; margin-bottom:8px; margin-right:6px; {'background:var(--primary); color:white;' if not tag else 'background:var(--surface); color:var(--text); border:1px solid var(--border);'}">All</a>
+                             {tag_cloud_html}
+                        </div>
+                    </div>
+                </aside>
             </div>
         </div>
     </div>
@@ -274,7 +347,7 @@ def gallery_index(focus: Optional[str] = None) -> str:
     <div class="container">
         <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
             <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Gallery</h1>
-            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">A collection of moments.</p>
+            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Travel photos, portraits, and moments.</p>
             <div style="display:flex; flex-direction:column; gap:24px;">
                 {albums_html_inner if albums_data else "<p>No albums found.</p>"}
             </div>
