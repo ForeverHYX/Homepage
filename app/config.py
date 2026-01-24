@@ -242,7 +242,7 @@ STYLES = """
         border-radius: 20px;
         display: flex;
         align-items: center;
-        overflow: hidden;
+        /* overflow: hidden; Removed to allow dropdown to show */
         border: 1px solid transparent;
     }
     .search-mode .search-bar-container {
@@ -251,6 +251,7 @@ STYLES = """
         pointer-events: auto;
         border-color: var(--primary);
         box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        overflow: visible; /* Ensure dropdown is visible */
     }
     
     /* Search Dropdown */

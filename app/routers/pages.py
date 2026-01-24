@@ -93,7 +93,7 @@ def index() -> str:
 
     <!-- News Modal -->
     <div id="newsModal" class="lightbox-overlay" onclick="closeNewsModal()">
-        <div class="card" style="padding:40px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; position:relative;" onclick="event.stopPropagation()">
+        <div class="card lightbox-content" style="padding:40px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; position:relative; background: var(--surface);" onclick="event.stopPropagation()">
             <button onclick="closeNewsModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer;">&times;</button>
             <h2 style="margin-top:0; border-left: 5px solid var(--primary); padding-left: 12px;">All News</h2>
             {all_news_html}
@@ -102,12 +102,25 @@ def index() -> str:
     
     <script>
     function openNewsModal() {{
-        document.getElementById('newsModal').classList.add('active');
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        if (scrollbarWidth > 0) {{
+            document.body.style.paddingRight = scrollbarWidth + 'px';
+        }}
+        
+        const overlay = document.getElementById('newsModal');
+        overlay.style.display = 'flex';
+        void overlay.offsetWidth; // Force Reflow
+        overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     }}
     function closeNewsModal() {{
-        document.getElementById('newsModal').classList.remove('active');
-        document.body.style.overflow = '';
+        const overlay = document.getElementById('newsModal');
+        overlay.classList.remove('active');
+        setTimeout(() => {{
+            overlay.style.display = 'none';
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }}, 300);
     }}
     </script>
     """
