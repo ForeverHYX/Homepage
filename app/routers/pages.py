@@ -204,7 +204,7 @@ def articles_index(tag: Optional[str] = None) -> str:
             <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Articles</h1>
             <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Thoughts, tutorials, and updates.</p>
             
-            <div class="right-sidebar-grid">
+            <div class="article-grid">
                 <div style="display:flex; flex-direction:column; gap:24px;">
                     {f'<div class="card" style="padding:16px; display:flex; align-items:center; justify-content:space-between;"><span>Filtered by tag: <strong>{tag}</strong></span> <a href="/articles" style="text-decoration:none; color:var(--primary);">Clear x</a></div>' if tag else ''}
                     {list_items if articles else "<p>No articles found.</p>"}

@@ -176,14 +176,15 @@ STYLES = """
     .toast { position: fixed; bottom: 32px; right: 32px; background: #0f172a; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; opacity: 0; transform: translateY(20px); transition: all .3s; pointer-events: none; z-index: 100; font-size: 14px; }
     .toast.show { opacity: 1; transform: translateY(0); }
 
-    /* Lightbox Styles (Moved from pages.py) */
+    /* Lightbox Styles (Refined) */
     .lightbox-overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.95);
+        background: rgba(0, 0, 0, 0.4); /* Lighter shadow */
+        backdrop-filter: blur(8px); /* Nice glass effect */
         z-index: 10000;
         display: none;
         align-items: center;
@@ -192,15 +193,18 @@ STYLES = """
         transition: opacity 0.3s ease;
     }
     .lightbox-overlay.active { display: flex; opacity: 1; }
+    
     .lightbox-content {
         max-width: 95vw;
         max-height: 95vh;
-        border-radius: 4px;
+        border-radius: 12px;
         box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        transform: scale(0.95);
-        transition: transform 0.3s ease;
+        transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy pop effect */
+        background: var(--surface); /* Ensure background for content */
     }
     .lightbox-overlay.active .lightbox-content { transform: scale(1); }
+    
     .lightbox-close {
         position: absolute;
         top: 20px;
@@ -217,7 +221,61 @@ STYLES = """
         opacity: 0.8;
         transition: opacity 0.2s;
     }
-    .lightbox-close:hover { opacity: 1; }
+    /* For image lightbox specifically, button is white. For modal, we use internal button */
+    
+    /* Header Search Animation */
+    .nav-links { transition: opacity 0.3s, transform 0.3s; transform-origin: right center; }
+    .search-mode .nav-links { opacity: 0; pointer-events: none; transform: translateX(20px) scale(0.95); }
+    .search-trigger { transition: opacity 0.2s; }
+    .search-mode .search-trigger { opacity: 0; pointer-events: none; }
+    
+    .search-bar-container {
+        position: absolute;
+        right: 70px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        background: var(--surface-highlight);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border: 1px solid transparent;
+    }
+    .search-mode .search-bar-container {
+        width: 400px;
+        opacity: 1;
+        pointer-events: auto;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    
+    /* Search Dropdown */
+    .search-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        width: 100%;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        margin-top: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+        opacity: 0;
+        transform: translateY(-10px);
+        pointer-events: none;
+        transition: all 0.2s;
+    }
+    .search-mode .search-dropdown.has-results {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
 """
 
 TEMPLATE_BASE = """<!doctype html>
@@ -247,17 +305,37 @@ TEMPLATE_BASE = """<!doctype html>
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span>Yixun Hong's Homepage</span>
       </a>
-      <div style="display:flex; gap:20px; font-weight:500; align-items:center;">
-        <a href="/" style="text-decoration:none; color:var(--text);">Home</a>
-        <a href="/articles" style="text-decoration:none; color:var(--text);">Articles</a>
-        <a href="/gallery" style="text-decoration:none; color:var(--text);">Gallery</a>
-        <a href="/uploads/transcript.pdf" target="_blank" style="text-decoration:none; color:var(--text);">Resume</a>
-        <a href="/upload" style="text-decoration:none; color:var(--text);">Upload</a>
-        <div style="width:1px; height:24px; background:var(--border); margin:0 4px;"></div>
-        <button class="action-btn" title="Search" onclick="openSearch()">
+      <div style="position:relative; display:flex; align-items:center; margin-left: auto;">
+        <!-- Nav Links -->
+        <div id="navLinks" class="nav-links" style="display:flex; gap:20px; font-weight:500; align-items:center;">
+            <a href="/" style="text-decoration:none; color:var(--text);">Home</a>
+            <a href="/articles" style="text-decoration:none; color:var(--text);">Articles</a>
+            <a href="/gallery" style="text-decoration:none; color:var(--text);">Gallery</a>
+            <a href="/uploads/transcript.pdf" target="_blank" style="text-decoration:none; color:var(--text);">Resume</a>
+            <a href="/upload" style="text-decoration:none; color:var(--text);">Upload</a>
+        </div>
+        
+        <!-- Divider -->
+        <div class="nav-links" style="width:1px; height:24px; background:var(--border); margin:0 12px;"></div>
+        
+        <!-- Search Trigger -->
+        <button id="searchTrigger" class="action-btn search-trigger" title="Search" onclick="openSearch()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </button>
-        <button id="themeToggle" class="action-btn" title="Toggle Theme" style="margin-left:0px;" onclick="toggleTheme()">
+
+        <!-- Inline Search Bar -->
+        <div id="inlineSearchBar" class="search-bar-container">
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted); margin-left:12px; margin-right:8px; flex-shrink:0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+             <input type="text" id="inlineSearchInput" placeholder="Search..." style="background:transparent; border:none; outline:none; font-size:15px; width:100%; color:var(--text); height:40px;" oninput="doSearch()" autocomplete="off">
+             <button onclick="closeSearch()" style="background:none; border:none; cursor:pointer; color:var(--muted); padding:0 12px;">&times;</button>
+             
+             <!-- Dropdown Results attached to this container -->
+             <div id="searchDropdown" class="search-dropdown">
+                <div id="inlineSearchResults" style="padding:8px 0;"></div>
+             </div>
+        </div>
+
+        <button id="themeToggle" class="action-btn" title="Toggle Theme" style="margin-left:8px;" onclick="toggleTheme()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
       </div>
@@ -270,20 +348,6 @@ TEMPLATE_BASE = """<!doctype html>
     </div>
   </footer>
   
-  <!-- Search Modal -->
-  <div id="searchModal" class="lightbox-overlay" onclick="closeSearch()">
-      <div class="card" style="padding:24px; max-width:600px; width:90%; max-height:80vh; display:flex; flex-direction:column; margin: 40px auto;" onclick="event.stopPropagation()">
-        <div style="border-bottom:1px solid var(--border); padding-bottom:16px; margin-bottom:16px; display:flex; align-items:center;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted); margin-right:12px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="searchInput" placeholder="Search articles & albums..." style="border:none; outline:none; font-size:18px; width:100%; background:transparent; color:var(--text);" oninput="doSearch()" autocomplete="off">
-            <button onclick="closeSearch()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:24px;">&times;</button>
-        </div>
-        <div id="searchResults" style="overflow-y:auto; flex:1;">
-            <p style="color:var(--muted); text-align:center; padding-top:20px;">Type to search...</p>
-        </div>
-      </div>
-  </div>
-
   <script>
     document.getElementById('copyright-year').textContent = new Date().getFullYear();
     const ICON_MOON = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
@@ -304,12 +368,13 @@ TEMPLATE_BASE = """<!doctype html>
         else btn.innerHTML = ICON_MOON;
     }}
     
-    // Search Logic
+    // Search Logic (Inline)
     let searchIndex = null;
+    const headerEl = document.querySelector('header .container');
+    
     function openSearch() {{
-        document.getElementById('searchModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => document.getElementById('searchInput').focus(), 100);
+        headerEl.classList.add('search-mode');
+        setTimeout(() => document.getElementById('inlineSearchInput').focus(), 100);
         
         if (!searchIndex) {{
             fetch('/api/search-index')
@@ -320,20 +385,20 @@ TEMPLATE_BASE = """<!doctype html>
     }}
     
     function closeSearch() {{
-        document.getElementById('searchModal').classList.remove('active');
-        document.body.style.overflow = '';
+        headerEl.classList.remove('search-mode');
+        document.getElementById('searchDropdown').classList.remove('has-results');
         setTimeout(() => {{
-             document.getElementById('searchInput').value = '';
-             document.getElementById('searchResults').innerHTML = '<p style="color:var(--muted); text-align:center; padding-top:20px;">Type to search...</p>';
-        }}, 200);
+             document.getElementById('inlineSearchInput').value = '';
+        }}, 300);
     }}
     
     function doSearch() {{
-        const q = document.getElementById('searchInput').value.toLowerCase().trim();
-        const res = document.getElementById('searchResults');
+        const q = document.getElementById('inlineSearchInput').value.toLowerCase().trim();
+        const res = document.getElementById('inlineSearchResults');
+        const dropdown = document.getElementById('searchDropdown');
         
         if (q.length < 1) {{ 
-            res.innerHTML = '<p style="color:var(--muted); text-align:center; padding-top:20px;">Type to search...</p>'; 
+            dropdown.classList.remove('has-results');
             return; 
         }}
         
@@ -346,23 +411,34 @@ TEMPLATE_BASE = """<!doctype html>
         );
         
         if (hits.length === 0) {{
-            res.innerHTML = '<p style="text-align:center; color:var(--muted); padding-top:20px;">No results found.</p>';
+            res.innerHTML = '<div style="padding:12px; text-align:center; color:var(--muted);">No results found.</div>';
+            dropdown.classList.add('has-results');
             return;
         }}
         
         res.innerHTML = hits.map(h => `
-            <a href="${{h.url}}" onclick="closeSearch()" style="display:block; text-decoration:none; padding:12px; border-bottom:1px solid var(--border); transition:background .2s;" onmouseover="this.style.background='var(--surface-highlight)'" onmouseout="this.style.background='transparent'">
-                <div style="color:var(--heading); font-weight:600; display:flex; align-items:center;">
-                    <span style="font-size:12px; background:var(--surface-highlight); color:var(--primary); padding:2px 6px; border-radius:4px; margin-right:8px;">${{h.type}}</span>
+            <a href="${{h.url}}" onclick="closeSearch()" style="display:block; text-decoration:none; padding:10px 16px; border-bottom:1px solid var(--border); transition:background .2s;" onmouseover="this.style.background='var(--surface-highlight)'" onmouseout="this.style.background='transparent'">
+                <div style="color:var(--heading); font-weight:600; font-size:14px; display:flex; align-items:center;">
+                    <span style="font-size:11px; background:var(--surface-highlight); color:var(--primary); padding:2px 6px; border-radius:4px; margin-right:8px;">${{h.type}}</span>
                     ${{h.title}}
                 </div>
-                <div style="color:var(--muted); font-size:13px; margin-top:4px; margin-left:55px;">${{h.date || ''}}</div>
             </a>
         `).join('');
+        
+        dropdown.classList.add('has-results');
     }}
 
     // Init correct icon on load
     updateThemeIcon(document.documentElement.getAttribute('data-theme'));
+    
+    // Global Event to close search if clicking outside
+    document.addEventListener('click', (e) => {{
+        if (headerEl.classList.contains('search-mode')) {{
+            if (!document.getElementById('inlineSearchBar').contains(e.target) && !document.getElementById('searchTrigger').contains(e.target)) {{
+                closeSearch();
+            }}
+        }}
+    }});
   
     {script}
   </script>
