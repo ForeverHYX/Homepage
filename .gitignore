@@ -6,4 +6,5 @@ uploads/*
 !uploads/.gitkeep
 content/*.md
 content/articles/*.md
-*.log*.log
+*.log
+*.txt
