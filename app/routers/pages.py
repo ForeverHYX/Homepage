@@ -560,6 +560,10 @@ def login_page(request: Request) -> Any:
 
 @router.post("/login")
 def login(username: str = Form(...), password: str = Form(...)) -> Any:
+    # Strip whitespace just in case
+    username = username.strip()
+    password = password.strip()
+
     if (
         secrets.compare_digest(username, UPLOAD_USERNAME) and 
         secrets.compare_digest(password, UPLOAD_PASSWORD)

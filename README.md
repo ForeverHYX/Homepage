@@ -1,13 +1,13 @@
 # Personal Academic Homepage (FastAPI Edition)
 
-A modern, highly customizable personal homepage and portfolio system built with **FastAPI**. Designed for academics, photographers, and developers who want a lightweight, single-file deployable solution with powerful content management capabilities.
+A modern, highly customizable personal homepage and portfolio system built with **FastAPI**. Designed for academics, photographers, and developers who want a lightweight, modular deployable solution with powerful content management capabilities.
 
 ## ✨ Key Features
 
 ### 🎨 Modern UI & Theming
 - **Dark/Light Mode**: Fully supported with system preference detection and persistent manual toggle.
 - **Responsive Design**: Mobile-friendly layout using CSS Grid and Flexbox.
-- **CSS Variables**: Easy theming system (modifying `STYLES` in `app/main.py`).
+- **CSS Variables**: Easy theming system (modifying `STYLES` in `app/config.py`).
 
 ### 📝 Content Management
 - **Markdown-Driven**: all content is stored in simple Markdown files.
@@ -19,7 +19,7 @@ A modern, highly customizable personal homepage and portfolio system built with 
     - Dedicated blog/article section (`/articles`).
     - Smart metadata parsing (Title, Date, Author) from Markdown headers.
     - Automatic Table of Contents (TOC) generation.
-    - Syntax highlighting for code blocks.
+    - PDF Support: Embed PDFs directly in markdown using standard image syntax.
 
 ### 🖼️ Advanced Gallery System
 - **Folder-Based Organization**: Simply upload a folder of images to create an album.
@@ -45,10 +45,20 @@ A modern, highly customizable personal homepage and portfolio system built with 
 ### Installation
 
 1. Clone the repository
-2. Install dependencies:
+2. Create `uploads` and `content` directories if they don't exist.
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
+
+### Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+HOMEPAGE_UPLOAD_USER=admin
+HOMEPAGE_UPLOAD_PASS=your_secure_password
+```
 
 ### Running Locally
 
@@ -59,41 +69,19 @@ Visit http://127.0.0.1:8000
 
 ---
 
-## 📂 Content Guide
+## 📂 Project Structure
 
-### 1. Articles (`content/articles/*.md`)
-Create a new markdown file in `content/articles/`. Use the following format for metadata recognition:
-
-```markdown
-# My Awesome Paper
-**Date**: 2023-10-24
-**Author**: Yixun Hong
-
-This is the summary text that appears on the card.
-
-## Introduction
-Content starts here...
 ```
-
-### 2. Main Page (`content/content.md`)
-Use H1 headers (`#`) to separate sections (Bio, Research, Education etc). The system will automatically render them as styled cards.
-
-```markdown
-# Biography
-I am a researcher...
-
-# Education
-* **PhD**, University of Science
-...
+├── app/
+│   ├── main.py          # Entry point
+│   ├── config.py        # Settings & Templates
+│   ├── auth.py          # Authentication Logic
+│   ├── utils.py         # Helper functions
+│   └── routers/         # API & Page Routes
+├── content/             # Your Markdown Content
+├── uploads/             # User uploaded files
+└── .env                 # Secrets (Not tracked in git)
 ```
-
-### 3. Gallery Structure
-Galleries are standard folders in `uploads/`.
-- **To Create**: Go to `/upload`, create a folder, upload JPEGs.
-- **To Publish**: Click the "Star" icon next to the folder in the Upload Manager.
-- **To Edit Info**: Click the "Pencil" icon to set a custom Title, Description, or specific Shoot Date.
-
----
 
 ## 🛠️ Deployment
 
@@ -113,5 +101,5 @@ This project acts as a standard ASGI application.
    *Note: Ensure `client_max_body_size` is increased in Nginx for large file uploads.*
 
 ## 🔒 Security
-- Default credentials are set via environment variables or `secrets.compare_digest` in `app/main.py`.
-- **Change the default password** in `app/main.py` (variables `UPLOAD_USERNAME` / `UPLOAD_PASSWORD`) before deploying.
+- Credentials are managed via `.env` file.
+- **Ensure `.env` is listed in `.gitignore`** (default behavior) to prevent leaking secrets.

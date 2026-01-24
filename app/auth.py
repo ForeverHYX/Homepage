@@ -1,6 +1,12 @@
 import secrets
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from fastapi import Request, HTTPException, status
+
+# Ensure .env is loaded (independent of config.py import order)
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env", override=True)
 
 # Security Config
 UPLOAD_USERNAME = os.getenv("HOMEPAGE_UPLOAD_USER", "admin")

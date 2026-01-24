@@ -8,7 +8,7 @@ load_dotenv(BASE_DIR / ".env")
 CONTENT_DIR = Path(os.getenv("HOMEPAGE_CONTENT_DIR", BASE_DIR / "content")).resolve()
 ARTICLES_DIR = CONTENT_DIR / "articles"
 UPLOAD_DIR = Path(os.getenv("HOMEPAGE_UPLOAD_DIR", BASE_DIR / "uploads")).resolve()
-GALLERY_CONFIG_FILE = BASE_DIR.parent / "gallery_config.json"
+GALLERY_CONFIG_FILE = BASE_DIR / "gallery_config.json"
 
 CONTENT_DIR.mkdir(parents=True, exist_ok=True)
 ARTICLES_DIR.mkdir(parents=True, exist_ok=True)

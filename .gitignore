@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .env
+gallery_config.json
 uploads/*
 !uploads/.gitkeep
 content/*.md
