@@ -115,9 +115,10 @@ def articles_index() -> str:
     
     content_html = f"""
     <div class="container">
-        <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
+        <div class="content-area" style="max-width:800px; margin:0 auto; padding:40px 0; background:transparent;">
             <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Articles</h1>
-            <div style="max-width:800px; display:flex; flex-direction:column; gap:24px;">
+            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px; padding-left:14px;">Thoughts, tutorials, and updates.</p>
+            <div style="display:flex; flex-direction:column; gap:24px;">
                 {list_items if articles else "<p>No articles yet.</p>"}
             </div>
         </div>
