@@ -117,7 +117,10 @@ def upload_page(request: Request) -> Any:
       let currentPath = "";
 
       function getIcon(filename) {{
-        const ext = filename.split('.').pop().toLowerCase();
+        if (!filename) return 'file';
+        const parts = filename.split('.');
+        if (parts.length < 2) return 'file';
+        const ext = parts.pop().toLowerCase();
         if (['jpg','jpeg','png','gif','webp'].includes(ext)) return 'img';
         return 'file';
       }}
@@ -179,81 +182,96 @@ def upload_page(request: Request) -> Any:
          currentPath = path;
          pathDisplay.textContent = path ? '/ ' + path : '/';
          
-         const res = await fetch(`/api/files?path=${{encodeURIComponent(path)}}`);
-         if (res.status === 401) return location.href = '/login';
-         const data = await res.json();
-         
-         fileList.innerHTML = '';
-         if (path) {{
-            const parts = path.split('/');
-            parts.pop();
-            const upPath = parts.join('/');
-            const div = document.createElement('div');
-            div.className = 'file-item';
-            div.style.background = 'var(--surface-highlight)';
-            div.innerHTML = `<div style="cursor:pointer; width:100%; display:flex; gap:12px; font-weight:600;" onclick="openPath('${{upPath}}')">Previous Directory</div>`;
-            fileList.appendChild(div);
-         }}
+         try {{
+             const res = await fetch(`/api/files?path=${{encodeURIComponent(path)}}`);
+             if (res.status === 401) return location.href = '/login';
+             if (!res.ok) throw new Error(res.statusText);
+             const data = await res.json();
+             
+             fileList.innerHTML = '';
+             if (path) {{
+                const parts = path.split('/');
+                parts.pop();
+                const upPath = parts.join('/');
+                const safeUpPath = upPath.replace(/'/g, "\\'");
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.style.background = 'var(--surface-highlight)';
+                div.innerHTML = `<div style="cursor:pointer; width:100%; display:flex; gap:12px; font-weight:600;" onclick="openPath('${{safeUpPath}}')">Previous Directory</div>`;
+                fileList.appendChild(div);
+             }}
 
-         if (data.files.length === 0) {{
-           document.getElementById('emptyState').style.display = 'block';
-         }} else {{
-           document.getElementById('emptyState').style.display = 'none';
-         }}
+             if (!data.files || data.files.length === 0) {{
+               document.getElementById('emptyState').style.display = 'block';
+             }} else {{
+               document.getElementById('emptyState').style.display = 'none';
+             }}
 
-         data.files.forEach(f => {{
-           const div = document.createElement('div');
-           div.className = 'file-item';
-           
-           if (f.type === 'dir') {{
-               const isGal = f.is_gallery;
-               // Escaping for JS string safety
-               const safeTitle = (f.title || f.name).replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
-               const safeDesc = (f.description || "").replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
-               const safeDate = (f.date || "");
-               const safeAuthor = (f.author || "Yixun Hong").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-               const safePath = f.path.replace(/'/g, "\\'");
-               
-               div.innerHTML = `
-                 <div style="display:flex; align-items:center; gap:16px; flex:1; cursor:pointer;" onclick="openPath('${{safePath}}')">
-                   <div class="file-preview" style="background:var(--surface-highlight); color:var(--primary); display:flex; align-items:center; justify-content:center;">{ICON_FOLDER}</div>
-                   <div>
-                       <div style="font-weight:600;">${{f.title || f.name}}</div>
-                       ${{isGal ? '<small style="color:#eab308">★ Gallery Album</small>' : ''}}
-                   </div>
-                 </div>
-                 <div style="display:flex; gap:4px; align-items:center;">
-                    <button class="action-btn" onclick="openMetaModal('${{safePath}}', '${{safeTitle}}', '${{safeDesc}}', '${{safeDate}}', '${{safeAuthor}}')" title="Edit Info">✎</button>
-                    <button class="action-btn" onclick="toggleGallery('${{safePath}}', ${{!isGal}})" title="Toggle Gallery">
-                        ${{isGal ? `{ICON_STAR_FILLED}` : `{ICON_STAR}`}}
-                    </button>
-                    <button class="action-btn danger" onclick="deleteFile('${{f.path}}')" title="Delete">{ICON_TRASH}</button>
-                 </div>
-               `;
-           }} else {{
-               const isImg = getIcon(f.name) === 'img';
-               const bg = isImg ? `url(${{f.url}})` : 'none';
-               const iconHtml = isImg ? '' : `{ICON_FILE}`;
-               
-               div.innerHTML = `
-                 <div style="display:flex; align-items:center; gap:16px; overflow:hidden;">
-                   <div class="file-preview" style="background-image:${{bg}}; background-size:cover; background-position:center;">
-                     ${{iconHtml}}
-                   </div>
-                   <div style="min-width:0;">
-                     <div style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${{f.name}}</div>
-                     <div style="font-size:12px; color:var(--muted);">${{(f.size/1024).toFixed(1)}} KB</div>
-                   </div>
-                 </div>
-                 <div style="display:flex; gap:4px;">
-                    <a href="${{f.url}}" target="_blank" class="action-btn" title="Open">{ICON_OPEN}</a>
-                    <button class="action-btn" onclick="copyUrl('${{f.url}}')" title="Copy Link">{ICON_COPY}</button>
-                    <button class="action-btn danger" onclick="deleteFile('${{f.url.replace('/uploads/', '')}}')" title="Delete">{ICON_TRASH}</button>
-                 </div>
-               `;
-           }}
-           fileList.appendChild(div);
-         }});
+             if (data.files) {{
+                 data.files.forEach(f => {{
+                   try {{
+                       const div = document.createElement('div');
+                       div.className = 'file-item';
+                       
+                       if (f.type === 'dir') {{
+                           const isGal = f.is_gallery;
+                           // Escaping for JS string safety
+                           const safeTitle = (f.title || f.name).replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\\n/g, ' ');
+                           const safeDesc = (f.description || "").replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\\n/g, '\\\\n');
+                           const safeDate = (f.date || "");
+                           const safeAuthor = (f.author || "Yixun Hong").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                           const safePath = f.path.replace(/'/g, "\\'");
+                           
+                           div.innerHTML = `
+                             <div style="display:flex; align-items:center; gap:16px; flex:1; cursor:pointer;" onclick="openPath('${{safePath}}')">
+                               <div class="file-preview" style="background:var(--surface-highlight); color:var(--primary); display:flex; align-items:center; justify-content:center;">{ICON_FOLDER}</div>
+                               <div>
+                                   <div style="font-weight:600;">${{f.title || f.name}}</div>
+                                   ${{isGal ? '<small style="color:#eab308">★ Gallery Album</small>' : ''}}
+                               </div>
+                             </div>
+                             <div style="display:flex; gap:4px; align-items:center;">
+                                <button class="action-btn" onclick="openMetaModal('${{safePath}}', '${{safeTitle}}', '${{safeDesc}}', '${{safeDate}}', '${{safeAuthor}}')" title="Edit Info">✎</button>
+                                <button class="action-btn" onclick="toggleGallery('${{safePath}}', ${{!isGal}})" title="Toggle Gallery">
+                                    ${{isGal ? `{ICON_STAR_FILLED}` : `{ICON_STAR}`}}
+                                </button>
+                                <button class="action-btn danger" onclick="deleteFile('${{safePath}}')" title="Delete">{ICON_TRASH}</button>
+                             </div>
+                           `;
+                       }} else {{
+                           const isImg = getIcon(f.name) === 'img';
+                           const encodedUrl = encodeURI(f.url).replace(/'/g, '%27');
+                           const bg = isImg ? `url('${{encodedUrl}}')` : 'none';
+                           const iconHtml = isImg ? '' : `{ICON_FILE}`;
+                           const safeUrl = f.url.replace(/'/g, "\\'");
+                           
+                           div.innerHTML = `
+                             <div style="display:flex; align-items:center; gap:16px; overflow:hidden;">
+                               <div class="file-preview" style="background-image:${{bg}}; background-size:cover; background-position:center;">
+                                 ${{iconHtml}}
+                               </div>
+                               <div style="min-width:0;">
+                                 <div style="font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${{f.name}}</div>
+                                 <div style="font-size:12px; color:var(--muted);">${{(f.size/1024).toFixed(1)}} KB</div>
+                               </div>
+                             </div>
+                             <div style="display:flex; gap:4px;">
+                                <a href="${{f.url}}" target="_blank" class="action-btn" title="Open">{ICON_OPEN}</a>
+                                <button class="action-btn" onclick="copyUrl('${{safeUrl}}')" title="Copy Link">{ICON_COPY}</button>
+                                <button class="action-btn danger" onclick="deleteFile('${{safeUrl.replace('/uploads/', '')}}')" title="Delete">{ICON_TRASH}</button>
+                             </div>
+                           `;
+                       }}
+                       fileList.appendChild(div);
+                   }} catch (err) {{
+                       console.error(err);
+                   }}
+                 }});
+             }}
+         }} catch(e) {{
+             console.error(e);
+             fileList.innerHTML = `<div style="padding:20px; text-align:center; color:red">Error: ${{e.message}}</div>`;
+         }}
       }}
 
       window.openPath = (path) => fetchFiles(path);
@@ -409,46 +427,55 @@ def toggle_gallery_api(request: Request, path: str = Form(...), enable: bool = F
 def list_files_api(request: Request, path: str = "") -> JSONResponse:
     require_login(request)
     
-    target_dir = UPLOAD_DIR
-    if path:
-        target_dir = safe_join(UPLOAD_DIR, path)
+    # Secure Path Handling
+    if not path or path == "/" or path == ".":
+        target_dir = UPLOAD_DIR
+        path = ""
+    else:
+        # Strip leading slashes to avoid absolute path issues
+        clean_path = path.lstrip("/")
+        target_dir = safe_join(UPLOAD_DIR, clean_path)
     
     if not target_dir.exists():
+         # Fallback to root or return empty?
+         # Check if it was a file browse attempt?
          raise HTTPException(status_code=404, detail="Path not found")
 
     items: List[dict] = []
     gallery_set = set(get_gallery_folders())
     
-    # Sort: Folders first, then files (by mtime desc)
     try:
         entries = list(target_dir.iterdir())
-    except NotADirectoryError:
-         raise HTTPException(status_code=400, detail="Not a directory")
-
-    entries.sort(key=lambda x: (not x.is_dir(), -x.stat().st_mtime))
-    
-    for p in entries:
-        rel_path = str(p.relative_to(UPLOAD_DIR))
+        entries.sort(key=lambda x: (not x.is_dir(), -x.stat().st_mtime))
         
-        if p.is_dir():
-            meta = get_folder_meta(p)
-            items.append({
-                "name": p.name,
-                "type": "dir",
-                "is_gallery": rel_path in gallery_set,
-                "path": rel_path,
-                "title": meta.get("title", p.name),
-                "description": meta.get("description", ""),
-                "date": meta.get("date", ""),
-                "author": meta.get("author", "Yixun Hong")
-            })
-        else:
-            items.append({
-                "name": p.name,
-                "type": "file",
-                "size": p.stat().st_size,
-                "url": f"/uploads/{rel_path}"
-            })
+        for p in entries:
+            try:
+                rel_path = str(p.relative_to(UPLOAD_DIR))
+            except ValueError:
+                continue
+
+            if p.is_dir():
+                meta = get_folder_meta(p)
+                items.append({
+                    "name": p.name,
+                    "type": "dir",
+                    "is_gallery": rel_path in gallery_set,
+                    "path": rel_path,
+                    "title": meta.get("title", p.name),
+                    "description": meta.get("description", ""),
+                    "date": meta.get("date", ""),
+                    "author": meta.get("author", "Yixun Hong")
+                })
+            else:
+                items.append({
+                    "name": p.name,
+                    "type": "file",
+                    "size": p.stat().st_size,
+                    "url": f"/uploads/{rel_path}"
+                })
+    except Exception as e:
+         print(f"Error listing files: {e}")
+         return JSONResponse({"files": [], "error": str(e)})
             
     return JSONResponse({"files": items, "current_path": path})
 

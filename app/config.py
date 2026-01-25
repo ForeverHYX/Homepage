@@ -58,6 +58,7 @@ STYLES = """
     }
 
     * { box-sizing: border-box; }
+    html { scrollbar-gutter: stable; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; transition: background 0.3s, color 0.3s; }
     
     /* Layout */
@@ -148,6 +149,26 @@ STYLES = """
     
     .prose p { margin-bottom: 1.25rem; line-height: 1.75; font-size: 1.05rem; }
     .prose > *:first-child { margin-top: 0; }
+    
+    /* Animations */
+    @keyframes pageLoad {
+        0% { opacity: 0; transform: translateY(10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    
+    .container.main-grid, .content-area, .upload-grid {
+        animation: pageLoad 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    }
+    
+    /* Navigation Link Hover */
+    .nav-links a { 
+        display: inline-block; 
+        transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1), color 0.2s; 
+    }
+    .nav-links a:hover { 
+        transform: scale(1.1); 
+        color: var(--primary); 
+    }
     .prose a { color: var(--primary); text-decoration: none; font-weight: 500; transition: color .2s; }
     .prose a:hover { color: var(--primary-hover); text-decoration: underline; }
 

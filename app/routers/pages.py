@@ -102,11 +102,6 @@ def index() -> str:
     
     <script>
     function openNewsModal() {{
-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-        if (scrollbarWidth > 0) {{
-            document.body.style.paddingRight = scrollbarWidth + 'px';
-        }}
-        
         const overlay = document.getElementById('newsModal');
         overlay.style.display = 'flex';
         void overlay.offsetWidth; // Force Reflow
@@ -119,7 +114,6 @@ def index() -> str:
         setTimeout(() => {{
             overlay.style.display = 'none';
             document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
         }}, 300);
     }}
     </script>
@@ -307,22 +301,27 @@ def gallery_index(focus: Optional[str] = None) -> str:
     albums_html_inner = ""
     
     for album in albums_data:
-         # Zoom Button Logic
-         zoom_btn = ""
+         # Navigation Logic
          back_btn = ""
-
-         if not is_focused:
-             zoom_btn = f"""
-             <a href="/gallery?focus={album['rel_path']}" title="Expand View" style="color:var(--muted); transition:color .2s; display:inline-flex; border:1px solid var(--border); padding:4px; border-radius:4px; margin-left:12px;">
-                {ICON_MAXIMIZE}
-             </a>
-             """
-         else:
+         
+         # Title Content & Metadata Alignment
+         if is_focused:
+             # Focused: Non-clickable large title
+             title_content = album['title']
+             # With border-left (6px) + padding-left (16px), text starts at 22px
+             meta_padding = "padding-left:22px;"
+             
+             # Back button
              back_btn = f"""
              <div style="margin-bottom: 20px;">
                 <a href="/gallery" class="action-btn" style="text-decoration:none; padding-left:0; color:var(--text); font-weight:500;">&larr; Back to All Galleries</a>
              </div>
              """
+         else:
+             # List: Clickable small title
+             title_content = f'<a href="/gallery?focus={album["rel_path"]}" style="text-decoration:none; color:inherit;">{album["title"]}</a>'
+             # No border, so metadata should be flush left
+             meta_padding = "padding-left:0;"
          
          # Build Carousel HTML
          slides = ""
@@ -335,27 +334,34 @@ def gallery_index(focus: Optional[str] = None) -> str:
          
          wrapper_class = "carousel-wrapper focused" if is_focused else "carousel-wrapper"
          
-         # Title Styling: Large with border if focused, smaller (Article-list like) if not
+        # Title Styling
          if is_focused:
-             title_style = "font-size:2.5rem; font-weight:600; margin:0; text-transform:capitalize; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
+             title_style = "font-size:2.5rem; font-weight:600; margin:0 0 16px 0; text-transform:capitalize; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
+             meta_style = "display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-bottom:16px;"
+             desc_style = "margin:0 0 24px 0; padding-left:22px; color:var(--text); font-size:1rem; line-height:1.6;"
+             card_padding = "padding:40px;"
+             card_margin = "margin-bottom:60px;"
+             nav_margin = "margin-bottom:24px;"
          else:
-             title_style = "font-size:1.5rem; font-weight:700; margin:0; text-transform:capitalize; line-height: 1.2; color:var(--heading);"
+             title_style = "font-size:1.5rem; font-weight:700; margin:0 0 12px 0; text-transform:capitalize; line-height: 1.2; color:var(--heading);"
+             meta_style = "font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;"
+             desc_style = "color:var(--text); font-size:15px; margin:0 0 16px 0; line-height:1.6;"
+             card_padding = "padding:24px;"
+             card_margin = "margin-bottom:24px;"
+             nav_margin = "margin-bottom:16px;"
 
          albums_html_inner += f"""
-         <section class="gallery-album mb-12 card" style="padding:40px;">
+         <section class="gallery-album mb-12 card" style="{card_padding} {card_margin}">
              {back_btn}
-             <div style="margin-bottom:24px; display:flex; align-items:center;">
-                <div style="flex:1;">
-                    <div style="display:flex; align-items:center;">
-                        <h2 style="{title_style}">{album['title']}</h2>
-                        {zoom_btn}
-                    </div>
-                    <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-top:8px;">
-                         <span style="display:flex; align-items:center;">{ICON_CALENDAR} {album['date_str'] if album['date_str'] else 'Unknown Date'}</span>
-                         <span style="display:flex; align-items:center;">{ICON_USER_S} {album['author']}</span>
-                    </div>
-                    {f'<p style="margin:16px 0 0 0; padding-left:22px; color:var(--text); font-size:1rem; line-height:1.6;">{album["desc"]}</p>' if album["desc"] else ''}
-                </div>
+             <div style="{nav_margin}">
+                 <h2 style="{title_style}">
+                    {title_content}
+                 </h2>
+                 <div style="{meta_style}">
+                      <span style="display:flex; align-items:center;">{ICON_CALENDAR} {album['date_str'] if album['date_str'] else 'Unknown Date'}</span>
+                      <span style="display:flex; align-items:center;">{ICON_USER_S} {album['author']}</span>
+                 </div>
+                 {f'<p style="{desc_style}">{album["desc"]}</p>' if album["desc"] else ''}
              </div>
              <div class="{wrapper_class}" style="{ 'box-shadow:none; border:none; padding:0;' if is_focused else 'box-shadow:none; border:none; padding:0; background:transparent;' }">
                  <div class="carousel-container" id="carousel-{album['path_name']}">
@@ -581,6 +587,10 @@ def article_detail(slug: str) -> Any:
     
     if not title: title = slug.replace("-", " ").title()
 
+    # Match Gallery Styling exactly
+    title_style = "font-size:2.5rem; font-weight:600; margin:0 0 16px 0; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
+    meta_style = "display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-bottom:16px;"
+
     content = f"""
     <div class="container article-grid" style="margin-top:40px; margin-bottom:60px;">
       <!-- Main Content Card -->
@@ -589,9 +599,9 @@ def article_detail(slug: str) -> Any:
             <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0; color:var(--text); font-weight:500;">&larr; Back to Articles</a>
         </div>
         
-        <header style="margin-bottom:24px; padding-bottom:8px;">
-            <h1 style="font-size:2.5rem; font-weight:600; color:var(--heading); margin:0 0 8px 0; padding-left:16px; border-left:6px solid var(--primary); line-height:1.2;">{title}</h1>
-            <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px;">
+        <header style="margin-bottom:24px;">
+            <h1 style="{title_style}">{title}</h1>
+            <div style="{meta_style}">
                  <span style="display:flex; align-items:center;">{ICON_CALENDAR} {date_str}</span>
                  <span style="display:flex; align-items:center;">{ICON_USER_S} {author}</span>
             </div>
