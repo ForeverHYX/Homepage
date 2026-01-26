@@ -102,18 +102,24 @@ def index() -> str:
     
     <script>
     function openNewsModal() {{
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = scrollbarWidth + 'px';
+        }
+
         const overlay = document.getElementById('newsModal');
         overlay.style.display = 'flex';
         void overlay.offsetWidth; // Force Reflow
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
-    }}
-    function closeNewsModal() {{
+    }
+    function closeNewsModal() {
         const overlay = document.getElementById('newsModal');
         overlay.classList.remove('active');
-        setTimeout(() => {{
+        setTimeout(() => {
             overlay.style.display = 'none';
             document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
         }}, 300);
     }}
     </script>
@@ -421,7 +427,7 @@ def gallery_index(focus: Optional[str] = None) -> str:
         overflow-x: auto; 
         display: flex;
         gap: 16px;
-        padding: 0 24px 12px 24px;
+        padding: 0 0 12px 0;
         align-items: center; 
         scrollbar-width: thin;
         scrollbar-color: var(--muted) transparent;
