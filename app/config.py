@@ -150,6 +150,194 @@ STYLES = """
     .prose p { margin-bottom: 1.25rem; line-height: 1.75; font-size: 1.05rem; }
     .prose > *:first-child { margin-top: 0; }
     
+    /* Blockquote */
+    .prose blockquote {
+        margin: 1.5rem 0;
+        padding: 0.5rem 1.25rem;
+        background: var(--surface-highlight);
+        border-left: 4px solid var(--primary);
+        border-radius: 0 8px 8px 0;
+        color: var(--muted);
+        font-style: italic;
+    }
+    .prose blockquote p {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .prose blockquote p:last-child {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Code Blocks */
+    .code-block-container {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin: 1.5rem 0;
+        background: var(--surface-highlight);
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s ease;
+        min-height: 50px; /* Ensure visibility */
+    }
+    
+    .code-block-container.maximized .code-content-wrapper {
+        flex: 1;
+    }
+    .code-block-container.maximized {
+        position: fixed;
+        top: 20px; left: 20px; right: 20px; bottom: 20px;
+        z-index: 10500;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        margin: 0;
+    }
+    
+    .code-block-container.collapsed .code-content-wrapper {
+        display: none;
+    }
+    
+    .code-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #e0f2fe; /* Light blue */
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    [data-theme="dark"] .code-header {
+        background: #1e3a8a; /* Dark blue */
+    }
+    
+    .code-dots {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .code-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.2s;
+    }
+    .code-dot:hover {
+        transform: scale(1.15);
+    }
+    .code-dot.close { background-color: #ff5f56; }
+    .code-dot.min { background-color: #ffbd2e; cursor: default; }
+    .code-dot.min:hover { transform: none; }
+    .code-dot.max { background-color: #27c93f; }
+    
+    .code-lang {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 0.75rem;
+        color: var(--text);
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        opacity: 0.7;
+    }
+    
+    .code-content-wrapper {
+        
+        overflow: auto;
+    }
+
+    .prose pre {
+        display: block;
+        width: 100%;
+        min-height: 20px; /* Force minimum visibility */
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
+    
+    .prose pre code {
+        display: block;
+        padding: 1rem;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.9em;
+        line-height: 1.5;
+        background: transparent;
+        color: inherit;
+        border-radius: 0;
+    }
+    
+    .prose code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        background: var(--surface-highlight);
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-size: 0.9em;
+        color: var(--primary);
+    }
+    
+    /* Override hljs background to match site theme */
+    .prose pre code.hljs {
+        background: transparent;
+        padding: 1rem;
+    }
+    
+    /* GitHub Repo Card */
+    .github-repo-card {
+        display: block;
+        text-decoration: none !important;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        margin: 1.5rem 0;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow);
+    }
+    .github-repo-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    }
+    [data-theme="dark"] .github-repo-card:hover {
+        box-shadow: 0 10px 15px -3px rgb(255 255 255 / 0.05), 0 4px 6px -2px rgb(255 255 255 / 0.02);
+    }
+    .github-repo-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: var(--heading);
+        font-weight: 600;
+        font-size: 1.15rem;
+    }
+    .github-repo-top svg {
+        color: var(--text);
+    }
+    .github-repo-desc {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    .github-repo-stats {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        color: var(--text);
+        font-size: 0.85rem;
+    }
+    .github-repo-stat {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 500;
+    }
+    .github-repo-stat svg {
+        color: var(--muted);
+    }
+    
     /* Animations */
     @keyframes pageLoad {
         0% { opacity: 0; transform: translateY(10px); }
@@ -309,6 +497,13 @@ TEMPLATE_BASE = """<!doctype html>
   <title>{title}</title>
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+  
+  <!-- Highlight.js for code syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-light">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+  
   <style>{styles}</style>
   <script>
     (function() {{
@@ -316,6 +511,8 @@ TEMPLATE_BASE = """<!doctype html>
         const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (saved === 'dark' || (!saved && sysDark)) {{
             document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('hljs-light').setAttribute('disabled', 'disabled');
+            document.getElementById('hljs-dark').removeAttribute('disabled');
         }}
     }})();
   </script>
@@ -386,8 +583,15 @@ TEMPLATE_BASE = """<!doctype html>
     
     function updateThemeIcon(theme) {{
         const btn = document.getElementById('themeToggle');
-        if (theme === 'dark') btn.innerHTML = ICON_SUN;
-        else btn.innerHTML = ICON_MOON;
+        if (theme === 'dark') {{
+            btn.innerHTML = ICON_SUN;
+            document.getElementById('hljs-light').disabled = true;
+            document.getElementById('hljs-dark').disabled = false;
+        }} else {{
+            btn.innerHTML = ICON_MOON;
+            document.getElementById('hljs-dark').disabled = true;
+            document.getElementById('hljs-light').disabled = false;
+        }}
     }}
     
     // Search Logic (Inline)
@@ -453,6 +657,67 @@ TEMPLATE_BASE = """<!doctype html>
     // Init correct icon on load
     updateThemeIcon(document.documentElement.getAttribute('data-theme'));
     
+    // Transform code blocks to add interactive Mac-style headers
+    document.addEventListener('DOMContentLoaded', () => {{
+        document.querySelectorAll('.prose pre').forEach((pre) => {{
+            if (!pre.parentNode || pre.closest('.code-block-container')) return;
+
+            let lang = 'code';
+            const code = pre.querySelector('code');
+            if (code) {{
+                code.classList.forEach((cls) => {{
+                    if (cls.startsWith('language-')) {{
+                        lang = cls.replace('language-', '');
+                    }}
+                }});
+            }}
+            if (!lang || lang === 'undefined' || lang === 'hljs') {{
+                lang = 'text';
+            }}
+
+            const container = document.createElement('div');
+            container.className = 'code-block-container';
+
+            const header = document.createElement('div');
+            header.className = 'code-header';
+
+            const dots = document.createElement('div');
+            dots.className = 'code-dots';
+
+            const btnClose = document.createElement('button');
+            btnClose.className = 'code-dot close';
+            btnClose.title = 'Collapse';
+            btnClose.onclick = () => {{ container.classList.toggle('collapsed'); }};
+
+            const btnMin = document.createElement('button');
+            btnMin.className = 'code-dot min';
+
+            const btnMax = document.createElement('button');
+            btnMax.className = 'code-dot max';
+            btnMax.title = 'Maximize';
+            btnMax.onclick = () => {{ container.classList.toggle('maximized'); }};
+
+            dots.appendChild(btnClose);
+            dots.appendChild(btnMin);
+            dots.appendChild(btnMax);
+
+            const langLabel = document.createElement('span');
+            langLabel.className = 'code-lang';
+            langLabel.textContent = lang;
+
+            header.appendChild(dots);
+            header.appendChild(langLabel);
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'code-content-wrapper';
+
+            pre.parentNode.insertBefore(container, pre);
+            container.appendChild(header);
+            container.appendChild(wrapper);
+            wrapper.appendChild(pre);
+        }});
+    }});
+    
     // Global Event to close search if clicking outside
     document.addEventListener('click', (e) => {{
         if (headerEl.classList.contains('search-mode')) {{
@@ -460,6 +725,83 @@ TEMPLATE_BASE = """<!doctype html>
                 closeSearch();
             }}
         }}
+    }});
+    
+    // Auto-convert standalone GitHub links into Repo Cards
+    document.addEventListener('DOMContentLoaded', () => {{
+        const escapeHtml = (s) => String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+
+        const githubRegex = /^https?:\/\/github\.com\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_.-]+)\/?$/;
+
+        const renderGithubCard = (parent, owner, repo) => {{
+            parent.innerHTML = '<div class="github-repo-card" style="opacity:0.6; padding: 12px 16px;"><div class="github-repo-top" style="margin:0;">Loading GitHub Repo: ' + owner + '/' + repo + '...</div></div>';
+
+            fetch('https://api.github.com/repos/' + owner + '/' + repo)
+                .then((res) => res.json())
+                .then((data) => {{
+                    if (data.message && data.message === 'Not Found') {{
+                        parent.innerHTML = '<a href="https://github.com/' + owner + '/' + repo + '">https://github.com/' + owner + '/' + repo + '</a>';
+                        return;
+                    }}
+
+                    const descHtml = data.description
+                        ? '<div class="github-repo-desc">' + escapeHtml(data.description) + '</div>'
+                        : '';
+
+                    const langHtml = data.language
+                        ? '<div class="github-repo-stat"><span style="width:10px;height:10px;border-radius:50%;background:var(--primary);display:inline-block;"></span>' + escapeHtml(data.language) + '</div>'
+                        : '';
+
+                    parent.outerHTML =
+                        '<a href="' + escapeHtml(data.html_url) + '" target="_blank" class="github-repo-card">' +
+                            '<div class="github-repo-top">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>' +
+                                '<span>' + escapeHtml(data.full_name) + '</span>' +
+                            '</div>' +
+                            descHtml +
+                            '<div class="github-repo-stats">' +
+                                langHtml +
+                                '<div class="github-repo-stat">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+                                    String(data.stargazers_count ?? 0) +
+                                '</div>' +
+                                '<div class="github-repo-stat">' +
+                                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>' +
+                                    String(data.forks_count ?? 0) +
+                                '</div>' +
+                            '</div>' +
+                        '</a>';
+                }})
+                .catch(() => {{
+                    parent.innerHTML = '<a href="https://github.com/' + owner + '/' + repo + '">https://github.com/' + owner + '/' + repo + '</a>';
+                }});
+        }};
+
+        // Case A: markdown already rendered as anchor
+        document.querySelectorAll('.prose a').forEach((a) => {{
+            const parent = a.parentNode;
+            if (!parent) return;
+            if (!(parent.tagName === 'P' || parent.tagName === 'LI')) return;
+            if (parent.textContent.trim() !== a.textContent.trim()) return;
+
+            const match = a.href.match(githubRegex);
+            if (!match) return;
+            renderGithubCard(parent, match[1], match[2]);
+        }});
+
+        // Case B: markdown kept as plain text URL
+        document.querySelectorAll('.prose p, .prose li').forEach((node) => {{
+            if (node.querySelector('a')) return;
+            const text = node.textContent.trim();
+            const match = text.match(githubRegex);
+            if (!match) return;
+            renderGithubCard(node, match[1], match[2]);
+        }});
     }});
   
     {script}

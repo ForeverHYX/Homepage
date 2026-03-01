@@ -5,8 +5,22 @@ __pycache__/
 gallery_config.json
 uploads/*
 !uploads/.gitkeep
-content/*.md
-content/articles/*.md
+# Content-related files
+content/**
+!content/.gitkeep
+!content/articles/
+!content/articles/.gitkeep
+
+# Test files
+smoke_test.py
+test_*.py
+*_test.py
+
+# Local debug / scratch files
+output.html
+test_js.html
+test_jsdom.js
+
 *.log
 *.txt
 uvicorn.log
