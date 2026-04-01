@@ -1,13 +1,22 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import uvicorn
 
 from app.config import UPLOAD_DIR
 from app.routers import pages, upload
 
-app = FastAPI(title="Yixun Hong's Homepage", version="0.4.1")
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Mount Static Files (Uploads)
+app = FastAPI(title="Yixun Hong's Homepage", version="0.5.0")
+
+# Jinja2 Templates
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+app.state.templates = templates
+
+# Mount Static Files
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 # Include Routers
