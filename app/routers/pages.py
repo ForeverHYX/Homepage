@@ -568,6 +568,7 @@ def article_detail(slug: str) -> Any:
     title = ""
     author = "Yixun Hong"
     date_str = ""
+    tags = []
     
     # Simple state parsers
     for line in lines:
@@ -581,17 +582,36 @@ def article_detail(slug: str) -> Any:
         if sline.lower().startswith("**author**:") or sline.lower().startswith("author:"):
             author = sline.split(":", 1)[1].strip()
             continue
+        if sline.lower().startswith("**tags**:") or sline.lower().startswith("tags:") or sline.lower().startswith("tag:"):
+            tag_str = sline.split(":", 1)[1].strip()
+            tags = [t.strip() for t in tag_str.split(",") if t.strip()]
+            continue
+        if sline.lower().startswith("**abstract**:") or sline.lower().startswith("abstract:"):
+            continue
         
         body_lines.append(line)
     
     clean_body = "\n".join(body_lines)
     
+    import re
+    # Calculate word count and read time
+    # Count English words and Chinese characters roughly
+    words = re.findall(r'[a-zA-Z0-9]+|[\u4e00-\u9fa5]', clean_body)
+    word_count = len(words)
+    read_time = max(1, round(word_count / 200))
+
+    ICON_CLOCK = """<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; position:relative; top:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>"""
+
     # Rendering with TOC
     md = markdown.Markdown(extensions=["fenced_code", "tables", "toc", PdfExtension()])
     html_body = md.convert(clean_body)
     toc_html = md.toc
     
     if not title: title = slug.replace("-", " ").title()
+
+    tags_html = ""
+    for t in tags:
+         tags_html += f'<span style="background:var(--surface-highlight); color:var(--text); font-size:11px; padding:2px 6px; border-radius:4px; margin-right:6px; border: 1px solid var(--border);">{t}</span>'
 
     # Match Gallery Styling exactly
     title_style = "font-size:2.5rem; font-weight:600; margin:0 0 16px 0; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
@@ -610,6 +630,8 @@ def article_detail(slug: str) -> Any:
             <div style="{meta_style}">
                  <span style="display:flex; align-items:center;">{ICON_CALENDAR} {date_str}</span>
                  <span style="display:flex; align-items:center;">{ICON_USER_S} {author}</span>
+                 <span style="display:flex; align-items:center;">{ICON_CLOCK} {word_count} words &middot; {read_time} min read</span>
+                 {f'<div style="display:flex; align-items:center;">{tags_html}</div>' if tags_html else ''}
             </div>
         </header>
 

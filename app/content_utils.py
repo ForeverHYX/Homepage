@@ -55,17 +55,22 @@ def get_all_articles() -> List[dict]:
                 tags = [t.strip() for t in tag_str.split(",") if t.strip()]
                 continue
                 
+            if line_strip.lower().startswith("**abstract**:") or line_strip.lower().startswith("abstract:"):
+                summary = line_strip.split(":", 1)[1].strip()
+                continue
+                
             # Content for summary (skip headers and empty lines)
             if not line_strip or line_strip.startswith("#") or line_strip.startswith("!"):
                 continue
             content_lines.append(line_strip)
             
-        # Generate Summary (first ~200 chars)
-        full_content = " ".join(content_lines)
-        if len(full_content) > 200:
-            summary = full_content[:200] + "..."
-        else:
-            summary = full_content
+        # Generate Summary (first ~200 chars) if no abstract provided
+        if not summary:
+            full_content = " ".join(content_lines)
+            if len(full_content) > 200:
+                summary = full_content[:200] + "..."
+            else:
+                summary = full_content
 
         # Fallback date from mtime if not in file
         mtime = stats.st_mtime
