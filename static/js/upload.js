@@ -124,7 +124,7 @@ const drop = document.getElementById('drop');
                            
                            div.innerHTML = `
                              <div style="display:flex; align-items:center; gap:16px; flex:1; cursor:pointer;" onclick="openPath('${safePath}')">
-                               <div class="file-preview" style="background:var(--surface-highlight); color:var(--primary); display:flex; align-items:center; justify-content:center;">{ICON_FOLDER}</div>
+                               <div class="file-preview" style="background:var(--surface-highlight); color:var(--primary); display:flex; align-items:center; justify-content:center;">${ICON_FOLDER}</div>
                                <div>
                                    <div style="font-weight:600;">${f.title || f.name}</div>
                                    ${isGal ? '<small style="color:#eab308">★ Gallery Album</small>' : ''}
@@ -133,16 +133,16 @@ const drop = document.getElementById('drop');
                              <div style="display:flex; gap:4px; align-items:center;">
                                 <button class="action-btn" onclick="openMetaModal('${safePath}', '${safeTitle}', '${safeDesc}', '${safeDate}', '${safeAuthor}')" title="Edit Info">✎</button>
                                 <button class="action-btn" onclick="toggleGallery('${safePath}', ${!isGal})" title="Toggle Gallery">
-                                    ${isGal ? `{ICON_STAR_FILLED}` : `{ICON_STAR}`}
+                                    ${isGal ? `${ICON_STAR_FILLED}` : `${ICON_STAR}`}
                                 </button>
-                                <button class="action-btn danger" onclick="deleteFile('${safePath}')" title="Delete">{ICON_TRASH}</button>
+                                <button class="action-btn danger" onclick="deleteFile('${safePath}')" title="Delete">${ICON_TRASH}</button>
                              </div>
                            `;
                        } else {
                            const isImg = getIcon(f.name) === 'img';
                            const encodedUrl = encodeURI(f.url).replace(/'/g, '%27');
                            const bg = isImg ? `url('${encodedUrl}')` : 'none';
-                           const iconHtml = isImg ? '' : `{ICON_FILE}`;
+                           const iconHtml = isImg ? '' : `${ICON_FILE}`;
                            const safeUrl = f.url.replace(/'/g, "\\'");
                            
                            div.innerHTML = `
@@ -156,9 +156,9 @@ const drop = document.getElementById('drop');
                                </div>
                              </div>
                              <div style="display:flex; gap:4px;">
-                                <a href="${f.url}" target="_blank" class="action-btn" title="Open">{ICON_OPEN}</a>
-                                <button class="action-btn" onclick="copyUrl('${safeUrl}')" title="Copy Link">{ICON_COPY}</button>
-                                <button class="action-btn danger" onclick="deleteFile('${safeUrl.replace('/uploads/', '')}')" title="Delete">{ICON_TRASH}</button>
+                                <a href="${f.url}" target="_blank" class="action-btn" title="Open">${ICON_OPEN}</a>
+                                <button class="action-btn" onclick="copyUrl('${safeUrl}')" title="Copy Link">${ICON_COPY}</button>
+                                <button class="action-btn danger" onclick="deleteFile('${safeUrl.replace('/uploads/', '')}')" title="Delete">${ICON_TRASH}</button>
                              </div>
                            `;
                        }
