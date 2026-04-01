@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} | Yixun Hong{% endblock %}
+
+{% block content %}
+    <div class="container article-grid" style="margin-top:40px; margin-bottom:60px;">
+      <main class="card content-area" style="padding:40px; min-width:0;">
+        <div style="margin-bottom:20px;">
+            <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0; color:var(--text); font-weight:500;">&larr; Back to Articles</a>
+        </div>
+        
+        <header style="margin-bottom:24px;">
+            <h1 style="font-size:2.5rem; font-weight:600; margin:0 0 16px 0; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);">{{ title }}</h1>
+            <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-bottom:16px;">
+                 <span style="display:flex; align-items:center;">{{ icon_calendar|safe }} {{ date_str }}</span>
+                 <span style="display:flex; align-items:center;">{{ icon_user|safe }} {{ author }}</span>
+                 <span style="display:flex; align-items:center;">{{ icon_clock|safe }} {{ word_count }} words &middot; {{ read_time }} min read</span>
+                 {% if tags %}
+                 <div style="display:flex; align-items:center;">{{ tags_html|safe }}</div>
+                 {% endif %}
+            </div>
+        </header>
+
+        <article class="prose">
+          {{ html_body|safe }}
+        </article>
+      </main>
+
+      <aside>
+          <div class="toc" style="position:sticky; top:100px;">
+              <p style="font-weight:700; color:var(--heading); margin-top:0; margin-bottom:12px; font-size:14px; text-transform:uppercase; letter-spacing:0.05em;">Contents</p>
+              {{ toc_html|safe }}
+          </div>
+      </aside>
+    </div>
+{% endblock %}

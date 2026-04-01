@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/uploads/favicon.png">
+  <title>{% block title %}Yixun Hong{% endblock %}</title>
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+  
+  <!-- Highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-light">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+  
+  <link rel="stylesheet" href="/static/css/styles.css">
+  {% block extra_head %}{% endblock %}
+  <script>
+    (function() {
+        const saved = localStorage.getItem('theme');
+        const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && sysDark)) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.getElementById('hljs-light').setAttribute('disabled', 'disabled');
+            document.getElementById('hljs-dark').removeAttribute('disabled');
+        }
+    })();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="/" class="brand">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Yixun Hong's Homepage</span>
+      </a>
+      <div style="position:relative; display:flex; align-items:center; margin-left: auto;">
+        <div id="navLinks" class="nav-links" style="display:flex; gap:20px; font-weight:500; align-items:center;">
+            <a href="/" style="text-decoration:none; color:var(--text);">Home</a>
+            <a href="/articles" style="text-decoration:none; color:var(--text);">Articles</a>
+            <a href="/gallery" style="text-decoration:none; color:var(--text);">Gallery</a>
+            <a href="/uploads/transcript.pdf" target="_blank" style="text-decoration:none; color:var(--text);">Resume</a>
+            <a href="/upload" style="text-decoration:none; color:var(--text);">Upload</a>
+        </div>
+        
+        <div class="nav-links" style="width:1px; height:24px; background:var(--border); margin:0 12px;"></div>
+        
+        <button id="searchTrigger" class="action-btn search-trigger" title="Search" onclick="openSearch()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+
+        <div id="inlineSearchBar" class="search-bar-container">
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted); margin-left:12px; margin-right:8px; flex-shrink:0;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+             <input type="text" id="inlineSearchInput" placeholder="Search..." style="background:transparent; border:none; outline:none; font-size:15px; width:100%; color:var(--text); height:40px;" oninput="doSearch()" autocomplete="off">
+             <button onclick="closeSearch()" style="background:none; border:none; cursor:pointer; color:var(--muted); padding:0 12px;">&times;</button>
+             <div id="searchDropdown" class="search-dropdown">
+                <div id="inlineSearchResults" style="padding:8px 0;"></div>
+             </div>
+        </div>
+
+        <button id="themeToggle" class="action-btn" title="Toggle Theme" style="margin-left:8px;" onclick="toggleTheme()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  {% block content %}{% endblock %}
+  <footer style="text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; margin-top: 40px; border-top: 1px solid var(--border);">
+    <div class="container">
+      &copy; <span id="copyright-year"></span> Yixun Hong. Powered by <a href="https://github.com/ForeverHYX/Homepage" style="color: inherit; text-decoration: underline;">Yixun's Homepage</a>.
+    </div>
+  </footer>
+  <script src="/static/js/main.js"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

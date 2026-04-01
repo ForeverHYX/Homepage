@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Home | Yixun Hong{% endblock %}
+
+{% block content %}
+    <div class="container main-grid">
+      <aside class="sidebar">
+        <div class="card profile-card">
+          <img src="{{ avatar_url }}" class="avatar" alt="Avatar" onerror="this.src='https://ui-avatars.com/api/?name=YH&background=3b82f6&color=fff&size=128'" />
+          <h1 class="profile-name">{{ about.name }}</h1>
+          <p class="profile-role">{{ about.role }}</p>
+          
+          <div class="contact-links">
+            <a href="{{ about.email }}" class="contact-icon" title="Email">{{ icon_mail|safe }}</a>
+            <a href="{{ about.github }}" class="contact-icon" target="_blank" title="GitHub">{{ icon_github|safe }}</a>
+          </div>
+          
+          <div class="location">
+            {{ icon_map|safe }} <span>{{ about.location }}</span>
+          </div>
+        </div>
+
+        <div class="card news-card">
+            <h3 class="news-title" style="display:flex; align-items:center;">
+                News 
+                <button type="button" onclick="openNewsModal()" style="display:inline-flex; align-items:center; justify-content:center; background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; margin-left:8px;" title="View All">
+                    {{ icon_maximize|safe }}
+                </button>
+            </h3>
+            {{ news_html|safe }}
+        </div>
+      </aside>
+      
+      <main class="card content-area">
+        {{ sections_html|safe }}
+      </main>
+    </div>
+
+    <!-- News Modal -->
+    <div id="newsModal" class="lightbox-overlay" onclick="closeNewsModal()">
+        <div class="card lightbox-content" style="padding:40px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; position:relative; background: var(--surface);" onclick="event.stopPropagation()">
+            <button onclick="closeNewsModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer;">&times;</button>
+            <h2 style="margin-top:0; border-left: 5px solid var(--primary); padding-left: 12px;">All News</h2>
+            {{ all_news_html|safe }}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function openNewsModal() {
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = scrollbarWidth + 'px';
+    }
+    const overlay = document.getElementById('newsModal');
+    overlay.style.display = 'flex';
+    void overlay.offsetWidth;
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function closeNewsModal() {
+    const overlay = document.getElementById('newsModal');
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }, 300);
+}
+</script>
+{% endblock %}

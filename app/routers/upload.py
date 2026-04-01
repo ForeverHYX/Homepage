@@ -7,7 +7,7 @@ from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, s
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, RedirectResponse
 
 from app.config import (
-    TEMPLATE_BASE, STYLES, UPLOAD_DIR,
+    UPLOAD_DIR,
     ICON_UPLOAD_CLOUD, ICON_FILE, ICON_OPEN, ICON_TRASH, ICON_COPY, 
     ICON_FOLDER, ICON_STAR, ICON_STAR_FILLED
 )
@@ -344,7 +344,11 @@ def upload_page(request: Request) -> Any:
       // document.getElementById('refreshBtn').addEventListener('click', fetchFiles);
       fetchFiles();
     """
-    return TEMPLATE_BASE.format(title="Upload | Yixun Hong", styles=STYLES, content=content, script=script)
+    t = request.app.state.templates
+    ctx = {'request': request, 'icon_upload_cloud': ICON_UPLOAD_CLOUD, 'icon_file': ICON_FILE,
+           'icon_open': ICON_OPEN, 'icon_trash': ICON_TRASH, 'icon_copy': ICON_COPY,
+           'icon_folder': ICON_FOLDER, 'icon_star': ICON_STAR, 'icon_star_filled': ICON_STAR_FILLED}
+    return t.TemplateResponse(request=request, name='upload.html', context=ctx)
 
 
 @router.post("/api/upload")

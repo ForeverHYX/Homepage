@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Yixun Hong{% endblock %}
+
+{% block content %}
+    <div class="container" style="display:flex; justify-content:center; padding-top:80px;">
+      <div style="background:var(--surface); padding:40px; border-radius:16px; width:100%; max-width:400px; border:1px solid var(--border); box-shadow:var(--shadow);">
+        <h1 style="margin:0 0 8px; font-size:24px;">Welcome Back</h1>
+        <p style="color:var(--muted); margin:0 0 32px;">Sign in to manage your files</p>
+        <form action="/login" method="post">
+          <div style="margin-bottom:20px;">
+            <label style="display:block; margin-bottom:8px; font-weight:500;">Username</label>
+            <input name="username" required autofocus style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg); color:var(--text);" />
+          </div>
+          <div style="margin-bottom:32px;">
+            <label style="display:block; margin-bottom:8px; font-weight:500;">Password</label>
+            <input type="password" name="password" required style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg); color:var(--text);" />
+          </div>
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+      </div>
+    </div>
+{% endblock %}

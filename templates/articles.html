@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Articles | Yixun Hong{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
+            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Articles</h1>
+            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Thoughts, tutorials, and updates.</p>
+            
+            <div class="article-grid">
+                <div style="display:flex; flex-direction:column; gap:24px;">
+                    {% if filter_tag %}
+                    <div class="card" style="padding:16px; display:flex; align-items:center; justify-content:space-between;">
+                        <span>Filtered by tag: <strong>{{ filter_tag }}</strong></span>
+                        <a href="/articles" style="text-decoration:none; color:var(--primary);">Clear x</a>
+                    </div>
+                    {% endif %}
+
+                    {% for art in articles %}
+                    <div class="card" style="padding:24px; margin-bottom:0px; transition: transform 0.2s;">
+                        <h2 style="margin:0 0 12px 0; font-size:1.5rem;">
+                            <a href="/articles/{{ art.slug }}" style="text-decoration:none; color:var(--heading);">{{ art.title }}</a>
+                        </h2>
+                        <div style="font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                             <span>{{ icon_calendar|safe }} {{ art.date }}</span>
+                             <span>{{ icon_user|safe }} {{ art.author }}</span>
+                             <div style="display:flex; align-items:center;">
+                                {% for t in art.tags %}
+                                <span style="background:var(--surface-highlight); color:var(--muted); font-size:11px; padding:2px 6px; border-radius:4px; margin-right:6px;">{{ t }}</span>
+                                {% endfor %}
+                             </div>
+                        </div>
+                        <p style="color:var(--text); font-size:15px; margin:0; line-height:1.6;">{{ art.summary }}</p>
+                        <div style="margin-top:16px;">
+                            <a href="/articles/{{ art.slug }}" style="font-weight:600; font-size:14px; color:var(--primary); text-decoration:none;">Read more &rarr;</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p>No articles found.</p>
+                    {% endfor %}
+                </div>
+                
+                <aside class="sidebar" style="position:sticky; top:100px;">
+                    <div class="card" style="padding:24px;">
+                        <h3 style="margin-top:0; font-size:18px; margin-bottom:16px;">Tags</h3>
+                        <div>
+                             <a href="/articles" style="display:inline-block; padding:4px 10px; border-radius:16px; font-size:13px; text-decoration:none; margin-bottom:8px; margin-right:6px; {% if not filter_tag %}background:var(--primary); color:white;{% else %}background:var(--surface); color:var(--text); border:1px solid var(--border);{% endif %}">All</a>
+                             {% for t, count in sorted_tags %}
+                             <a href="/articles?tag={{ t }}" style="display:inline-block; padding:4px 10px; border-radius:16px; font-size:13px; text-decoration:none; margin-bottom:8px; margin-right:6px; transition:all .2s; {% if filter_tag == t %}background:var(--primary); color:white;{% else %}background:var(--surface); color:var(--text); border:1px solid var(--border);{% endif %}">
+                                {{ t }} <span style="opacity:0.6; font-size:0.9em;">({{ count }})</span>
+                             </a>
+                             {% endfor %}
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+{% endblock %}

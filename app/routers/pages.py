@@ -3,15 +3,16 @@ import datetime
 from datetime import datetime
 import secrets
 from pathlib import Path
+import re
 import markdown
 
 from fastapi import APIRouter, Request, Form, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 
 from app.config import (
-    TEMPLATE_BASE, STYLES, UPLOAD_DIR, ARTICLES_DIR,
+    UPLOAD_DIR, ARTICLES_DIR,
     ICON_MAIL, ICON_GITHUB, ICON_MAP, ICON_CALENDAR, ICON_USER_S, 
-    ICON_ARROW_LEFT, ICON_MAXIMIZE, ICON_ARROW_LEFT
+    ICON_ARROW_LEFT, ICON_MAXIMIZE
 )
 from app.utils import (
     parse_markdown_sections, render_markdown_file, get_gallery_folders, 
@@ -22,23 +23,29 @@ from app.auth import get_current_user, VALID_SESSIONS, SESSION_KEY, UPLOAD_USERN
 
 router = APIRouter()
 
+
+def _templates(request: Request):
+    return request.app.state.templates
+
+
+def _render(request, name, context=None):
+    t = _templates(request)
+    ctx = {"request": request}
+    if context:
+        ctx.update(context)
+    return t.TemplateResponse(request=request, name=name, context=ctx)
+
+
 @router.get("/", response_class=HTMLResponse)
-def index() -> str:
-    # Get structured info
+def index(request: Request) -> Any:
     about = get_about_info()
     avatar_url = "/uploads/avatar.png"
-
-    # Parse main content into sections
     raw_sections = parse_markdown_sections("content.md")
     
-    # Section Colors (Light Blue to Primary Blue)
     section_colors = ['#bfdbfe', '#93c5fd', '#60a5fa', '#3b82f6']
-
-    # Generate HTML for each section
     sections_html = ""
     for i, (title, body) in enumerate(raw_sections):
         color = section_colors[i % len(section_colors)]
-        
         sections_html += f"""
         <section class="cv-section">
             <h2 class="section-title" style="border-left-color: {color}">{title}</h2>
@@ -47,562 +54,166 @@ def index() -> str:
             </div>
         </section>
         """
-
-    # If no sections, just render normally to avoid blank page
+    
     if not sections_html:
         raw_html = render_markdown_file("content.md")
-        sections_html = f"""<div class="prose">{raw_html}</div>"""
+        sections_html = f'<div class="prose">{raw_html}</div>'
 
-    # Render News (Merged & Sorted)
     news_html = parse_and_merge_news(limit=6)
-    all_news_html = parse_and_merge_news(limit=100) # For modal
+    all_news_html = parse_and_merge_news(limit=100)
 
-    page_content = f"""
-    <div class="container main-grid">
-      <aside class="sidebar">
-        <div class="card profile-card">
-          <img src="{avatar_url}" class="avatar" alt="Avatar" onerror="this.src='https://ui-avatars.com/api/?name=YH&background=3b82f6&color=fff&size=128'" />
-          <h1 class="profile-name">{about['name']}</h1>
-          <p class="profile-role">{about['role']}</p>
-          
-          <div class="contact-links">
-            <a href="{about['email']}" class="contact-icon" title="Email">{ICON_MAIL}</a>
-            <a href="{about['github']}" class="contact-icon" target="_blank" title="GitHub">{ICON_GITHUB}</a>
-          </div>
-          
-          <div class="location">
-            {ICON_MAP} <span>{about['location']}</span>
-          </div>
-        </div>
-
-        <div class="card news-card">
-            <h3 class="news-title" style="display:flex; align-items:center;">
-                News 
-                <button type="button" onclick="openNewsModal()" style="display:inline-flex; align-items:center; justify-content:center; background:none; border:none; color:var(--muted); cursor:pointer; padding:4px; margin-left:8px;" title="View All">
-                    {ICON_MAXIMIZE}
-                </button>
-            </h3>
-            {news_html}
-        </div>
-      </aside>
-      
-      <main class="card content-area">
-        {sections_html}
-      </main>
-    </div>
-
-    <!-- News Modal -->
-    <div id="newsModal" class="lightbox-overlay" onclick="closeNewsModal()">
-        <div class="card lightbox-content" style="padding:40px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; position:relative; background: var(--surface);" onclick="event.stopPropagation()">
-            <button onclick="closeNewsModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer;">&times;</button>
-            <h2 style="margin-top:0; border-left: 5px solid var(--primary); padding-left: 12px;">All News</h2>
-            {all_news_html}
-        </div>
-    </div>
-    
-    <script>
-    function openNewsModal() {{
-        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-        if (scrollbarWidth > 0) {{
-            document.body.style.paddingRight = scrollbarWidth + 'px';
-        }}
-
-        const overlay = document.getElementById('newsModal');
-        overlay.style.display = 'flex';
-        void overlay.offsetWidth; // Force Reflow
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }}
-    function closeNewsModal() {{
-        const overlay = document.getElementById('newsModal');
-        overlay.classList.remove('active');
-        setTimeout(() => {{
-            overlay.style.display = 'none';
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }}, 300);
-    }}
-    </script>
-    """
-    return TEMPLATE_BASE.format(title="Home | Yixun Hong", styles=STYLES, content=page_content, script="")
+    return _render(request, "index.html", {
+        "about": about,
+        "avatar_url": avatar_url,
+        "sections_html": sections_html,
+        "news_html": news_html,
+        "all_news_html": all_news_html,
+        "icon_mail": ICON_MAIL,
+        "icon_github": ICON_GITHUB,
+        "icon_map": ICON_MAP,
+        "icon_maximize": ICON_MAXIMIZE,
+    })
 
 
 @router.get("/api/search-index")
 def search_api():
     data = []
-    # Articles
     for a in get_all_articles():
         data.append({
-            "type": "Article",
-            "title": a['title'],
-            "desc": a['summary'],
-            "tags": a.get('tags', []),
-            "date": a['date'],
+            "type": "Article", "title": a['title'], "desc": a['summary'],
+            "tags": a.get('tags', []), "date": a['date'],
             "url": f"/articles/{a['slug']}"
         })
-    # Galleries
     for rel_path in get_gallery_folders():
-         path = safe_join(UPLOAD_DIR, rel_path)
-         if not path.exists(): continue
-         meta = get_folder_meta(path)
-         title = meta.get("title", path.name)
-         desc = meta.get("description", "")
-         data.append({
-             "type": "Album",
-             "title": title,
-             "desc": desc,
-             "tags": [],
-             "date": meta.get("date", ""),
-             "url": f"/gallery?focus={rel_path}"
-         })
-         
+        path = safe_join(UPLOAD_DIR, rel_path)
+        if not path.exists(): continue
+        meta = get_folder_meta(path)
+        data.append({
+            "type": "Album", "title": meta.get("title", path.name),
+            "desc": meta.get("description", ""), "tags": [],
+            "date": meta.get("date", ""), "url": f"/gallery?focus={rel_path}"
+        })
     return JSONResponse(data)
 
 
 @router.get("/articles", response_class=HTMLResponse)
-def articles_index(tag: Optional[str] = None) -> str:
+def articles_index(request: Request, tag: Optional[str] = None) -> Any:
     articles = get_all_articles()
-    
-    # Calculate Tag Counts (from full list)
     all_tags = {}
     for a in articles:
         for t in a.get('tags', []):
             if t: all_tags[t] = all_tags.get(t, 0) + 1
-            
-    # Filter
     if tag:
         articles = [a for a in articles if tag in a.get('tags', [])]
-    
-    # Sort tags by count
     sorted_tags = sorted(all_tags.items(), key=lambda x: x[1], reverse=True)
-    
-    list_items = ""
-    for art in articles:
-        tags_html = ""
-        for t in art.get('tags', []):
-             tags_html += f'<span style="background:var(--surface-highlight); color:var(--muted); font-size:11px; padding:2px 6px; border-radius:4px; margin-right:6px;">{t}</span>'
-
-        # Create a card for each article
-        list_items += f"""
-        <div class="card" style="padding:24px; margin-bottom:0px; transition: transform 0.2s;">
-            <h2 style="margin:0 0 12px 0; font-size:1.5rem;">
-                <a href="/articles/{art["slug"]}" style="text-decoration:none; color:var(--heading);">{art["title"]}</a>
-            </h2>
-            <div style="font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-                 <span>{ICON_CALENDAR} {art["date"]}</span>
-                 <span>{ICON_USER_S} {art["author"]}</span>
-                 <div style="display:flex; align-items:center;">{tags_html}</div>
-            </div>
-            <p style="color:var(--text); font-size:15px; margin:0; line-height:1.6;">
-                {art["summary"]}
-            </p>
-            <div style="margin-top:16px;">
-                <a href="/articles/{art["slug"]}" style="font-weight:600; font-size:14px; color:var(--primary); text-decoration:none;">Read more &rarr;</a>
-            </div>
-        </div>
-        """
-    
-    tag_cloud_html = ""
-    for t, count in sorted_tags:
-         active_style = "background:var(--primary); color:white;" if tag == t else "background:var(--surface); color:var(--text); border:1px solid var(--border);"
-         tag_cloud_html += f"""
-         <a href="/articles?tag={t}" style="display:inline-block; padding:4px 10px; border-radius:16px; font-size:13px; text-decoration:none; margin-bottom:8px; margin-right:6px; transition:all .2s; {active_style}">
-            {t} <span style="opacity:0.6; font-size:0.9em;">({count})</span>
-         </a>
-         """
-
-    content_html = f"""
-    <div class="container">
-        <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
-            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Articles</h1>
-            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Thoughts, tutorials, and updates.</p>
-            
-            <div class="article-grid">
-                <div style="display:flex; flex-direction:column; gap:24px;">
-                    {f'<div class="card" style="padding:16px; display:flex; align-items:center; justify-content:space-between;"><span>Filtered by tag: <strong>{tag}</strong></span> <a href="/articles" style="text-decoration:none; color:var(--primary);">Clear x</a></div>' if tag else ''}
-                    {list_items if articles else "<p>No articles found.</p>"}
-                </div>
-                
-                <aside class="sidebar" style="position:sticky; top:100px;">
-                    <div class="card" style="padding:24px;">
-                        <h3 style="margin-top:0; font-size:18px; margin-bottom:16px;">Tags</h3>
-                        <div>
-                             <a href="/articles" style="display:inline-block; padding:4px 10px; border-radius:16px; font-size:13px; text-decoration:none; margin-bottom:8px; margin-right:6px; {'background:var(--primary); color:white;' if not tag else 'background:var(--surface); color:var(--text); border:1px solid var(--border);'}">All</a>
-                             {tag_cloud_html}
-                        </div>
-                    </div>
-                </aside>
-            </div>
-        </div>
-    </div>
-    """
-    return TEMPLATE_BASE.format(title="Articles | Yixun Hong", styles=STYLES, content=content_html, script="")
+    return _render(request, "articles.html", {
+        "articles": articles, "filter_tag": tag, "sorted_tags": sorted_tags,
+        "icon_calendar": ICON_CALENDAR, "icon_user": ICON_USER_S,
+    })
 
 
 @router.get("/gallery", response_class=HTMLResponse)
-def gallery_index(focus: Optional[str] = None) -> str:
+def gallery_index(request: Request, focus: Optional[str] = None) -> Any:
     gallery_dirs = get_gallery_folders()
-    
     is_focused = False
     if focus and focus in gallery_dirs:
         gallery_dirs = [focus]
         is_focused = True
 
-    # Gather data first
-    albums_data = []
-
+    albums = []
     for rel_path in gallery_dirs:
-         path = safe_join(UPLOAD_DIR, rel_path)
-         if not path.exists() or not path.is_dir():
-             continue
-             
-         # Get Images
-         images = []
-         try:
-             for f in sorted(list(path.iterdir()), key=lambda x: x.name):
-                 if f.suffix.lower() in ['.jpg', '.jpeg', '.png', '.webp', '.gif']:
-                      rel_file_path = f.relative_to(UPLOAD_DIR)
-                      images.append(f"/uploads/{rel_file_path}")
-         except:
-             continue
-                  
-         if not images:
-             continue
-             
-         # Get metadata
-         meta = get_folder_meta(path)
-         title = meta.get("title", path.name)
-         desc = meta.get("description", "")
-         date_str = meta.get("date", "")
-         author = meta.get("author", "Yixun Hong")
-         
-         # Determine Sort Timestamp
-         sort_ts = 0.0
-         if date_str:
-             try:
-                 sort_ts = datetime.strptime(date_str, "%Y-%m-%d").timestamp()
-             except: pass
-         
-         if sort_ts == 0.0:
-            # Fallback to latest mtime in folder
+        path = safe_join(UPLOAD_DIR, rel_path)
+        if not path.exists() or not path.is_dir():
+            continue
+        images = []
+        try:
+            for f in sorted(list(path.iterdir()), key=lambda x: x.name):
+                if f.suffix.lower() in ['.jpg', '.jpeg', '.png', '.webp', '.gif']:
+                    rel_file_path = f.relative_to(UPLOAD_DIR)
+                    images.append(f"/uploads/{rel_file_path}")
+        except:
+            continue
+        if not images:
+            continue
+        meta = get_folder_meta(path)
+        
+        sort_ts = 0.0
+        date_str = meta.get("date", "")
+        if date_str:
+            try: sort_ts = datetime.strptime(date_str, "%Y-%m-%d").timestamp()
+            except: pass
+        if sort_ts == 0.0:
             try:
                 sort_ts = max(p.stat().st_mtime for p in path.iterdir())
                 date_str = datetime.fromtimestamp(sort_ts).strftime("%Y-%m-%d")
             except: pass
-            
-         albums_data.append({
-             "path_name": path.name,
-             "rel_path": rel_path,
-             "title": title,
-             "desc": desc,
-             "date_str": date_str,
-             "author": author,
-             "images": images,
-             "sort_ts": sort_ts
-         })
-    
-    # Sort by date descending
-    albums_data.sort(key=lambda x: x["sort_ts"], reverse=True)
-
-    albums_html_inner = ""
-    
-    for album in albums_data:
-         # Navigation Logic
-         back_btn = ""
-         
-         # Title Content & Metadata Alignment
-         if is_focused:
-             # Focused: Non-clickable large title
-             title_content = album['title']
-             # With border-left (6px) + padding-left (16px), text starts at 22px
-             meta_padding = "padding-left:22px;"
-             
-             # Back button
-             back_btn = f"""
-             <div style="margin-bottom: 20px;">
-                <a href="/gallery" class="action-btn" style="text-decoration:none; padding-left:0; color:var(--text); font-weight:500;">&larr; Back to All Galleries</a>
-             </div>
-             """
-         else:
-             # List: Clickable small title
-             title_content = f'<a href="/gallery?focus={album["rel_path"]}" style="text-decoration:none; color:inherit;">{album["title"]}</a>'
-             # No border, so metadata should be flush left
-             meta_padding = "padding-left:0;"
-         
-         # Build Carousel HTML
-         slides = ""
-         for img_url in album["images"]:
-             slides += f"""
-             <div class="carousel-slide" onclick="openLightbox('{img_url}')">
-                 <img src="{img_url}" loading="lazy" alt="Photo">
-             </div>
-             """
-         
-         wrapper_class = "carousel-wrapper focused" if is_focused else "carousel-wrapper"
-         
-        # Title Styling
-         if is_focused:
-             title_style = "font-size:2.5rem; font-weight:600; margin:0 0 16px 0; text-transform:capitalize; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
-             meta_style = "display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-bottom:16px;"
-             desc_style = "margin:0 0 24px 0; padding-left:22px; color:var(--text); font-size:1rem; line-height:1.6;"
-             card_padding = "padding:40px;"
-             card_margin = "margin-bottom:60px;"
-             nav_margin = "margin-bottom:24px;"
-         else:
-             title_style = "font-size:1.5rem; font-weight:700; margin:0 0 12px 0; text-transform:capitalize; line-height: 1.2; color:var(--heading);"
-             meta_style = "font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;"
-             desc_style = "color:var(--text); font-size:15px; margin:0 0 16px 0; line-height:1.6;"
-             card_padding = "padding:24px;"
-             card_margin = "margin-bottom:24px;"
-             nav_margin = "margin-bottom:16px;"
-
-         albums_html_inner += f"""
-         <section class="gallery-album mb-12 card" style="{card_padding} {card_margin}">
-             {back_btn}
-             <div style="{nav_margin}">
-                 <h2 style="{title_style}">
-                    {title_content}
-                 </h2>
-                 <div style="{meta_style}">
-                      <span style="display:flex; align-items:center;">{ICON_CALENDAR} {album['date_str'] if album['date_str'] else 'Unknown Date'}</span>
-                      <span style="display:flex; align-items:center;">{ICON_USER_S} {album['author']}</span>
-                 </div>
-                 {f'<p style="{desc_style}">{album["desc"]}</p>' if album["desc"] else ''}
-             </div>
-             <div class="{wrapper_class}" style="{ 'box-shadow:none; border:none; padding:0;' if is_focused else 'box-shadow:none; border:none; padding:0; background:transparent;' }">
-                 <div class="carousel-container" id="carousel-{album['path_name']}">
-                     {slides}
-                 </div>
-             </div>
-         </section>
-         """
-    
-    # Unified Container Structure matching /articles
-    header_html = ""
-    if not is_focused:
-        header_html = """
-            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Gallery</h1>
-            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Travel photos, portraits, and moments.</p>
-        """
-
-    final_content = f"""
-    <div class="container">
-        <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
-            {header_html}
-            <div style="display:flex; flex-direction:column; gap:24px;">
-                {albums_html_inner if albums_data else "<p>No albums found.</p>"}
-            </div>
-        </div>
-    </div>
-    """
-
-    extra_styles = """
-    .gallery-album { margin-bottom: 60px; }
-
-    /* Carousel / Filmstrip Styles */
-    .carousel-wrapper {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        box-shadow: var(--shadow);
-        border-radius: 16px;
-        padding: 20px 0;
-        overflow: hidden;
-        transition: all 0.3s ease;
-    }
-    
-    /* Focused Mode Modifications */
-    .carousel-wrapper.focused {
-        /* Keep the shadow box look */
-        background: var(--surface);
-        border: 1px solid var(--border);
-        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); /* Stronger shadow */
-        border-radius: 20px;
-        padding: 32px;
         
-        /* Expand width slightly beyond normal container if possible, or just be full width */
-        width: 100%;
-    }
+        if is_focused:
+            title_style = "font-size:2.5rem; font-weight:600; margin:0 0 16px 0; text-transform:capitalize; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
+            meta_style = "display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-bottom:16px;"
+            desc_style = "margin:0 0 24px 0; padding-left:22px; color:var(--text); font-size:1rem; line-height:1.6;"
+            card_padding = "padding:40px;"
+            card_margin = "margin-bottom:60px;"
+            nav_margin = "margin-bottom:24px;"
+        else:
+            title_style = "font-size:1.5rem; font-weight:700; margin:0 0 12px 0; text-transform:capitalize; line-height: 1.2; color:var(--heading);"
+            meta_style = "font-size:13px; color:var(--muted); margin-bottom:12px; display:flex; gap:16px; align-items:center; flex-wrap:wrap;"
+            desc_style = "color:var(--text); font-size:15px; margin:0 0 16px 0; line-height:1.6;"
+            card_padding = "padding:24px;"
+            card_margin = "margin-bottom:24px;"
+            nav_margin = "margin-bottom:16px;"
 
-    .carousel-container { 
-        overflow-x: auto; 
-        display: flex;
-        gap: 16px;
-        padding: 0 0 12px 0;
-        align-items: center; 
-        scrollbar-width: thin;
-        scrollbar-color: var(--muted) transparent;
-    }
+        albums.append({
+            "path_name": path.name, "rel_path": rel_path,
+            "title": meta.get("title", path.name), "desc": meta.get("description", ""),
+            "date_str": date_str, "author": meta.get("author", "Yixun Hong"),
+            "images": images, "sort_ts": sort_ts,
+            "title_style": title_style, "meta_style": meta_style,
+            "desc_style": desc_style, "card_padding": card_padding,
+            "card_margin": card_margin, "nav_margin": nav_margin,
+            "wrapper_class": "carousel-wrapper focused" if is_focused else "carousel-wrapper",
+        })
     
-    .carousel-wrapper.focused .carousel-container {
-        /* Convert to grid/wrap layout */
-        flex-wrap: wrap;
-        justify-content: center; /* Center images */
-        gap: 16px; /* Space between images */
-        padding: 0;
-        height: auto; /* Let it grow vertically */
-        overflow-x: visible; /* No scrollbar needed horizontally usually */
-        align-items: flex-start;
-    }
-    
-    /* Scrollbar Logic for Focused */
-    .carousel-wrapper.focused .carousel-container::-webkit-scrollbar { display: none; }
-
-    .carousel-container::-webkit-scrollbar { height: 6px; }
-    .carousel-container::-webkit-scrollbar-track { background: transparent; }
-    .carousel-container::-webkit-scrollbar-thumb { background-color: var(--muted); border-radius: 3px; }
-    .carousel-container::-webkit-scrollbar-thumb:hover { background-color: var(--text); }
-    
-    .carousel-slide {
-        flex: 0 0 auto;
-        height: 500px;
-        border-radius: 8px;
-        overflow: hidden;
-        transition: all 0.3s;
-        cursor: pointer;
-    }
-    
-    .carousel-wrapper.focused .carousel-slide {
-        /* Fixed height for rows */
-        height: 280px; 
-        border-radius: 8px; /* Keep rounded corners */
-        box-shadow: var(--shadow); /* Individual shadow */
-        opacity: 1;
-        transition: transform 0.2s;
-    }
-
-    .carousel-wrapper.focused .carousel-slide:hover {
-        transform: scale(1.02); /* Subtle zoom on hover */
-        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    }
-    
-    .carousel-slide img {
-        height: 100%;
-        width: auto; 
-        object-fit: contain; 
-        display: block;
-    }
-    
-    @media(max-width: 800px) {
-        .carousel-slide { height: 300px; }
-        .carousel-wrapper.focused .carousel-slide { height: 200px; } /* Smaller on mobile */
-    }
-    """
-    
-    script = """
-    // Lightbox Logic
-    window.openLightbox = (url) => {
-        const overlay = document.getElementById('lightboxOverlay');
-        const img = document.getElementById('lightboxImg');
-        img.src = url;
-        overlay.style.display = 'flex';
-        void overlay.offsetWidth;
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    };
-    
-    window.closeLightbox = () => {
-        const overlay = document.getElementById('lightboxOverlay');
-        overlay.classList.remove('active');
-        setTimeout(() => {
-            overlay.style.display = 'none';
-            document.getElementById('lightboxImg').src = '';
-            document.body.style.overflow = '';
-        }, 300);
-    };
-
-    // Auto Scroll Logic (Only for non-focused)
-    document.addEventListener('DOMContentLoaded', () => {
-        // If focused, we might disable auto-scroll to let user inspect
-        const carousels = document.querySelectorAll('.carousel-container');
-        const isFocused = document.querySelector('.carousel-wrapper.focused');
-        
-        if (isFocused) return; // Disable auto scroll in focused mode
-
-        carousels.forEach(container => {
-            let interval;
-            const startAutoPlay = () => {
-                interval = setInterval(() => {
-                    const currentScroll = container.scrollLeft;
-                    const maxScroll = container.scrollWidth - container.clientWidth;
-                    if (currentScroll >= maxScroll - 5) {
-                        container.scrollTo({ left: 0, behavior: 'smooth' });
-                    } else {
-                        container.scrollBy({ left: 400, behavior: 'smooth' });
-                    }
-                }, 2000);
-            };
-            const stopAutoPlay = () => clearInterval(interval);
-            startAutoPlay();
-            container.addEventListener('mouseenter', stopAutoPlay);
-            container.addEventListener('mouseleave', startAutoPlay);
-            container.addEventListener('touchstart', stopAutoPlay, {passive: true});
-            container.addEventListener('touchend', startAutoPlay);
-        });
-    });
-    """
-
-    # Add Lightbox Structure to final content
-    final_content += """
-    <!-- Lightbox Structure -->
-    <div id="lightboxOverlay" class="lightbox-overlay" onclick="closeLightbox()">
-        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-        <img id="lightboxImg" class="lightbox-content" src="" alt="Full Size" onclick="event.stopPropagation()">
-    </div>
-    """
-    
-    return TEMPLATE_BASE.format(title="Gallery | Yixun Hong", styles=STYLES + extra_styles, content=final_content, script=script)
+    albums.sort(key=lambda x: x["sort_ts"], reverse=True)
+    return _render(request, "gallery.html", {
+        "albums": albums, "is_focused": is_focused,
+    })
 
 
 @router.get("/articles/{slug}", response_class=HTMLResponse)
-def article_detail(slug: str) -> Any:
+def article_detail(request: Request, slug: str) -> Any:
     path = ARTICLES_DIR / f"{slug}.md"
     if not path.exists():
         raise HTTPException(status_code=404, detail="Article not found")
     
     text = path.read_text(encoding="utf-8")
-    
-    # Parse Metadata manually to separate it from body
     lines = text.splitlines()
     body_lines = []
-    
-    title = ""
-    author = "Yixun Hong"
-    date_str = ""
+    title, author, date_str = "", "Yixun Hong", ""
     tags = []
     
-    # Simple state parsers
     for line in lines:
         sline = line.strip()
         if not title and sline.startswith("# "):
-            title = sline[2:].strip()
-            continue
+            title = sline[2:].strip(); continue
         if sline.lower().startswith("**date**:") or sline.lower().startswith("date:"):
-            date_str = sline.split(":", 1)[1].strip()
-            continue
+            date_str = sline.split(":", 1)[1].strip(); continue
         if sline.lower().startswith("**author**:") or sline.lower().startswith("author:"):
-            author = sline.split(":", 1)[1].strip()
-            continue
+            author = sline.split(":", 1)[1].strip(); continue
         if sline.lower().startswith("**tags**:") or sline.lower().startswith("tags:") or sline.lower().startswith("tag:"):
             tag_str = sline.split(":", 1)[1].strip()
-            tags = [t.strip() for t in tag_str.split(",") if t.strip()]
-            continue
+            tags = [t.strip() for t in tag_str.split(",") if t.strip()]; continue
         if sline.lower().startswith("**abstract**:") or sline.lower().startswith("abstract:"):
             continue
-        
         body_lines.append(line)
     
     clean_body = "\n".join(body_lines)
-    
-    import re
-    # Calculate word count and read time
-    # Count English words and Chinese characters roughly
     words = re.findall(r'[a-zA-Z0-9]+|[\u4e00-\u9fa5]', clean_body)
     word_count = len(words)
     read_time = max(1, round(word_count / 200))
 
-    ICON_CLOCK = """<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; position:relative; top:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>"""
+    ICON_CLOCK = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; position:relative; top:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
 
-    # Rendering with TOC
     md = markdown.Markdown(extensions=["fenced_code", "tables", "toc", PdfExtension()])
     html_body = md.convert(clean_body)
     toc_html = md.toc
@@ -611,81 +222,28 @@ def article_detail(slug: str) -> Any:
 
     tags_html = ""
     for t in tags:
-         tags_html += f'<span style="background:var(--surface-highlight); color:var(--text); font-size:11px; padding:2px 6px; border-radius:4px; margin-right:6px; border: 1px solid var(--border);">{t}</span>'
+        tags_html += f'<span style="background:var(--surface-highlight); color:var(--text); font-size:11px; padding:2px 6px; border-radius:4px; margin-right:6px; border: 1px solid var(--border);">{t}</span>'
 
-    # Match Gallery Styling exactly
-    title_style = "font-size:2.5rem; font-weight:600; margin:0 0 16px 0; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);"
-    meta_style = "display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-bottom:16px;"
-
-    content = f"""
-    <div class="container article-grid" style="margin-top:40px; margin-bottom:60px;">
-      <!-- Main Content Card -->
-      <main class="card content-area" style="padding:40px; min-width:0;">
-        <div style="margin-bottom:20px;">
-            <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0; color:var(--text); font-weight:500;">&larr; Back to Articles</a>
-        </div>
-        
-        <header style="margin-bottom:24px;">
-            <h1 style="{title_style}">{title}</h1>
-            <div style="{meta_style}">
-                 <span style="display:flex; align-items:center;">{ICON_CALENDAR} {date_str}</span>
-                 <span style="display:flex; align-items:center;">{ICON_USER_S} {author}</span>
-                 <span style="display:flex; align-items:center;">{ICON_CLOCK} {word_count} words &middot; {read_time} min read</span>
-                 {f'<div style="display:flex; align-items:center;">{tags_html}</div>' if tags_html else ''}
-            </div>
-        </header>
-
-        <article class="prose">
-          {html_body}
-        </article>
-      </main>
-
-      <!-- Right Sidebar (TOC) -->
-      <aside>
-          <div class="toc" style="position:sticky; top:100px;">
-              <p style="font-weight:700; color:var(--heading); margin-top:0; margin-bottom:12px; font-size:14px; text-transform:uppercase; letter-spacing:0.05em;">Contents</p>
-              {toc_html}
-          </div>
-      </aside>
-
-    </div>
-    """
-    return TEMPLATE_BASE.format(title=f"{title} | Yixun Hong", styles=STYLES, content=content, script="")
+    return _render(request, "article_detail.html", {
+        "title": title, "html_body": html_body, "toc_html": toc_html,
+        "icon_calendar": ICON_CALENDAR, "icon_user": ICON_USER_S, "icon_clock": ICON_CLOCK,
+        "date_str": date_str, "author": author,
+        "word_count": word_count, "read_time": read_time,
+        "tags_html": tags_html, "tags": tags,
+    })
 
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request) -> Any:
     if get_current_user(request):
         return RedirectResponse("/upload")
-    
-    content = f"""
-    <div class="container" style="display:flex; justify-content:center; padding-top:80px;">
-      <div style="background:var(--surface); padding:40px; border-radius:16px; width:100%; max-width:400px; border:1px solid var(--border); box-shadow:var(--shadow);">
-        <h1 style="margin:0 0 8px; font-size:24px;">Welcome Back</h1>
-        <p style="color:var(--muted); margin:0 0 32px;">Sign in to manage your files</p>
-        <form action="/login" method="post">
-          <div style="margin-bottom:20px;">
-            <label style="display:block; margin-bottom:8px; font-weight:500;">Username</label>
-            <input name="username" required autofocus style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg); color:var(--text);" />
-          </div>
-          <div style="margin-bottom:32px;">
-            <label style="display:block; margin-bottom:8px; font-weight:500;">Password</label>
-            <input type="password" name="password" required style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--bg); color:var(--text);" />
-          </div>
-          <button type="submit" class="btn btn-primary">Sign In</button>
-        </form>
-      </div>
-    </div>
-    """
-    return TEMPLATE_BASE.format(title="Login | Yixun Hong", styles=STYLES, content=content, script="")
+    return _render(request, "login.html", {})
 
 
 @router.post("/login")
 def login(username: str = Form(...), password: str = Form(...)) -> Any:
-    # Strip whitespace just in case
     username = username.strip()
     password = password.strip()
-
     if (
         secrets.compare_digest(username, UPLOAD_USERNAME) and 
         secrets.compare_digest(password, UPLOAD_PASSWORD)
@@ -695,7 +253,6 @@ def login(username: str = Form(...), password: str = Form(...)) -> Any:
         response = RedirectResponse(url="/upload", status_code=status.HTTP_303_SEE_OTHER)
         response.set_cookie(key=SESSION_KEY, value=token, httponly=True, max_age=86400)
         return response
-    
     return HTMLResponse(
         content="<script>alert('Invalid credentials'); history.back();</script>", 
         status_code=status.HTTP_401_UNAUTHORIZED
