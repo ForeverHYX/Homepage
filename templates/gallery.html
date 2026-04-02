@@ -4,23 +4,16 @@
 
 {% block extra_head %}
 <style>
-.gallery-album { margin-bottom: 60px; }
-.carousel-wrapper {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow);
-    border-radius: 16px;
-    padding: 20px 0;
-    overflow: hidden;
-    transition: all 0.3s ease;
+.gallery-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
-.carousel-wrapper.focused {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    border-radius: 20px;
-    padding: 32px;
-    width: 100%;
+.gallery-album {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 0;
 }
 .carousel-container { 
     overflow-x: auto; 
@@ -45,47 +38,20 @@
 .carousel-container::-webkit-scrollbar-track { background: transparent; }
 .carousel-container::-webkit-scrollbar-thumb { background-color: var(--muted); border-radius: 3px; }
 .carousel-container::-webkit-scrollbar-thumb:hover { background-color: var(--text); }
-.carousel-slide {
-    flex: 0 0 auto;
-    height: 500px;
-    border-radius: 8px;
-    overflow: hidden;
-    transition: all 0.3s;
-    cursor: pointer;
-}
-.carousel-wrapper.focused .carousel-slide {
-    height: 280px; 
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    opacity: 1;
-    transition: transform 0.2s;
-}
-.carousel-wrapper.focused .carousel-slide:hover {
-    transform: scale(1.02);
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-}
-.carousel-slide img {
-    height: 100%;
-    width: auto; 
-    object-fit: contain; 
-    display: block;
-}
-@media(max-width: 800px) {
-    .carousel-slide { height: 300px; }
-    .carousel-wrapper.focused .carousel-slide { height: 200px; }
-}
 </style>
 {% endblock %}
 
 {% block content %}
     <div class="container">
-        <div class="content-area" style="max-width:100%; margin:0 auto; padding:40px 0; background:transparent;">
+        <div class="page-shell">
             {% if not is_focused %}
-            <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Gallery</h1>
-            <p style="color:var(--muted); font-size:1.1rem; margin-top:-16px; margin-bottom:40px;">Travel photos, portraits, and moments.</p>
+            <div>
+                <h1 class="section-title" style="border-left-color: var(--primary); margin-bottom:24px; font-size: 3rem; padding-bottom:10px;">Gallery</h1>
+                <p class="page-lead">Travel photos, portraits, and moments.</p>
+            </div>
             {% endif %}
             
-            <div style="display:flex; flex-direction:column; gap:24px;">
+            <div class="gallery-list">
                 {% for album in albums %}
                 <section class="gallery-album mb-12 card" style="{{ album.card_padding }} {{ album.card_margin }}">
                     {% if is_focused %}
