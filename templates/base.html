@@ -7,14 +7,14 @@
   <title>{% block title %}Yixun Hong{% endblock %}</title>
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
-  
+
   <!-- Highlight.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-light">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-dark" disabled>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
-  
-  <link rel="stylesheet" href="/static/css/styles.css">
+
+  <link rel="stylesheet" href="/static/css/styles.css?v=7">
   {% block extra_head %}{% endblock %}
   <script>
     (function() {
@@ -43,9 +43,9 @@
             <a href="/uploads/transcript.pdf" target="_blank" style="text-decoration:none; color:var(--text);">Resume</a>
             <a href="/upload" style="text-decoration:none; color:var(--text);">Upload</a>
         </div>
-        
+
         <div class="nav-links" style="width:1px; height:24px; background:var(--border); margin:0 12px;"></div>
-        
+
         <button id="searchTrigger" class="action-btn search-trigger" title="Search" onclick="openSearch()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </button>
@@ -66,7 +66,7 @@
     </div>
   </header>
   {% block content %}{% endblock %}
-  <footer style="text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; margin-top: 40px; border-top: 1px solid var(--border);">
+  <footer>
     <div class="container">
       &copy; <span id="copyright-year"></span> Yixun Hong. Powered by <a href="https://github.com/ForeverHYX/Homepage" style="color: inherit; text-decoration: underline;">Yixun's Homepage</a>.
     </div>
