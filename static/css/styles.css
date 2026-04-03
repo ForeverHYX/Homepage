@@ -124,13 +124,19 @@ body {
     --liquid-light-y: 10%;
     --liquid-glow: 0.82;
     --liquid-angle: 118deg;
+    --liquid-blur: 19px;
+    --liquid-saturation: 170%;
+    --liquid-brightness: 1.05;
     --liquid-displacement-scale: 18;
     --liquid-aberration: 1.4;
+    --nav-idle-blur: 12px;
+    --nav-idle-saturation: 148%;
+    --nav-idle-brightness: 1.025;
     border-radius: 999px;
     overflow: hidden;
     padding: 10px 14px 10px 18px;
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+        linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.1));
 }
 
 .nav-island:hover {
@@ -148,6 +154,8 @@ body {
 .nav-island-warp {
     background:
         linear-gradient(180deg, rgba(248, 252, 255, 0.28) 0%, rgba(233, 242, 255, 0.14) 42%, rgba(191, 219, 254, 0.22) 100%);
+    backdrop-filter: blur(var(--nav-idle-blur)) saturate(var(--nav-idle-saturation)) brightness(var(--nav-idle-brightness));
+    -webkit-backdrop-filter: blur(var(--nav-idle-blur)) saturate(var(--nav-idle-saturation)) brightness(var(--nav-idle-brightness));
 }
 
 .nav-island-body {
@@ -2360,6 +2368,14 @@ body {
 [data-theme="dark"] .nav-island-warp {
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(148, 163, 184, 0.05) 42%, rgba(96, 165, 250, 0.08) 100%);
+}
+
+[data-theme="dark"] .nav-island {
+    --liquid-saturation: 158%;
+    --liquid-brightness: 1.02;
+    --nav-idle-blur: 11px;
+    --nav-idle-saturation: 138%;
+    --nav-idle-brightness: 1.01;
 }
 
 /* --- Footer --- */
