@@ -7,10 +7,7 @@
       <div class="home-lightfield" aria-hidden="true"></div>
       <aside class="sidebar home-sidebar">
         <div class="card home-liquid-card home-profile-card">
-          <span class="home-liquid-layer home-liquid-base" aria-hidden="true"></span>
-          <span class="home-liquid-layer home-liquid-rim" aria-hidden="true"></span>
-          <span class="home-liquid-layer home-liquid-shoulder" aria-hidden="true"></span>
-          <span class="home-liquid-sheen" aria-hidden="true"></span>
+          <span class="home-liquid-warp" aria-hidden="true"></span>
           <div class="home-liquid-body">
             <img src="{{ avatar_url }}" class="avatar" alt="Avatar" onerror="this.src='https://ui-avatars.com/api/?name=YH&background=3b82f6&color=fff&size=128'" />
             <h1 class="profile-name">{{ about.name }}</h1>
@@ -28,10 +25,7 @@
         </div>
 
         <div class="card home-liquid-card home-news-card">
-            <span class="home-liquid-layer home-liquid-base" aria-hidden="true"></span>
-            <span class="home-liquid-layer home-liquid-rim" aria-hidden="true"></span>
-            <span class="home-liquid-layer home-liquid-shoulder" aria-hidden="true"></span>
-            <span class="home-liquid-sheen" aria-hidden="true"></span>
+            <span class="home-liquid-warp" aria-hidden="true"></span>
             <div class="home-liquid-body">
                 <h3 class="news-title">
                     <span>News</span>
@@ -62,7 +56,7 @@
 
 {% block extra_scripts %}
 <script src="/static/js/home-lightfield.js?v=2"></script>
-<script src="/static/js/liquid-glass.js?v=4"></script>
+<script src="/static/js/liquid-glass.js?v=6"></script>
 <script>
 function openNewsModal() {
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;

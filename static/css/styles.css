@@ -506,38 +506,33 @@ body {
 }
 
 .home-liquid-card {
-    --liquid-radius: 32px;
-    --liquid-rim-size: 14px;
-    --liquid-shoulder-inset: 9px;
-    --liquid-shoulder-size: 9px;
     --liquid-light-x: 18%;
     --liquid-light-y: 12%;
-    --liquid-rim-shift-x: 0px;
-    --liquid-rim-shift-y: 0px;
-    --liquid-shoulder-shift-x: 0px;
-    --liquid-shoulder-shift-y: 0px;
-    --liquid-base-shift-x: 0px;
-    --liquid-base-shift-y: 0px;
-    --liquid-lift: 0;
+    --liquid-angle: 135deg;
+    --liquid-glow: 0.78;
+    --liquid-blur: 24px;
+    --liquid-saturation: 180%;
+    --liquid-brightness: 1.08;
+    --liquid-displacement-scale: 25;
+    --liquid-aberration: 1.8;
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    border-radius: var(--liquid-radius);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    border-radius: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
     box-shadow:
         0 28px 60px rgba(15, 23, 42, 0.16),
         0 12px 24px rgba(15, 23, 42, 0.08);
-    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .home-liquid-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow:
-        0 36px 72px rgba(15, 23, 42, 0.18),
-        0 16px 28px rgba(15, 23, 42, 0.1);
+        0 34px 68px rgba(15, 23, 42, 0.18),
+        0 14px 28px rgba(15, 23, 42, 0.1);
 }
 
 .home-liquid-card::before,
@@ -550,18 +545,18 @@ body {
 }
 
 .home-liquid-card::before {
-    z-index: 0;
+    z-index: 1;
     background:
-        radial-gradient(140% 100% at 50% 100%, rgba(96, 165, 250, 0.14) 0%, rgba(96, 165, 250, 0.04) 36%, rgba(96, 165, 250, 0) 62%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
-    opacity: 0.9;
+        radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 28%, rgba(255, 255, 255, 0) 52%),
+        radial-gradient(130% 120% at 50% 100%, rgba(96, 165, 250, 0.14) 0%, rgba(96, 165, 250, 0.05) 36%, rgba(96, 165, 250, 0) 68%);
+    opacity: 0.92;
 }
 
 .home-liquid-card::after {
     z-index: 4;
-    padding: 1px;
+    padding: 1.25px;
     background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.68) 0%, rgba(255, 255, 255, 0.16) 18%, rgba(255, 255, 255, 0.04) 52%, rgba(186, 230, 253, 0.16) 76%, rgba(255, 255, 255, 0.52) 100%);
+        linear-gradient(var(--liquid-angle), rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.18) 24%, rgba(255, 255, 255, 0.52) 50%, rgba(186, 230, 253, 0.16) 78%, rgba(255, 255, 255, 0.02) 100%);
     mask:
         linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
@@ -570,85 +565,60 @@ body {
         linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    opacity: 0.58;
+    opacity: calc(0.32 + ((var(--liquid-glow) - 0.78) * 0.9));
+    filter: blur(0.24px) saturate(118%) brightness(1.06);
 }
 
-.home-liquid-layer,
-.home-liquid-sheen {
+.home-liquid-warp {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: block;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(248, 252, 255, 0.26) 0%, rgba(233, 242, 255, 0.12) 42%, rgba(191, 219, 254, 0.2) 100%);
+    transform: translateZ(0);
+}
+
+.home-liquid-warp::before,
+.home-liquid-warp::after {
+    content: "";
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
 }
 
-.home-liquid-base {
-    z-index: 1;
+.home-liquid-warp::before {
     background:
-        linear-gradient(180deg, rgba(248, 252, 255, 0.26) 0%, rgba(232, 242, 255, 0.16) 42%, rgba(191, 219, 254, 0.24) 100%);
-    backdrop-filter: blur(18px) saturate(165%) brightness(1.08);
-    -webkit-backdrop-filter: blur(18px) saturate(165%) brightness(1.08);
-    transform: translate3d(var(--liquid-base-shift-x), var(--liquid-base-shift-y), 0) scale(1.002);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.66),
-        inset 0 -22px 34px rgba(191, 219, 254, 0.12);
-}
-
-.home-liquid-rim {
-    z-index: 2;
-    padding: var(--liquid-rim-size);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 44%, rgba(191, 219, 254, 0.12) 100%);
-    backdrop-filter: blur(16px) saturate(185%) brightness(1.12);
-    -webkit-backdrop-filter: blur(16px) saturate(185%) brightness(1.12);
-    transform: translate3d(var(--liquid-rim-shift-x), var(--liquid-rim-shift-y), 0) scale(1.045);
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    box-shadow:
-        inset 0 0 0 0.8px rgba(255, 255, 255, 0.28),
-        0 0 22px rgba(255, 255, 255, 0.06);
-    opacity: 0.94;
-}
-
-.home-liquid-shoulder {
-    z-index: 2;
-    inset: var(--liquid-shoulder-inset);
-    padding: var(--liquid-shoulder-size);
-    border-radius: calc(var(--liquid-radius) - var(--liquid-shoulder-inset));
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 48%, rgba(191, 219, 254, 0.08) 100%);
-    backdrop-filter: blur(12px) saturate(175%) brightness(1.08);
-    -webkit-backdrop-filter: blur(12px) saturate(175%) brightness(1.08);
-    transform: translate3d(var(--liquid-shoulder-shift-x), var(--liquid-shoulder-shift-y), 0) scale(1.018);
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0.52;
-}
-
-.home-liquid-sheen {
-    z-index: 3;
-    background:
-        radial-gradient(140% 90% at var(--liquid-light-x) var(--liquid-light-y), rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.38) 8%, rgba(255, 255, 255, 0.12) 18%, rgba(255, 255, 255, 0) 38%),
-        radial-gradient(120% 120% at 84% 82%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.03) 32%, rgba(96, 165, 250, 0) 64%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 34%, rgba(255, 255, 255, 0) 58%, rgba(255, 255, 255, 0.08) 100%);
+        radial-gradient(140% 92% at var(--liquid-light-x) var(--liquid-light-y), rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.46) 9%, rgba(255, 255, 255, 0.14) 22%, rgba(255, 255, 255, 0) 42%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.03) 42%, rgba(255, 255, 255, 0) 72%);
     mix-blend-mode: screen;
-    opacity: calc(0.82 + (var(--liquid-lift) * 0.12));
+    opacity: var(--liquid-glow);
+}
+
+.home-liquid-warp::after {
+    background:
+        radial-gradient(120% 110% at 84% 82%, rgba(96, 165, 250, 0.16) 0%, rgba(96, 165, 250, 0.05) 30%, rgba(96, 165, 250, 0) 62%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+    opacity: 0.72;
 }
 
 .home-liquid-body {
     position: relative;
     z-index: 5;
+}
+
+.home-profile-card {
+    --liquid-displacement-scale: 27;
+    --liquid-aberration: 1.9;
+}
+
+.home-news-card {
+    --liquid-displacement-scale: 23;
+    --liquid-aberration: 1.6;
 }
 
 .home-profile-card .home-liquid-body {
@@ -1078,7 +1048,12 @@ body {
 }
 
 [data-theme="dark"] .home-liquid-card {
+    --liquid-blur: 18px;
+    --liquid-saturation: 154%;
+    --liquid-brightness: 1.02;
     border-color: rgba(255, 255, 255, 0.08);
+    background:
+        linear-gradient(180deg, rgba(18, 27, 45, 0.42), rgba(12, 18, 32, 0.24));
     box-shadow:
         0 34px 68px rgba(0, 0, 0, 0.42),
         0 14px 26px rgba(0, 0, 0, 0.2);
@@ -1086,51 +1061,45 @@ body {
 
 [data-theme="dark"] .home-liquid-card::before {
     background:
-        radial-gradient(140% 100% at 50% 100%, rgba(37, 99, 235, 0.18) 0%, rgba(37, 99, 235, 0.04) 36%, rgba(37, 99, 235, 0) 62%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+        radial-gradient(120% 88% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.045) 24%, rgba(255, 255, 255, 0) 52%),
+        radial-gradient(136% 104% at 50% 100%, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0.045) 34%, rgba(37, 99, 235, 0) 64%);
+    opacity: 0.84;
 }
 
 [data-theme="dark"] .home-liquid-card::after {
     background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 18%, rgba(255, 255, 255, 0.02) 52%, rgba(96, 165, 250, 0.12) 76%, rgba(255, 255, 255, 0.18) 100%);
-    opacity: 0.46;
+        linear-gradient(var(--liquid-angle), rgba(255, 255, 255, 0.015) 0%, rgba(255, 255, 255, 0.1) 22%, rgba(255, 255, 255, 0.3) 50%, rgba(96, 165, 250, 0.12) 82%, rgba(255, 255, 255, 0.02) 100%);
+    opacity: calc(0.22 + ((var(--liquid-glow) - 0.78) * 0.5));
+    filter: blur(0.44px) saturate(112%) brightness(1.02);
 }
 
-[data-theme="dark"] .home-liquid-base {
+[data-theme="dark"] .home-liquid-warp {
     background:
-        linear-gradient(180deg, rgba(18, 28, 48, 0.3) 0%, rgba(11, 18, 32, 0.18) 42%, rgba(20, 28, 44, 0.28) 100%);
-    backdrop-filter: blur(18px) saturate(155%) brightness(1.03);
-    -webkit-backdrop-filter: blur(18px) saturate(155%) brightness(1.03);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        inset 0 -22px 34px rgba(37, 99, 235, 0.08);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.025) 42%, rgba(96, 165, 250, 0.06) 100%);
 }
 
-[data-theme="dark"] .home-liquid-rim {
+[data-theme="dark"] .home-liquid-warp::before {
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 44%, rgba(96, 165, 250, 0.08) 100%);
-    backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
-    -webkit-backdrop-filter: blur(16px) saturate(165%) brightness(1.04);
-    box-shadow:
-        inset 0 0 0 0.8px rgba(255, 255, 255, 0.12),
-        0 0 18px rgba(37, 99, 235, 0.08);
-    opacity: 0.88;
+        radial-gradient(138% 94% at var(--liquid-light-x) var(--liquid-light-y), rgba(255, 255, 255, 0.64) 0%, rgba(255, 255, 255, 0.28) 8%, rgba(255, 255, 255, 0.09) 18%, rgba(255, 255, 255, 0) 38%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.018) 46%, rgba(255, 255, 255, 0) 74%);
+    opacity: calc(0.74 + ((var(--liquid-glow) - 0.78) * 0.36));
 }
 
-[data-theme="dark"] .home-liquid-shoulder {
+[data-theme="dark"] .home-liquid-warp::after {
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 48%, rgba(37, 99, 235, 0.06) 100%);
-    backdrop-filter: blur(12px) saturate(155%) brightness(1.03);
-    -webkit-backdrop-filter: blur(12px) saturate(155%) brightness(1.03);
-    opacity: 0.44;
+        radial-gradient(116% 110% at 82% 82%, rgba(96, 165, 250, 0.11) 0%, rgba(96, 165, 250, 0.03) 28%, rgba(96, 165, 250, 0) 58%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.022), rgba(255, 255, 255, 0));
+    opacity: 0.58;
 }
 
-[data-theme="dark"] .home-liquid-sheen {
-    background:
-        radial-gradient(140% 90% at var(--liquid-light-x) var(--liquid-light-y), rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.16) 8%, rgba(255, 255, 255, 0.04) 18%, rgba(255, 255, 255, 0) 38%),
-        radial-gradient(120% 120% at 84% 82%, rgba(96, 165, 250, 0.16) 0%, rgba(96, 165, 250, 0.05) 32%, rgba(96, 165, 250, 0) 64%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 34%, rgba(255, 255, 255, 0) 58%, rgba(96, 165, 250, 0.06) 100%);
-    opacity: calc(0.72 + (var(--liquid-lift) * 0.1));
+[data-theme="dark"] .home-profile-card {
+    --liquid-displacement-scale: 22;
+    --liquid-aberration: 1.3;
+}
+
+[data-theme="dark"] .home-news-card {
+    --liquid-displacement-scale: 19;
+    --liquid-aberration: 1.1;
 }
 
 [data-theme="dark"] .home-profile-card .avatar {
@@ -2135,9 +2104,9 @@ footer {
     }
     .home-liquid-card {
         --liquid-radius: 26px;
-        --liquid-rim-size: 12px;
-        --liquid-shoulder-inset: 7px;
-        --liquid-shoulder-size: 8px;
+        --liquid-blur: 20px;
+        --liquid-displacement-scale: 21;
+        --liquid-aberration: 1.45;
         border-radius: 26px;
     }
     .home-glass {
