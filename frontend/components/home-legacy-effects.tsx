@@ -356,6 +356,13 @@ function initHomeLiquidGlass() {
     blur: Element;
   };
 
+  type LiquidVisual = {
+    lightX: number;
+    lightY: number;
+    angle: number;
+    glow: number;
+  };
+
   type LiquidState = {
     card: HTMLElement;
     warp: HTMLElement;
@@ -369,10 +376,19 @@ function initHomeLiquidGlass() {
     aberration: number;
     backdropFilter: string;
     active: boolean;
+    focused: boolean;
     filterRefs: FilterRefs | null;
     bounds: { left: number; top: number; width: number; height: number };
-    current: { lightX: number; lightY: number; angle: number; glow: number };
-    target: { lightX: number; lightY: number; angle: number; glow: number };
+    current: LiquidVisual;
+    target: LiquidVisual;
+    rendered: LiquidVisual;
+  };
+
+  const liquidRest: LiquidVisual = {
+    lightX: 18,
+    lightY: 12,
+    angle: 135,
+    glow: 0.58,
   };
 
   const ensureSvgRoot = () => {
@@ -722,10 +738,12 @@ function initHomeLiquidGlass() {
       aberration: 0,
       backdropFilter: "",
       active: false,
+      focused: false,
       filterRefs: null,
       bounds: { left: 0, top: 0, width: 0, height: 0 },
-      current: { lightX: 18, lightY: 12, angle: 135, glow: 0.58 },
-      target: { lightX: 18, lightY: 12, angle: 135, glow: 0.58 },
+      current: { ...liquidRest },
+      target: { ...liquidRest },
+      rendered: { ...liquidRest },
     }];
   });
 
@@ -750,6 +768,9 @@ function initHomeLiquidGlass() {
     state.warp.style.filter = "";
     state.warp.style.backdropFilter = "";
     state.warp.style.removeProperty("-webkit-backdrop-filter");
+    state.current = { ...liquidRest };
+    state.target = { ...liquidRest };
+    state.rendered = { ...liquidRest };
   };
 
   const syncFilter = (state: LiquidState) => {
@@ -772,8 +793,9 @@ function initHomeLiquidGlass() {
     const backdropFilter = `blur(${styles.getPropertyValue("--liquid-blur").trim() || "22px"}) saturate(${styles.getPropertyValue("--liquid-saturation").trim() || "180%"}) brightness(${styles.getPropertyValue("--liquid-brightness").trim() || "1.08"})`;
     const enabled =
       desktopLiquidGlass.matches && warpVisible && width >= 20 && height >= 20;
+    const runtimeEnabled = enabled && (reduceMotion.matches || state.focused);
 
-    if (!enabled) {
+    if (!runtimeEnabled) {
       state.width = width;
       state.height = height;
       state.radius = radius;
@@ -832,12 +854,96 @@ function initHomeLiquidGlass() {
   let geometrySyncRafId = 0;
   let filterSyncRafId = 0;
   let refreshTargetsAfterFilter = false;
+  let focusedStateId = "";
 
-  const applyState = (state: (typeof states)[number]) => {
-    state.card.style.setProperty("--liquid-light-x", `${state.current.lightX.toFixed(2)}%`);
-    state.card.style.setProperty("--liquid-light-y", `${state.current.lightY.toFixed(2)}%`);
-    state.card.style.setProperty("--liquid-angle", `${state.current.angle.toFixed(2)}deg`);
-    state.card.style.setProperty("--liquid-glow", state.current.glow.toFixed(3));
+  const stateDelta = (from: LiquidVisual, to: LiquidVisual) =>
+    Math.abs(from.lightX - to.lightX) +
+    Math.abs(from.lightY - to.lightY) +
+    Math.abs(from.angle - to.angle) +
+    Math.abs(from.glow - to.glow);
+
+  const applyState = (state: (typeof states)[number], force = false) => {
+    if (!force && stateDelta(state.current, state.rendered) < 0.12) {
+      return false;
+    }
+
+    const lightX = Number(state.current.lightX.toFixed(2));
+    const lightY = Number(state.current.lightY.toFixed(2));
+    const angle = Number(state.current.angle.toFixed(2));
+    const glow = Number(state.current.glow.toFixed(3));
+
+    state.card.style.setProperty("--liquid-light-x", `${lightX}%`);
+    state.card.style.setProperty("--liquid-light-y", `${lightY}%`);
+    state.card.style.setProperty("--liquid-angle", `${angle}deg`);
+    state.card.style.setProperty("--liquid-glow", glow.toFixed(3));
+    state.rendered = {
+      lightX,
+      lightY,
+      angle,
+      glow,
+    };
+    return true;
+  };
+
+  const resetTarget = (state: LiquidState) => {
+    state.target.lightX = liquidRest.lightX;
+    state.target.lightY = liquidRest.lightY;
+    state.target.angle = liquidRest.angle;
+    state.target.glow = liquidRest.glow;
+  };
+
+  const isPointerNearState = (state: LiquidState) => {
+    const margin = clamp(
+      Math.max(state.bounds.width, state.bounds.height) * 0.28,
+      88,
+      220
+    );
+
+    return (
+      pagePointer.x >= state.bounds.left - margin &&
+      pagePointer.x <= state.bounds.left + state.bounds.width + margin &&
+      pagePointer.y >= state.bounds.top - margin &&
+      pagePointer.y <= state.bounds.top + state.bounds.height + margin
+    );
+  };
+
+  const syncFocusedState = () => {
+    if (!desktopLiquidGlass.matches || reduceMotion.matches) {
+      const hadFocus = focusedStateId !== "";
+      focusedStateId = "";
+      states.forEach((state) => {
+        state.focused = false;
+        resetTarget(state);
+      });
+      return hadFocus;
+    }
+
+    const nextFocusedId =
+      states
+        .filter((state) => {
+          const width = Math.max(state.bounds.width, 1);
+          const height = Math.max(state.bounds.height, 1);
+          return width >= 20 && height >= 20 && isPointerNearState(state);
+        })
+        .map((state) => {
+          const centerX = state.bounds.left + state.bounds.width * 0.5;
+          const centerY = state.bounds.top + state.bounds.height * 0.5;
+          const distance = Math.hypot(pagePointer.x - centerX, pagePointer.y - centerY);
+          return { state, distance };
+        })
+        .sort((left, right) => left.distance - right.distance)[0]?.state.id ?? "";
+
+    const focusChanged = nextFocusedId !== focusedStateId;
+    focusedStateId = nextFocusedId;
+
+    states.forEach((state) => {
+      state.focused = state.id === focusedStateId;
+      if (!state.focused) {
+        resetTarget(state);
+      }
+    });
+
+    return focusChanged;
   };
 
   const frame = () => {
@@ -851,11 +957,7 @@ function initHomeLiquidGlass() {
       state.current.glow = lerp(state.current.glow, state.target.glow, 0.12);
       applyState(state);
 
-      const delta =
-        Math.abs(state.current.lightX - state.target.lightX) +
-        Math.abs(state.current.lightY - state.target.lightY) +
-        Math.abs(state.current.angle - state.target.angle) +
-        Math.abs(state.current.glow - state.target.glow);
+      const delta = stateDelta(state.current, state.target);
 
       if (delta > 0.08) pending = true;
     });
@@ -891,9 +993,11 @@ function initHomeLiquidGlass() {
   const cleanups: Array<() => void> = [];
   const pagePointer = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.2 };
 
+  states.forEach(syncGeometry);
+  syncFocusedState();
   states.forEach((state) => {
     syncFilter(state);
-    applyState(state);
+    applyState(state, true);
   });
 
   const syncTargetsFromPointer = () => {
@@ -901,11 +1005,16 @@ function initHomeLiquidGlass() {
       return;
     }
 
+    if (syncFocusedState()) {
+      scheduleFilterSync();
+    }
+
     states.forEach((state) => {
       const width = Math.max(state.bounds.width, 1);
       const height = Math.max(state.bounds.height, 1);
 
-      if (width < 20 || height < 20) {
+      if (width < 20 || height < 20 || !state.focused) {
+        resetTarget(state);
         return;
       }
 
@@ -919,7 +1028,10 @@ function initHomeLiquidGlass() {
       state.target.angle = 135 + dx * 18 + dy * 10;
       state.target.glow = 0.58 + (Math.abs(dx) + Math.abs(dy)) * 0.035;
     });
-    scheduleFrame();
+
+    if (states.some((state) => stateDelta(state.current, state.target) > 0.08)) {
+      scheduleFrame();
+    }
   };
 
   function scheduleTargetSync() {
@@ -995,13 +1107,16 @@ function initHomeLiquidGlass() {
   const handleMotionChange = () => {
     if (reduceMotion.matches) {
       states.forEach((state) => {
-        state.current = { lightX: 18, lightY: 12, angle: 135, glow: 0.58 };
-        state.target = { lightX: 18, lightY: 12, angle: 135, glow: 0.58 };
-        applyState(state);
+        state.current = { ...liquidRest };
+        state.target = { ...liquidRest };
+        state.rendered = { ...liquidRest };
+        applyState(state, true);
       });
+      scheduleFilterSync(true);
       return;
     }
 
+    scheduleFilterSync(true);
     scheduleTargetSync();
   };
 
