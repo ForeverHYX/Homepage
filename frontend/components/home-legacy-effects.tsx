@@ -322,10 +322,12 @@ function initHomeLiquidGlass() {
 
   const SVG_NS = "http://www.w3.org/2000/svg";
   const XLINK_NS = "http://www.w3.org/1999/xlink";
+  const desktopLiquidGlass = window.matchMedia("(min-width: 801px)");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const clamp = (value: number, min: number, max: number) =>
     Math.min(max, Math.max(min, value));
   const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
+  const displacementMapCache = new Map<string, string>();
 
   const smoothstep = (edge0: number, edge1: number, value: number) => {
     const t = clamp((value - edge0) / Math.max(edge1 - edge0, 0.0001), 0, 1);
@@ -344,6 +346,33 @@ function initHomeLiquidGlass() {
     const ax = Math.max(qx, 0);
     const ay = Math.max(qy, 0);
     return Math.hypot(ax, ay) + Math.min(Math.max(qx, qy), 0) - radius;
+  };
+
+  type FilterRefs = {
+    filter: Element;
+    image: Element;
+    edgeMaskAlpha: Element;
+    displacements: Element[];
+    blur: Element;
+  };
+
+  type LiquidState = {
+    card: HTMLElement;
+    warp: HTMLElement;
+    id: string;
+    width: number;
+    height: number;
+    radius: number;
+    theme: string;
+    mapKey: string;
+    displacementScale: number;
+    aberration: number;
+    backdropFilter: string;
+    active: boolean;
+    filterRefs: FilterRefs | null;
+    bounds: { left: number; top: number; width: number; height: number };
+    current: { lightX: number; lightY: number; angle: number; glow: number };
+    target: { lightX: number; lightY: number; angle: number; glow: number };
   };
 
   const ensureSvgRoot = () => {
@@ -372,9 +401,30 @@ function initHomeLiquidGlass() {
     return { svg, defs };
   };
 
-  const createDisplacementMap = (width: number, height: number, radius: number) => {
+  const getMapSpec = (width: number, height: number, radius: number) => {
     const mapWidth = clamp(Math.round(width), 160, 360);
     const mapHeight = clamp(Math.round(height), 120, 420);
+    const halfWidth = mapWidth * 0.5 - 1.5;
+    const halfHeight = mapHeight * 0.5 - 1.5;
+    const mapRadius = Math.max(
+      6,
+      Math.min(radius, Math.min(halfWidth, halfHeight) - 2)
+    );
+    const normalizedRadius = Number(mapRadius.toFixed(2));
+
+    return {
+      mapWidth,
+      mapHeight,
+      mapRadius,
+      key: `${mapWidth}x${mapHeight}x${normalizedRadius}`,
+    };
+  };
+
+  const createDisplacementMap = (
+    mapWidth: number,
+    mapHeight: number,
+    radius: number
+  ) => {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) return "";
@@ -386,7 +436,7 @@ function initHomeLiquidGlass() {
     const data = image.data;
     const halfWidth = mapWidth * 0.5 - 1.5;
     const halfHeight = mapHeight * 0.5 - 1.5;
-    const maxRadius = Math.max(6, Math.min(radius, Math.min(halfWidth, halfHeight) - 2));
+    const maxRadius = radius;
     const edgeWidth = Math.max(14, Math.min(mapWidth, mapHeight) * 0.16);
     const eps = 1.15;
 
@@ -442,6 +492,25 @@ function initHomeLiquidGlass() {
     return canvas.toDataURL("image/png");
   };
 
+  const getDisplacementMap = (width: number, height: number, radius: number) => {
+    const spec = getMapSpec(width, height, radius);
+    let mapUrl = displacementMapCache.get(spec.key);
+
+    if (!mapUrl) {
+      mapUrl = createDisplacementMap(
+        spec.mapWidth,
+        spec.mapHeight,
+        spec.mapRadius
+      );
+      displacementMapCache.set(spec.key, mapUrl);
+    }
+
+    return {
+      key: spec.key,
+      url: mapUrl,
+    };
+  };
+
   const setHref = (node: Element, value: string) => {
     node.setAttribute("href", value);
     node.setAttributeNS(XLINK_NS, "href", value);
@@ -455,13 +524,7 @@ function initHomeLiquidGlass() {
     return node;
   };
 
-  const buildFilter = (
-    defs: SVGDefsElement,
-    id: string,
-    mapUrl: string,
-    scale: number,
-    aberration: number
-  ) => {
+  const createFilter = (defs: SVGDefsElement, id: string): FilterRefs => {
     defs.querySelector(`#${id}`)?.remove();
 
     const filter = createNode("filter", {
@@ -481,7 +544,6 @@ function initHomeLiquidGlass() {
       result: "DISPLACEMENT_MAP",
       preserveAspectRatio: "none",
     });
-    setHref(image, mapUrl);
     filter.appendChild(image);
     filter.appendChild(
       createNode("feColorMatrix", {
@@ -500,12 +562,11 @@ function initHomeLiquidGlass() {
       in: "EDGE_INTENSITY",
       result: "EDGE_MASK",
     });
-    edgeMask.appendChild(
-      createNode("feFuncA", {
-        type: "discrete",
-        tableValues: `0 ${Math.min(aberration * 0.05, 0.24).toFixed(3)} 1`,
-      })
-    );
+    const edgeMaskAlpha = createNode("feFuncA", {
+      type: "discrete",
+      tableValues: "0 0.09 1",
+    });
+    edgeMask.appendChild(edgeMaskAlpha);
     filter.appendChild(edgeMask);
 
     filter.appendChild(
@@ -518,22 +579,21 @@ function initHomeLiquidGlass() {
     );
 
     const channels: Array<["RED" | "GREEN" | "BLUE", string, number]> = [
-      ["RED", "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0", scale],
-      ["GREEN", "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0", Math.max(scale * (1 - aberration * 0.05), 1)],
-      ["BLUE", "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0", Math.max(scale * (1 - aberration * 0.1), 1)],
+      ["RED", "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0", 1],
+      ["GREEN", "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0", 1],
+      ["BLUE", "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0", 1],
     ];
 
-    channels.forEach(([name, matrix, channelScale]) => {
-      filter.appendChild(
-        createNode("feDisplacementMap", {
+    const displacements = channels.map(([name, matrix, channelScale]) => {
+      const displacement = createNode("feDisplacementMap", {
           in: "SourceGraphic",
           in2: "DISPLACEMENT_MAP",
           scale: channelScale,
           xChannelSelector: "R",
           yChannelSelector: "B",
           result: `${name}_DISPLACED`,
-        })
-      );
+      });
+      filter.appendChild(displacement);
       filter.appendChild(
         createNode("feColorMatrix", {
           in: `${name}_DISPLACED`,
@@ -542,6 +602,7 @@ function initHomeLiquidGlass() {
           result: `${name}_CHANNEL`,
         })
       );
+      return displacement;
     });
 
     filter.appendChild(
@@ -560,12 +621,13 @@ function initHomeLiquidGlass() {
         result: "RGB_BLEND",
       })
     );
+    const blur = createNode("feGaussianBlur", {
+      in: "RGB_BLEND",
+      stdDeviation: "0.32",
+      result: "ABERRATED_BLURRED",
+    });
     filter.appendChild(
-      createNode("feGaussianBlur", {
-        in: "RGB_BLEND",
-        stdDeviation: Math.max(0.1, 0.5 - aberration * 0.1),
-        result: "ABERRATED_BLURRED",
-      })
+      blur
     );
     filter.appendChild(
       createNode("feComposite", {
@@ -604,42 +666,95 @@ function initHomeLiquidGlass() {
     );
 
     defs.appendChild(filter);
+
+    return {
+      filter,
+      image,
+      edgeMaskAlpha,
+      displacements,
+      blur,
+    };
+  };
+
+  const updateFilter = (
+    refs: FilterRefs,
+    mapUrl: string,
+    scale: number,
+    aberration: number
+  ) => {
+    setHref(refs.image, mapUrl);
+    refs.edgeMaskAlpha.setAttribute(
+      "tableValues",
+      `0 ${Math.min(aberration * 0.05, 0.24).toFixed(3)} 1`
+    );
+
+    const channelScales = [
+      scale,
+      Math.max(scale * (1 - aberration * 0.05), 1),
+      Math.max(scale * (1 - aberration * 0.1), 1),
+    ];
+    refs.displacements.forEach((displacement, index) => {
+      displacement.setAttribute("scale", channelScales[index].toFixed(3));
+    });
+    refs.blur.setAttribute(
+      "stdDeviation",
+      Math.max(0.1, 0.5 - aberration * 0.1).toFixed(3)
+    );
   };
 
   const { defs } = ensureSvgRoot();
-  const states = cards
-    .map((card, index) => ({
+  const states: LiquidState[] = cards.flatMap((card, index) => {
+    const warp = card.querySelector<HTMLElement>(".home-liquid-warp");
+    if (!warp) {
+      return [];
+    }
+
+    return [{
       card,
-      warp: card.querySelector<HTMLElement>(".home-liquid-warp"),
+      warp,
       id: `home-liquid-filter-${index + 1}`,
       width: 0,
       height: 0,
       radius: 0,
       theme: "",
+      mapKey: "",
+      displacementScale: 0,
+      aberration: 0,
+      backdropFilter: "",
+      active: false,
+      filterRefs: null,
+      bounds: { left: 0, top: 0, width: 0, height: 0 },
       current: { lightX: 18, lightY: 12, angle: 135, glow: 0.58 },
       target: { lightX: 18, lightY: 12, angle: 135, glow: 0.58 },
-    }))
-    .filter(
-      (
-        state
-      ): state is {
-        card: HTMLElement;
-        warp: HTMLElement;
-        id: string;
-        width: number;
-        height: number;
-        radius: number;
-        theme: string;
-        current: { lightX: number; lightY: number; angle: number; glow: number };
-        target: { lightX: number; lightY: number; angle: number; glow: number };
-      } => Boolean(state.warp)
-    );
+    }];
+  });
 
   if (!states.length) return () => {};
 
-  const syncFilter = (state: (typeof states)[number]) => {
-    const styles = getComputedStyle(state.card);
+  const syncGeometry = (state: LiquidState) => {
     const rect = state.card.getBoundingClientRect();
+    state.bounds.left = rect.left;
+    state.bounds.top = rect.top;
+    state.bounds.width = rect.width;
+    state.bounds.height = rect.height;
+    return rect;
+  };
+
+  const clearFilter = (state: LiquidState) => {
+    if (!state.active && !state.backdropFilter) {
+      return;
+    }
+
+    state.active = false;
+    state.backdropFilter = "";
+    state.warp.style.filter = "";
+    state.warp.style.backdropFilter = "";
+    state.warp.style.removeProperty("-webkit-backdrop-filter");
+  };
+
+  const syncFilter = (state: LiquidState) => {
+    const rect = syncGeometry(state);
+    const styles = getComputedStyle(state.card);
     const width = Math.round(rect.width);
     const height = Math.round(rect.height);
     const radius = parseFloat(styles.borderTopLeftRadius) || 32;
@@ -647,41 +762,76 @@ function initHomeLiquidGlass() {
       document.documentElement.getAttribute("data-theme") === "dark"
         ? "dark"
         : "light";
-
-    if (width < 20 || height < 20) return;
-    if (
-      state.width === width &&
-      state.height === height &&
-      state.radius === radius &&
-      state.theme === theme
-    ) {
-      return;
-    }
-
-    state.width = width;
-    state.height = height;
-    state.radius = radius;
-    state.theme = theme;
-
+    const warpVisible = getComputedStyle(state.warp).display !== "none";
     const displacementScale =
       parseFloat(styles.getPropertyValue("--liquid-displacement-scale")) ||
       (theme === "dark" ? 22 : 25);
     const aberration =
       parseFloat(styles.getPropertyValue("--liquid-aberration")) ||
       (theme === "dark" ? 1.4 : 1.8);
-    const mapUrl = createDisplacementMap(width, height, radius);
+    const backdropFilter = `blur(${styles.getPropertyValue("--liquid-blur").trim() || "22px"}) saturate(${styles.getPropertyValue("--liquid-saturation").trim() || "180%"}) brightness(${styles.getPropertyValue("--liquid-brightness").trim() || "1.08"})`;
+    const enabled =
+      desktopLiquidGlass.matches && warpVisible && width >= 20 && height >= 20;
 
-    buildFilter(defs, state.id, mapUrl, displacementScale, aberration);
+    if (!enabled) {
+      state.width = width;
+      state.height = height;
+      state.radius = radius;
+      state.theme = theme;
+      state.displacementScale = displacementScale;
+      state.aberration = aberration;
+      state.mapKey = "";
+      clearFilter(state);
+      return;
+    }
+
+    const geometryChanged =
+      state.width !== width || state.height !== height || state.radius !== radius;
+    const themeChanged = state.theme !== theme;
+    const filterChanged =
+      state.displacementScale !== displacementScale ||
+      state.aberration !== aberration;
+    const backdropChanged = state.backdropFilter !== backdropFilter;
+
+    state.width = width;
+    state.height = height;
+    state.radius = radius;
+    state.theme = theme;
+    state.displacementScale = displacementScale;
+    state.aberration = aberration;
+    state.backdropFilter = backdropFilter;
+
+    if (
+      state.active &&
+      !geometryChanged &&
+      !themeChanged &&
+      !filterChanged &&
+      !backdropChanged
+    ) {
+      return;
+    }
+
+    const refs = state.filterRefs ?? (state.filterRefs = createFilter(defs, state.id));
+    if (geometryChanged || !state.mapKey || filterChanged || themeChanged) {
+      const map = getDisplacementMap(width, height, radius);
+      state.mapKey = map.key;
+      updateFilter(refs, map.url, displacementScale, aberration);
+    }
 
     state.warp.style.filter = `url(#${state.id})`;
-    state.warp.style.backdropFilter = `blur(${styles.getPropertyValue("--liquid-blur").trim() || "22px"}) saturate(${styles.getPropertyValue("--liquid-saturation").trim() || "180%"}) brightness(${styles.getPropertyValue("--liquid-brightness").trim() || "1.08"})`;
+    state.warp.style.backdropFilter = backdropFilter;
     state.warp.style.setProperty(
       "-webkit-backdrop-filter",
-      state.warp.style.backdropFilter
+      backdropFilter
     );
+    state.active = true;
   };
 
   let rafId = 0;
+  let targetSyncRafId = 0;
+  let geometrySyncRafId = 0;
+  let filterSyncRafId = 0;
+  let refreshTargetsAfterFilter = false;
 
   const applyState = (state: (typeof states)[number]) => {
     state.card.style.setProperty("--liquid-light-x", `${state.current.lightX.toFixed(2)}%`);
@@ -721,6 +871,23 @@ function initHomeLiquidGlass() {
     }
   };
 
+  const scheduleFilterSync = (refreshTargets = false) => {
+    refreshTargetsAfterFilter = refreshTargetsAfterFilter || refreshTargets;
+    if (filterSyncRafId) {
+      return;
+    }
+
+    filterSyncRafId = window.requestAnimationFrame(() => {
+      filterSyncRafId = 0;
+      states.forEach(syncFilter);
+
+      if (refreshTargetsAfterFilter) {
+        refreshTargetsAfterFilter = false;
+        scheduleTargetSync();
+      }
+    });
+  };
+
   const cleanups: Array<() => void> = [];
   const pagePointer = { x: window.innerWidth * 0.5, y: window.innerHeight * 0.2 };
 
@@ -730,10 +897,20 @@ function initHomeLiquidGlass() {
   });
 
   const syncTargetsFromPointer = () => {
+    if (!desktopLiquidGlass.matches || reduceMotion.matches) {
+      return;
+    }
+
     states.forEach((state) => {
-      const rect = state.card.getBoundingClientRect();
-      const x = clamp(((pagePointer.x - rect.left) / rect.width) * 100, 8, 92);
-      const y = clamp(((pagePointer.y - rect.top) / rect.height) * 100, 8, 92);
+      const width = Math.max(state.bounds.width, 1);
+      const height = Math.max(state.bounds.height, 1);
+
+      if (width < 20 || height < 20) {
+        return;
+      }
+
+      const x = clamp(((pagePointer.x - state.bounds.left) / width) * 100, 8, 92);
+      const y = clamp(((pagePointer.y - state.bounds.top) / height) * 100, 8, 92);
       const dx = (x - 50) / 50;
       const dy = (y - 50) / 50;
 
@@ -745,17 +922,40 @@ function initHomeLiquidGlass() {
     scheduleFrame();
   };
 
+  function scheduleTargetSync() {
+    if (!desktopLiquidGlass.matches || reduceMotion.matches || targetSyncRafId) {
+      return;
+    }
+
+    targetSyncRafId = window.requestAnimationFrame(() => {
+      targetSyncRafId = 0;
+      syncTargetsFromPointer();
+    });
+  }
+
+  const scheduleGeometrySync = () => {
+    if (!desktopLiquidGlass.matches || geometrySyncRafId) {
+      return;
+    }
+
+    geometrySyncRafId = window.requestAnimationFrame(() => {
+      geometrySyncRafId = 0;
+      states.forEach(syncGeometry);
+      scheduleTargetSync();
+    });
+  };
+
   if (!reduceMotion.matches) {
     const handlePagePointerMove = (event: PointerEvent) => {
       pagePointer.x = event.clientX;
       pagePointer.y = event.clientY;
-      syncTargetsFromPointer();
+      scheduleTargetSync();
     };
 
     const handlePagePointerReset = () => {
       pagePointer.x = window.innerWidth * 0.5;
       pagePointer.y = window.innerHeight * 0.2;
-      syncTargetsFromPointer();
+      scheduleTargetSync();
     };
 
     window.addEventListener("pointermove", handlePagePointerMove, { passive: true });
@@ -770,16 +970,16 @@ function initHomeLiquidGlass() {
       window.removeEventListener("blur", handlePagePointerReset);
     });
 
-    syncTargetsFromPointer();
+    scheduleTargetSync();
   }
 
   const resizeObserver = new ResizeObserver(() => {
-    states.forEach(syncFilter);
+    scheduleFilterSync(true);
   });
   states.forEach((state) => resizeObserver.observe(state.card));
 
   const themeObserver = new MutationObserver(() => {
-    states.forEach(syncFilter);
+    scheduleFilterSync();
   });
   themeObserver.observe(document.documentElement, {
     attributes: true,
@@ -787,10 +987,10 @@ function initHomeLiquidGlass() {
   });
 
   const handleResize = () => {
-    states.forEach(syncFilter);
-    syncTargetsFromPointer();
+    scheduleFilterSync(true);
   };
   window.addEventListener("resize", handleResize, { passive: true });
+  window.addEventListener("scroll", scheduleGeometrySync, { passive: true });
 
   const handleMotionChange = () => {
     if (reduceMotion.matches) {
@@ -799,7 +999,14 @@ function initHomeLiquidGlass() {
         state.target = { lightX: 18, lightY: 12, angle: 135, glow: 0.58 };
         applyState(state);
       });
+      return;
     }
+
+    scheduleTargetSync();
+  };
+
+  const handleBreakpointChange = () => {
+    scheduleFilterSync(true);
   };
 
   if (typeof reduceMotion.addEventListener === "function") {
@@ -810,15 +1017,37 @@ function initHomeLiquidGlass() {
     cleanups.push(() => reduceMotion.removeListener(handleMotionChange));
   }
 
+  if (typeof desktopLiquidGlass.addEventListener === "function") {
+    desktopLiquidGlass.addEventListener("change", handleBreakpointChange);
+    cleanups.push(() =>
+      desktopLiquidGlass.removeEventListener("change", handleBreakpointChange)
+    );
+  } else if (typeof desktopLiquidGlass.addListener === "function") {
+    desktopLiquidGlass.addListener(handleBreakpointChange);
+    cleanups.push(() =>
+      desktopLiquidGlass.removeListener(handleBreakpointChange)
+    );
+  }
+
   return () => {
     if (rafId) {
       window.cancelAnimationFrame(rafId);
     }
+    if (targetSyncRafId) {
+      window.cancelAnimationFrame(targetSyncRafId);
+    }
+    if (geometrySyncRafId) {
+      window.cancelAnimationFrame(geometrySyncRafId);
+    }
+    if (filterSyncRafId) {
+      window.cancelAnimationFrame(filterSyncRafId);
+    }
     resizeObserver.disconnect();
     themeObserver.disconnect();
     window.removeEventListener("resize", handleResize);
+    window.removeEventListener("scroll", scheduleGeometrySync);
     cleanups.forEach((cleanup) => cleanup());
-    states.forEach((state) => defs.querySelector(`#${state.id}`)?.remove());
+    states.forEach((state) => state.filterRefs?.filter.remove());
   };
 }
 
