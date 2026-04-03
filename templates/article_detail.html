@@ -9,14 +9,18 @@
             <a href="/articles" class="action-btn" style="text-decoration:none; padding-left:0; color:var(--text); font-weight:500;">&larr; Back to Articles</a>
         </div>
         
-        <header style="margin-bottom:24px;">
-            <h1 style="font-size:2.5rem; font-weight:600; margin:0 0 16px 0; border-left: 6px solid var(--primary); padding-left: 16px; line-height: 1.2; color:var(--heading);">{{ title }}</h1>
-            <div style="display:flex; gap:24px; color:var(--muted); font-size:15px; padding-left:22px; margin-bottom:16px;">
-                 <span style="display:flex; align-items:center;">{{ icon_calendar|safe }} {{ date_str }}</span>
-                 <span style="display:flex; align-items:center;">{{ icon_user|safe }} {{ author }}</span>
-                 <span style="display:flex; align-items:center;">{{ icon_clock|safe }} {{ word_count }} words &middot; {{ read_time }} min read</span>
+        <header class="card article-hero">
+            <h1 class="article-hero-title">{{ title }}</h1>
+            <div class="article-hero-meta">
+                 <span>{{ icon_calendar|safe }} {{ date_str }}</span>
+                 <span>{{ icon_user|safe }} {{ author }}</span>
+                 <span>{{ icon_clock|safe }} {{ word_count }} words &middot; {{ read_time }} min read</span>
                  {% if tags %}
-                 <div style="display:flex; align-items:center;">{{ tags_html|safe }}</div>
+                 <div class="article-hero-tags">
+                    {% for tag in tags %}
+                    <span class="chip article-tag-chip">{{ tag }}</span>
+                    {% endfor %}
+                 </div>
                  {% endif %}
             </div>
         </header>

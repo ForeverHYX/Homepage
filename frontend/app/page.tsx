@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HomeLegacyEffects } from "@/components/home-legacy-effects";
 import { HomeSidebar } from "@/components/home-sidebar";
 import { getHomePayload } from "@/lib/api";
 
@@ -12,6 +13,7 @@ export default async function HomePage() {
   return (
     <div className="container main-grid home-layout">
       <div className="home-lightfield" aria-hidden="true" />
+      <HomeLegacyEffects />
       <HomeSidebar
         about={home.about}
         avatarUrl={home.avatar_url}
