@@ -377,6 +377,7 @@ function initHomeLiquidGlass() {
     backdropFilter: string;
     active: boolean;
     focused: boolean;
+    globalAmbient: boolean;
     filterRefs: FilterRefs | null;
     bounds: { left: number; top: number; width: number; height: number };
     current: LiquidVisual;
@@ -725,6 +726,10 @@ function initHomeLiquidGlass() {
       return [];
     }
 
+    const globalAmbient =
+      card.classList.contains("home-profile-card") ||
+      card.classList.contains("home-news-card");
+
     return [{
       card,
       warp,
@@ -739,6 +744,7 @@ function initHomeLiquidGlass() {
       backdropFilter: "",
       active: false,
       focused: false,
+      globalAmbient,
       filterRefs: null,
       bounds: { left: 0, top: 0, width: 0, height: 0 },
       current: { ...liquidRest },
@@ -793,7 +799,9 @@ function initHomeLiquidGlass() {
     const backdropFilter = `blur(${styles.getPropertyValue("--liquid-blur").trim() || "22px"}) saturate(${styles.getPropertyValue("--liquid-saturation").trim() || "180%"}) brightness(${styles.getPropertyValue("--liquid-brightness").trim() || "1.08"})`;
     const enabled =
       desktopLiquidGlass.matches && warpVisible && width >= 20 && height >= 20;
-    const runtimeEnabled = enabled && (reduceMotion.matches || state.focused);
+    const runtimeEnabled =
+      enabled &&
+      (reduceMotion.matches || state.focused || state.globalAmbient);
 
     if (!runtimeEnabled) {
       state.width = width;
@@ -913,7 +921,9 @@ function initHomeLiquidGlass() {
       focusedStateId = "";
       states.forEach((state) => {
         state.focused = false;
-        resetTarget(state);
+        if (!state.globalAmbient) {
+          resetTarget(state);
+        }
       });
       return hadFocus;
     }
@@ -938,7 +948,7 @@ function initHomeLiquidGlass() {
 
     states.forEach((state) => {
       state.focused = state.id === focusedStateId;
-      if (!state.focused) {
+      if (!state.focused && !state.globalAmbient) {
         resetTarget(state);
       }
     });
@@ -1009,9 +1019,25 @@ function initHomeLiquidGlass() {
       scheduleFilterSync();
     }
 
+    const viewportWidth = Math.max(window.innerWidth, 1);
+    const viewportHeight = Math.max(window.innerHeight, 1);
+    const ambientX = clamp((pagePointer.x / viewportWidth) * 100, 10, 90);
+    const ambientY = clamp((pagePointer.y / viewportHeight) * 100, 8, 92);
+    const ambientDx = (ambientX - 50) / 50;
+    const ambientDy = (ambientY - 50) / 50;
+
     states.forEach((state) => {
       const width = Math.max(state.bounds.width, 1);
       const height = Math.max(state.bounds.height, 1);
+
+      if (state.globalAmbient) {
+        state.target.lightX = ambientX;
+        state.target.lightY = ambientY;
+        state.target.angle = 135 + ambientDx * 18 + ambientDy * 10;
+        state.target.glow =
+          0.58 + (Math.abs(ambientDx) + Math.abs(ambientDy)) * 0.035;
+        return;
+      }
 
       if (width < 20 || height < 20 || !state.focused) {
         resetTarget(state);
