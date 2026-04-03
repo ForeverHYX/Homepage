@@ -116,7 +116,7 @@ body {
 
 .nav-cluster {
     position: relative;
-    width: min(100%, 940px);
+    width: 100%;
 }
 
 .nav-island {
