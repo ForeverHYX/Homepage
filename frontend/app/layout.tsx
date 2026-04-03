@@ -1,8 +1,6 @@
 /* eslint-disable @next/next/no-css-tags */
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
-import { ContentEnhancer } from "@/components/content-enhancer";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -42,26 +40,11 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <link rel="stylesheet" href="/static/css/styles.css?v=56" />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
-          id="hljs-light"
-        />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
-          id="hljs-dark"
-        />
       </head>
       <body>
         <SiteHeader />
         {children}
         <SiteFooter />
-        <Script
-          src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
-          strategy="afterInteractive"
-        />
-        <ContentEnhancer />
       </body>
     </html>
   );

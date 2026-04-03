@@ -22,7 +22,6 @@ export function SiteHeader() {
   const [query, setQuery] = useState("");
   const [searchIndex, setSearchIndex] = useState<SearchEntry[] | null>(null);
   const navClusterRef = useRef<HTMLDivElement | null>(null);
-  const searchBarRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const closeSearch = () => {
@@ -34,21 +33,6 @@ export function SiteHeader() {
     closeSearch();
     setMobileMenuOpen(false);
   };
-
-  useEffect(() => {
-    const lightSheet = document.getElementById("hljs-light") as HTMLLinkElement | null;
-    const darkSheet = document.getElementById("hljs-dark") as HTMLLinkElement | null;
-    if (!lightSheet || !darkSheet) {
-      return;
-    }
-    if (theme === "dark") {
-      lightSheet.disabled = true;
-      darkSheet.disabled = false;
-    } else {
-      darkSheet.disabled = true;
-      lightSheet.disabled = false;
-    }
-  }, [theme]);
 
   useEffect(() => {
     if (searchOpen) {
@@ -179,7 +163,7 @@ export function SiteHeader() {
 
                 <div className="nav-divider" aria-hidden="true" />
 
-                <div id="inlineSearchBar" className="search-bar-container" ref={searchBarRef}>
+                <div id="inlineSearchBar" className="search-bar-container">
                   <SearchIcon className="search-bar-icon" width={18} height={18} />
                   <input
                     ref={searchInputRef}

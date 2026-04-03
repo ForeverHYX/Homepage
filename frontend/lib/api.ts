@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type {
   ArticleDetailPayload,
   ArticlesPayload,
@@ -9,10 +10,13 @@ const API_BASE_URL =
   process.env.API_BASE_URL ??
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   "http://127.0.0.1:8000";
+const REVALIDATE_SECONDS = 60;
 
 async function requestJson<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    cache: "no-store",
+    next: {
+      revalidate: REVALIDATE_SECONDS,
+    },
   });
 
   if (!response.ok) {
@@ -22,20 +26,22 @@ async function requestJson<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function getHomePayload() {
-  return requestJson<HomePayload>("/api/site/home");
-}
+export const getHomePayload = cache(async () =>
+  requestJson<HomePayload>("/api/site/home")
+);
 
-export function getArticlesPayload(tag?: string) {
+export const getArticlesPayload = cache(async (tag?: string) => {
   const query = tag ? `?tag=${encodeURIComponent(tag)}` : "";
   return requestJson<ArticlesPayload>(`/api/site/articles${query}`);
-}
+});
 
-export function getGalleryPayload(focus?: string) {
+export const getGalleryPayload = cache(async (focus?: string) => {
   const query = focus ? `?focus=${encodeURIComponent(focus)}` : "";
   return requestJson<GalleryPayload>(`/api/site/gallery${query}`);
-}
+});
 
-export function getArticleDetailPayload(slug: string) {
-  return requestJson<ArticleDetailPayload>(`/api/site/articles/${encodeURIComponent(slug)}`);
-}
+export const getArticleDetailPayload = cache(async (slug: string) =>
+  requestJson<ArticleDetailPayload>(
+    `/api/site/articles/${encodeURIComponent(slug)}`
+  )
+);
