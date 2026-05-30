@@ -50,18 +50,19 @@ def _save_sessions(sessions: dict) -> None:
         pass
 
 
-# In-memory cache synced with disk
-VALID_SESSIONS = _load_sessions()
-
-
 def get_current_user(request: Request) -> bool:
+    """Always read from disk so multi-worker setups stay consistent."""
     token = request.cookies.get(SESSION_KEY)
-    if token and token in VALID_SESSIONS:
-        if VALID_SESSIONS[token] > time.time():
-            return True
-        # Expired — clean up
-        del VALID_SESSIONS[token]
-        _save_sessions(VALID_SESSIONS)
+    if not token:
+        return False
+    sessions = _load_sessions()
+    expiry = sessions.get(token)
+    if expiry and expiry > time.time():
+        return True
+    # Expired or missing — optionally clean up
+    if expiry is not None:
+        sessions.pop(token, None)
+        _save_sessions(sessions)
     return False
 
 
@@ -79,18 +80,20 @@ def verify_credentials(username: str, password: str) -> bool:
 
 def create_session() -> str:
     """Create a new session token, persist it, and return the token."""
+    sessions = _load_sessions()
     token = secrets.token_urlsafe(32)
     expiry = time.time() + SESSION_TIMEOUT
-    VALID_SESSIONS[token] = expiry
-    _save_sessions(VALID_SESSIONS)
+    sessions[token] = expiry
+    _save_sessions(sessions)
     return token
 
 
 def destroy_session(token: str) -> None:
     """Remove a session token from storage."""
-    if token in VALID_SESSIONS:
-        del VALID_SESSIONS[token]
-        _save_sessions(VALID_SESSIONS)
+    sessions = _load_sessions()
+    if token in sessions:
+        del sessions[token]
+        _save_sessions(sessions)
 
 
 def get_cookie_settings() -> dict:
