@@ -69,7 +69,7 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
           {albums.length ? (
             albums.map((album) => (
               <section
-                className="gallery-album mb-12 card home-liquid-card"
+                className="gallery-album mb-12 card home-liquid-card ambient-liquid-card"
                 style={{
                   padding: 0,
                   marginBottom: isFocused ? 60 : 24,

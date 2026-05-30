@@ -689,6 +689,14 @@ body {
     --liquid-displacement-scale: 23;
     --liquid-aberration: 1.6;
 }
+.ambient-liquid-card {
+    --liquid-displacement-scale: 27;
+    --liquid-aberration: 1.9;
+}
+
+.ambient-liquid-card .home-liquid-body {
+    padding: 24px 28px;
+}
 
 .home-profile-card .home-liquid-body {
     padding: 38px 28px;
@@ -1567,6 +1575,8 @@ body {
 }
 
 .article-card {
+    padding: 0;
+}
     padding: 24px;
 }
 

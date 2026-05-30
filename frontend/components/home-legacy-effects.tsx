@@ -728,6 +728,9 @@ function initHomeLiquidGlass() {
 
     const globalAmbient =
       card.classList.contains("home-profile-card") ||
+      card.classList.contains("home-news-card") ||
+      card.classList.contains("ambient-liquid-card");
+      card.classList.contains("home-profile-card") ||
       card.classList.contains("home-news-card");
 
     return [{

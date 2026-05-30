@@ -40,7 +40,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
             {data.articles.length ? (
               data.articles.map((article) => (
-                <div className="card home-liquid-card article-card" key={article.slug}>
+                <div className="card home-liquid-card ambient-liquid-card article-card" key={article.slug}>
                   <span className="home-liquid-warp" aria-hidden="true" />
                   <div className="home-liquid-body">
                     <h2 className="article-card-title">
