@@ -1,0 +1,16 @@
+[Unit]
+Description=Foreverhyx Homepage (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/newhomepage
+Environment=HOMEPAGE_CONTENT_DIR=/root/newhomepage/content
+Environment=HOMEPAGE_UPLOAD_DIR=/root/newhomepage/uploads
+Environment=HOMEPAGE_COOKIE_SECURE=true
+ExecStart=/root/newhomepage/.venv/bin/gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 --workers 2 --timeout 60 --access-logfile /var/log/nginx/homepage_access.log --error-logfile /var/log/nginx/homepage_error.log
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

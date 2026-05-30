@@ -1,7 +1,5 @@
 from __future__ import annotations
-import os
 import json
-import secrets
 from pathlib import Path
 from typing import List, Tuple
 from PIL import Image
@@ -12,6 +10,7 @@ from markdown.treeprocessors import Treeprocessor
 from markdown.extensions import Extension
 
 from app.config import CONTENT_DIR, GALLERY_CONFIG_FILE
+from app.cache import cache_by_mtime
 
 # --- Extensions ---
 
@@ -93,23 +92,19 @@ def process_uploaded_image(file_path: Path) -> str:
     return file_path.name
 
 def safe_join(base: Path, target: str) -> Path:
+    """Join base and target, ensuring the result stays under base."""
+    base = base.resolve()
     candidate = (base / target).resolve()
-    if base not in candidate.parents and candidate != base:
+    try:
+        candidate.relative_to(base)
+    except ValueError:
         raise HTTPException(status_code=400, detail="Invalid path")
     return candidate
 
 
 # --- Markdown / Content Utilities ---
 
-def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
-    """
-    Parses a markdown file into sections based on H1 headers (# Header).
-    Returns a list of (Title, HTML_Content) tuples.
-    """
-    path = CONTENT_DIR / filename
-    if not path.exists():
-        return []
-    
+def _parse_sections_raw(path: Path) -> List[Tuple[str, str]]:
     text = path.read_text(encoding="utf-8")
     sections = []
     current_title = ""
@@ -133,9 +128,22 @@ def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
     # Filter out empty sections
     return [s for s in sections if s[0] or s[1]]
 
+def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
+    """
+    Parses a markdown file into sections based on H1 headers (# Header).
+    Returns a list of (Title, HTML_Content) tuples.
+    """
+    path = CONTENT_DIR / filename
+    if not path.exists():
+        return []
+    return cache_by_mtime(path, lambda: _parse_sections_raw(path))
+
+def _render_markdown_raw(path: Path) -> str:
+    text = path.read_text(encoding="utf-8")
+    return markdown.markdown(text, extensions=["fenced_code", "tables", "toc", PdfExtension()])
+
 def render_markdown_file(filename: str) -> str:
     path = CONTENT_DIR / filename
     if not path.exists():
         return ""
-    text = path.read_text(encoding="utf-8")
-    return markdown.markdown(text, extensions=["fenced_code", "tables", "toc", PdfExtension()])
+    return cache_by_mtime(path, lambda: _render_markdown_raw(path))

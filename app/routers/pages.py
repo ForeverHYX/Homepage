@@ -1,7 +1,5 @@
 from typing import Optional, Any
-import datetime
 from datetime import datetime
-import secrets
 from pathlib import Path
 import re
 import markdown
@@ -12,14 +10,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from app.config import (
     UPLOAD_DIR, ARTICLES_DIR,
     ICON_MAIL, ICON_GITHUB, ICON_MAP, ICON_CALENDAR, ICON_USER_S, 
-    ICON_ARROW_LEFT, ICON_MAXIMIZE
+    ICON_ARROW_LEFT, ICON_MAXIMIZE,
+    limiter,
 )
 from app.utils import (
     parse_markdown_sections, render_markdown_file, get_gallery_folders, 
     safe_join, get_folder_meta, PdfExtension
 )
 from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles
-from app.auth import get_current_user, VALID_SESSIONS, SESSION_KEY, UPLOAD_USERNAME, UPLOAD_PASSWORD
+from app.auth import get_current_user, verify_credentials, create_session, get_cookie_settings
 
 router = APIRouter()
 
@@ -266,7 +265,8 @@ def index(request: Request) -> Any:
 
 @router.get("/api/site/home")
 def home_api() -> Any:
-    return JSONResponse(_build_home_payload())
+    payload = _build_home_payload()
+    return JSONResponse(payload, headers={"Cache-Control": "public, max-age=60"})
 
 
 @router.get("/api/search-index")
@@ -301,7 +301,7 @@ def articles_index(request: Request, tag: Optional[str] = None) -> Any:
 
 @router.get("/api/site/articles")
 def articles_api(tag: Optional[str] = None) -> Any:
-    return JSONResponse(_build_articles_payload(tag))
+    return JSONResponse(_build_articles_payload(tag), headers={"Cache-Control": "public, max-age=60"})
 
 
 @router.get("/gallery", response_class=HTMLResponse)
@@ -312,7 +312,7 @@ def gallery_index(request: Request, focus: Optional[str] = None) -> Any:
 
 @router.get("/api/site/gallery")
 def gallery_api(focus: Optional[str] = None) -> Any:
-    return JSONResponse(_build_gallery_payload(focus))
+    return JSONResponse(_build_gallery_payload(focus), headers={"Cache-Control": "public, max-age=60"})
 
 
 @router.get("/articles/{slug}", response_class=HTMLResponse)
@@ -327,7 +327,7 @@ def article_detail(request: Request, slug: str) -> Any:
 
 @router.get("/api/site/articles/{slug}")
 def article_detail_api(slug: str) -> Any:
-    return JSONResponse(_build_article_detail_payload(slug))
+    return JSONResponse(_build_article_detail_payload(slug), headers={"Cache-Control": "public, max-age=300"})
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -338,17 +338,22 @@ def login_page(request: Request) -> Any:
 
 
 @router.post("/login")
-def login(username: str = Form(...), password: str = Form(...)) -> Any:
+@limiter.limit("10/minute")
+def login(request: Request, username: str = Form(...), password: str = Form(...)) -> Any:
     username = username.strip()
     password = password.strip()
-    if (
-        secrets.compare_digest(username, UPLOAD_USERNAME) and 
-        secrets.compare_digest(password, UPLOAD_PASSWORD)
-    ):
-        token = secrets.token_urlsafe(32)
-        VALID_SESSIONS.add(token)
+    if verify_credentials(username, password):
+        token = create_session()
         response = RedirectResponse(url="/upload", status_code=status.HTTP_303_SEE_OTHER)
-        response.set_cookie(key=SESSION_KEY, value=token, httponly=True, max_age=86400)
+        cookie_cfg = get_cookie_settings()
+        response.set_cookie(
+            key=cookie_cfg["key"],
+            value=token,
+            httponly=cookie_cfg["httponly"],
+            secure=cookie_cfg["secure"],
+            samesite=cookie_cfg["samesite"],
+            max_age=cookie_cfg["max_age"],
+        )
         return response
     return HTMLResponse(
         content="<script>alert('Invalid credentials'); history.back();</script>", 

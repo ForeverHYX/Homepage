@@ -1,6 +1,5 @@
 from __future__ import annotations
 import re
-import datetime
 from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
@@ -8,12 +7,19 @@ import json
 
 import markdown
 from app.config import ARTICLES_DIR, CONTENT_DIR, UPLOAD_DIR
-
-# Re-import from existing utility to avoid circular issues or duplication if needed
-# But for clarity, we can assume these stand alone or import dependencies
+from app.cache import cache_by_mtime
 from app.utils import PdfExtension, get_gallery_folders, get_folder_meta, safe_join
 
-def get_all_articles() -> List[dict]:
+def _articles_mtime() -> float:
+    """Return the most recent mtime among all files in ARTICLES_DIR."""
+    mtime = 0.0
+    if ARTICLES_DIR.exists():
+        for f in ARTICLES_DIR.iterdir():
+            if f.is_file():
+                mtime = max(mtime, f.stat().st_mtime)
+    return mtime
+
+def _build_articles_list() -> List[dict]:
     """Scans ARTICLES_DIR for markdown files and returns sorting info."""
     if not ARTICLES_DIR.exists():
         return []
@@ -99,12 +105,28 @@ def get_all_articles() -> List[dict]:
     # Sort by time desc
     return sorted(articles, key=lambda x: x["mtime"], reverse=True)
 
+def get_all_articles() -> List[dict]:
+    """Cached articles list keyed by directory mtime."""
+    mtime = _articles_mtime()
+    # We use a synthetic path key so cache_by_mtime can work
+    key_path = ARTICLES_DIR / ".articles_cache"
+    # Fake mtime: touch the key file to reflect current mtime
+    # Simpler: use a custom in-memory cache with mtime key
+    from app.cache import _cache
+    cache_key = f"articles:{ARTICLES_DIR.resolve()}"
+    entry = _cache.get(cache_key)
+    if entry and entry.get("mtime") == mtime:
+        return entry["value"]
+    value = _build_articles_list()
+    _cache[cache_key] = {"mtime": mtime, "value": value}
+    return value
 
-def parse_and_merge_news(limit: int = 6) -> str:
+
+def _build_news_html(limit: int) -> str:
     """Parses news.md and merges with articles and galleries, sorting by date."""
     items = []
     
-    # 1. Parse Manual News (from content.md)
+    # 1. Parse Manual News (from news.md)
     news_path = CONTENT_DIR / "news.md"
     if news_path.exists():
         text = news_path.read_text(encoding="utf-8")
@@ -201,14 +223,28 @@ def parse_and_merge_news(limit: int = 6) -> str:
     
     return html
 
+def parse_and_merge_news(limit: int = 6) -> str:
+    """Cached news HTML keyed by news.md mtime + articles mtime + gallery config mtime."""
+    news_mtime = (CONTENT_DIR / "news.md").stat().st_mtime if (CONTENT_DIR / "news.md").exists() else 0
+    art_mtime = _articles_mtime()
+    gal_mtime = (UPLOAD_DIR / "gallery_config.json").stat().st_mtime if (UPLOAD_DIR / "gallery_config.json").exists() else 0
+    combined = f"{news_mtime}-{art_mtime}-{gal_mtime}-{limit}"
+    from app.cache import _cache
+    cache_key = f"news_html:{combined}"
+    entry = _cache.get(cache_key)
+    if entry:
+        return entry["value"]
+    value = _build_news_html(limit)
+    _cache[cache_key] = {"value": value}
+    return value
 
-def get_about_info() -> dict:
+
+def _parse_about_info(path: Path) -> dict:
     """Parses about.md for structured info."""
     default = {
         "email": "#", "github": "#", "location": "Earth", 
         "name": "Yixun Hong", "role": "Student / Researcher"
     }
-    path = CONTENT_DIR / "about.md"
     if not path.exists():
         return default
     
@@ -236,3 +272,8 @@ def get_about_info() -> dict:
     # but for now we keep them hardcoded or minimal as requested.
     
     return info
+
+def get_about_info() -> dict:
+    """Cached about info keyed by about.md mtime."""
+    path = CONTENT_DIR / "about.md"
+    return cache_by_mtime(path, lambda: _parse_about_info(path))

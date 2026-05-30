@@ -1,7 +1,12 @@
 fastapi==0.115.8
-uvicorn==0.30.6
+uvicorn[standard]==0.30.6
+gunicorn==23.0.0
 markdown==3.7
 python-multipart==0.0.9
 python-dotenv
 Jinja2
 Pillow
+bcrypt==4.3.0
+passlib
+slowapi
+httpx

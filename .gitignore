@@ -25,3 +25,4 @@ test_jsdom.js
 *.txt
 uvicorn.log
 
+.sessions.json

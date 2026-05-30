@@ -3,13 +3,17 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 
-from app.config import UPLOAD_DIR
+from app.config import UPLOAD_DIR, limiter
 from app.routers import pages, upload
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-app = FastAPI(title="Yixun Hong's Homepage", version="0.5.0")
+app = FastAPI(title="Yixun Hong's Homepage", version="0.6.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Jinja2 Templates
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

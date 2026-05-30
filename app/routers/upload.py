@@ -9,7 +9,8 @@ from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, Redirect
 from app.config import (
     UPLOAD_DIR,
     ICON_UPLOAD_CLOUD, ICON_FILE, ICON_OPEN, ICON_TRASH, ICON_COPY, 
-    ICON_FOLDER, ICON_STAR, ICON_STAR_FILLED
+    ICON_FOLDER, ICON_STAR, ICON_STAR_FILLED,
+    limiter,
 )
 from app.utils import (
     safe_join, process_uploaded_image, get_folder_meta, save_folder_meta,
@@ -18,6 +19,15 @@ from app.utils import (
 from app.auth import require_login, get_current_user
 
 router = APIRouter()
+
+# Upload security constants
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
+BLOCKED_EXTENSIONS = {
+    ".exe", ".dll", ".bat", ".cmd", ".sh", ".php", ".jsp", ".asp", ".aspx",
+    ".py", ".pyc", ".rb", ".pl", ".cgi", ".wsf", ".vbs", ".js", ".jar",
+    ".apk", ".ipa", ".deb", ".rpm", ".msi", ".com", ".scr", ".hta",
+    ".html", ".htm", ".xml", ".svg", ".svgz",
+}
 
 @router.get("/upload", response_class=HTMLResponse)
 def upload_page(request: Request) -> Any:
@@ -309,7 +319,6 @@ def upload_page(request: Request) -> Any:
         if (res.ok) {{ showToast('Deleted'); fetchFiles(currentPath); }}
       }};
 
-
       uploadBtn.addEventListener('click', async () => {{
         if (queue.length === 0) return;
         
@@ -352,11 +361,20 @@ def upload_page(request: Request) -> Any:
 
 
 @router.post("/api/upload")
+@limiter.limit("30/minute")
 async def upload_file_api(request: Request, file: UploadFile = File(...), path: str = Form("")) -> JSONResponse:
     require_login(request)
     if not file.filename:
         raise HTTPException(status_code=400, detail="Missing filename")
-    
+
+    # Extension blacklist check
+    ext = Path(file.filename).suffix.lower()
+    if ext in BLOCKED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="File type not allowed")
+
+    # Size guard (nginx should also enforce client_max_body_size)
+    total_written = 0
+
     # Resolve path
     target_dir = UPLOAD_DIR
     if path:
@@ -369,9 +387,14 @@ async def upload_file_api(request: Request, file: UploadFile = File(...), path: 
 
     with target_path.open("wb") as f:
         while True:
-            chunk = await file.read(1024 * 1024 * 5) # 5MB chunks
+            chunk = await file.read(1024 * 1024 * 5)  # 5MB chunks
             if not chunk:
                 break
+            total_written += len(chunk)
+            if total_written > MAX_UPLOAD_SIZE:
+                f.close()
+                target_path.unlink(missing_ok=True)
+                raise HTTPException(status_code=413, detail="File too large")
             f.write(chunk)
 
     # Process Image (JPG -> WebP)
@@ -388,6 +411,7 @@ async def upload_file_api(request: Request, file: UploadFile = File(...), path: 
 
 
 @router.post("/api/folder")
+@limiter.limit("20/minute")
 def create_folder_api(request: Request, name: str = Form(...), path: str = Form("")) -> JSONResponse:
     require_login(request)
     target_dir = UPLOAD_DIR
@@ -403,6 +427,7 @@ def create_folder_api(request: Request, name: str = Form(...), path: str = Form(
 
 
 @router.post("/api/folder/meta")
+@limiter.limit("30/minute")
 def update_folder_meta(request: Request, path: str = Form(...), title: str = Form(...), description: str = Form(...), date: str = Form(""), author: str = Form("Yixun Hong")) -> JSONResponse:
     require_login(request)
     target = safe_join(UPLOAD_DIR, path)
@@ -414,6 +439,7 @@ def update_folder_meta(request: Request, path: str = Form(...), title: str = For
 
 
 @router.post("/api/gallery/toggle")
+@limiter.limit("30/minute")
 def toggle_gallery_api(request: Request, path: str = Form(...), enable: bool = Form(...)) -> JSONResponse:
     require_login(request)
     # Validate path exists
@@ -428,6 +454,7 @@ def toggle_gallery_api(request: Request, path: str = Form(...), enable: bool = F
 
 
 @router.get("/api/files")
+@limiter.limit("60/minute")
 def list_files_api(request: Request, path: str = "") -> JSONResponse:
     require_login(request)
     
@@ -485,6 +512,7 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
 
 
 @router.delete("/api/files/{path:path}")
+@limiter.limit("30/minute")
 def delete_file_api(request: Request, path: str) -> JSONResponse:
     require_login(request)
     target = safe_join(UPLOAD_DIR, path)
