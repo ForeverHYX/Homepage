@@ -21,13 +21,11 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
     <div className="container">
       <div className="page-shell">
 
-
         <div className="article-grid">
           <div className="page-stack">
             {data.filter_tag ? (
-              <div className="card home-liquid-card">
-                <span className="home-liquid-warp" aria-hidden="true" />
-                <div className="home-liquid-body">
+              <div className="card home-glass article-card">
+                <div className="home-glass-body" style={{ padding: "24px 28px" }}>
                   <span className="article-filter-label">
                     Filtered by tag: <strong>{data.filter_tag}</strong>
                   </span>
@@ -40,9 +38,8 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
             {data.articles.length ? (
               data.articles.map((article) => (
-                <div className="card home-liquid-card ambient-liquid-card article-card" key={article.slug}>
-                  <span className="home-liquid-warp" aria-hidden="true" />
-                  <div className="home-liquid-body">
+                <div className="card home-glass article-card" key={article.slug}>
+                  <div className="home-glass-body" style={{ padding: "28px 32px" }}>
                     <h2 className="article-card-title">
                       <Link href={`/articles/${article.slug}`}>{article.title}</Link>
                     </h2>
@@ -74,7 +71,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           </div>
 
           <aside className="sidebar" style={{ position: "sticky", top: 100 }}>
-            <div className="card home-liquid-card sidebar-card">
+            <div className="card home-liquid-card home-news-card">
               <span className="home-liquid-warp" aria-hidden="true" />
               <div className="home-liquid-body">
                 <h3 className="sidebar-card-title">Tags</h3>
