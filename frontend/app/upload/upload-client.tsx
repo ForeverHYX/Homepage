@@ -27,7 +27,7 @@ export default function UploadManager() {
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [modalData, setModalData] = useState({ path: "", title: "", description: "", date: "", author: "Yixun Hong" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -124,7 +124,12 @@ export default function UploadManager() {
       date: item.date || "",
       author: item.author || "Yixun Hong",
     });
-    setModalOpen(true);
+    setEditMode(true);
+  };
+
+  const closeMeta = () => {
+    setEditMode(false);
+    setModalData({ path: "", title: "", description: "", date: "", author: "Yixun Hong" });
   };
 
   const saveMeta = async () => {
@@ -135,7 +140,7 @@ export default function UploadManager() {
     form.append("date", modalData.date);
     form.append("author", modalData.author);
     await fetch("/api/folder/meta", { method: "POST", body: form, credentials: "include" });
-    setModalOpen(false);
+    closeMeta();
     fetchFiles(currentPath);
     showToast("Info Updated");
   };
@@ -155,56 +160,91 @@ export default function UploadManager() {
     <div className="container upload-grid">
       <section>
         <div className="card" style={{ padding: "24px", position: "sticky", top: "100px" }}>
-          <h2 style={{ marginTop: 0, fontSize: "18px", color: "var(--heading)" }}>Upload Manager</h2>
+          {editMode ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                <button className="action-btn" onClick={closeMeta} title="Back" style={{ padding: "4px 8px" }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                </button>
+                <h2 style={{ margin: 0, fontSize: "18px", color: "var(--heading)" }}>Edit Folder Info</h2>
+              </div>
+              <div style={{ marginBottom: "12px" }}>
+                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Title</label>
+                <input value={modalData.title} onChange={(e) => setModalData({ ...modalData, title: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} />
+              </div>
+              <div style={{ marginBottom: "12px" }}>
+                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Shoot Date</label>
+                <input type="date" value={modalData.date} onChange={(e) => setModalData({ ...modalData, date: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} />
+              </div>
+              <div style={{ marginBottom: "12px" }}>
+                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Author</label>
+                <input value={modalData.author} onChange={(e) => setModalData({ ...modalData, author: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} placeholder="Yixun Hong" />
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Description</label>
+                <textarea rows={3} value={modalData.description} onChange={(e) => setModalData({ ...modalData, description: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)", fontFamily: "inherit" }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                <button className="btn" style={{ background: "var(--surface-highlight)", color: "var(--text)" }} onClick={closeMeta}>Cancel</button>
+                <button className="btn btn-primary" onClick={saveMeta}>Save</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 style={{ marginTop: 0, fontSize: "18px", color: "var(--heading)" }}>Upload Manager</h2>
 
-          <div style={{ marginBottom: "16px" }}>
-            <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "14px", color: "var(--muted)" }}>Current Path:</div>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center", background: "var(--surface-highlight)", padding: "8px", borderRadius: "6px", fontFamily: "monospace", overflowX: "auto" }}>
-              <button className="action-btn" onClick={() => fetchFiles("")}>Home</button>
-              <span>{currentPath ? "/ " + currentPath : "/"}</span>
-            </div>
-          </div>
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "14px", color: "var(--muted)" }}>Current Path:</div>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center", background: "var(--surface-highlight)", padding: "8px", borderRadius: "6px", fontFamily: "monospace", overflowX: "auto" }}>
+                  <button className="action-btn" onClick={() => fetchFiles("")}>Home</button>
+                  <span>{currentPath ? "/ " + currentPath : "/"}</span>
+                </div>
+              </div>
 
-          <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
-            <input
-              id="folderName"
-              type="text"
-              placeholder="New Folder"
-              style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }}
-            />
-            <button className="btn btn-primary" onClick={createFolder} style={{ padding: "0 12px" }}>+</button>
-          </div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                <input
+                  id="folderName"
+                  type="text"
+                  placeholder="New Folder"
+                  style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }}
+                />
+                <button className="btn btn-primary" onClick={createFolder} style={{ padding: "0 12px" }}>+</button>
+              </div>
 
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: dragOver ? "2px dashed var(--primary)" : "2px dashed var(--border)",
-              borderRadius: "12px",
-              padding: "24px",
-              textAlign: "center",
-              background: dragOver ? "var(--surface-highlight)" : "transparent",
-              transition: "all 0.2s",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ color: "var(--primary)", marginBottom: "12px" }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-            </div>
-            <p style={{ margin: 0, fontWeight: 600, color: "var(--text)", fontSize: "15px" }}>Click to Add Files</p>
-            <input ref={fileInputRef} type="file" multiple onChange={handleFileSelect} style={{ display: "none" }} />
-          </div>
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: dragOver ? "2px dashed var(--primary)" : "2px dashed var(--border)",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  textAlign: "center",
+                  background: dragOver ? "var(--surface-highlight)" : "transparent",
+                  transition: "all 0.2s",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ color: "var(--primary)", marginBottom: "12px" }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <p style={{ margin: 0, fontWeight: 600, color: "var(--text)", fontSize: "15px" }}>Click to Add Files</p>
+                <input ref={fileInputRef} type="file" multiple onChange={handleFileSelect} style={{ display: "none" }} />
+              </div>
 
-          <div style={{ marginTop: "16px", fontSize: "14px", textAlign: "center", color: "var(--muted)" }}>
-            {queue.length ? `${queue.length} file(s) ready` : ""}
-          </div>
-          <button className="btn btn-primary" style={{ marginTop: "16px", width: "100%" }} disabled={!queue.length || uploading} onClick={startUpload}>
-            {uploading ? "Uploading..." : "Start Upload"}
-          </button>
+              <div style={{ marginTop: "16px", fontSize: "14px", textAlign: "center", color: "var(--muted)" }}>
+                {queue.length ? `${queue.length} file(s) ready` : ""}
+              </div>
+              <button className="btn btn-primary" style={{ marginTop: "16px", width: "100%" }} disabled={!queue.length || uploading} onClick={startUpload}>
+                {uploading ? "Uploading..." : "Start Upload"}
+              </button>
+            </>
+          )}
         </div>
       </section>
 
@@ -317,37 +357,6 @@ export default function UploadManager() {
       {toast && (
         <div className="toast show" style={{ position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}>
           {toast}
-        </div>
-      )}
-
-      {modalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.12)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setModalOpen(false)}>
-          <div className="card home-liquid-card" style={{ padding: 0, borderRadius: "12px", width: "100%", maxWidth: "400px", position: "relative" }} onClick={(e) => e.stopPropagation()}>
-            <span className="home-liquid-warp" aria-hidden="true" />
-            <div className="home-liquid-body" style={{ padding: "32px" }}>
-            <h3 style={{ margin: "0 0 16px", color: "var(--heading)" }}>Edit Folder Info</h3>
-            <div style={{ marginBottom: "12px" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Title</label>
-              <input value={modalData.title} onChange={(e) => setModalData({ ...modalData, title: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} />
-            </div>
-            <div style={{ marginBottom: "12px" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Shoot Date</label>
-              <input type="date" value={modalData.date} onChange={(e) => setModalData({ ...modalData, date: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} />
-            </div>
-            <div style={{ marginBottom: "12px" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Author</label>
-              <input value={modalData.author} onChange={(e) => setModalData({ ...modalData, author: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} placeholder="Yixun Hong" />
-            </div>
-            <div style={{ marginBottom: "20px" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Description</label>
-              <textarea rows={3} value={modalData.description} onChange={(e) => setModalData({ ...modalData, description: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)", fontFamily: "inherit" }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-              <button className="btn" style={{ background: "var(--surface-highlight)", color: "var(--text)" }} onClick={() => setModalOpen(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={saveMeta}>Save</button>
-            </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
