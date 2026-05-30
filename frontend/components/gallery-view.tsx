@@ -156,9 +156,8 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="card home-liquid-card">
-                    <span className="home-liquid-warp" aria-hidden="true" />
-                    <div className="home-liquid-body" style={{ padding: "28px 32px" }}>
+                  <div className="card home-glass">
+                    <div className="home-glass-body" style={{ padding: "28px 32px" }}>
                       <div style={{ marginBottom: 16 }}>
                         <h2
                           style={{
