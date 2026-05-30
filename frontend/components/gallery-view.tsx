@@ -64,107 +64,158 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
   return (
     <div className="container">
       <div className="page-shell">
-
-
         <div className="gallery-list">
           {albums.length ? (
             albums.map((album) => (
               <section
-                className="gallery-album mb-12 card home-glass"
+                className="gallery-album mb-12"
                 style={{
-                  padding: 0,
                   marginBottom: isFocused ? 60 : 24,
                 }}
                 key={album.rel_path}
               >
-
-                <div className="home-glass-body" style={{ padding: isFocused ? 40 : 24 }}>
                 {isFocused ? (
-                  <div style={{ marginBottom: 20 }}>
-                    <Link
-                      href="/gallery"
-                      className="action-btn"
-                      style={{
-                        textDecoration: "none",
-                        paddingLeft: 0,
-                        color: "var(--text)",
-                        fontWeight: 500,
-                      }}
-                    >
-                      &larr; Back to All Galleries
-                    </Link>
-                  </div>
-                ) : null}
+                  <>
+                    <div className="card home-glass" style={{ marginBottom: 24 }}>
+                      <div className="home-glass-body" style={{ padding: 40 }}>
+                        <div style={{ marginBottom: 20 }}>
+                          <Link
+                            href="/gallery"
+                            className="action-btn"
+                            style={{
+                              textDecoration: "none",
+                              paddingLeft: 0,
+                              color: "var(--text)",
+                              fontWeight: 500,
+                            }}
+                          >
+                            &larr; Back to All Galleries
+                          </Link>
+                        </div>
 
-                <div style={{ marginBottom: isFocused ? 24 : 16 }}>
-                  <h2
-                    style={{
-                      fontSize: isFocused ? "2.5rem" : "1.5rem",
-                      fontWeight: isFocused ? 600 : 700,
-                      margin: "0 0 12px 0",
-                      textTransform: "capitalize",
-                      lineHeight: 1.2,
-                      color: "var(--heading)",
-                      borderLeft: isFocused ? "6px solid var(--primary)" : undefined,
-                      paddingLeft: isFocused ? 16 : undefined,
-                    }}
-                  >
-                    {isFocused ? (
-                      album.title
-                    ) : (
-                      <Link href={`/gallery?focus=${encodeURIComponent(album.rel_path)}`}>
-                        {album.title}
-                      </Link>
-                    )}
-                  </h2>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: isFocused ? 24 : 16,
-                      color: "var(--muted)",
-                      fontSize: isFocused ? 15 : 13,
-                      paddingLeft: isFocused ? 22 : 0,
-                      marginBottom: 12,
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
-                    <span><UserIcon width={14} height={14} /> {album.author}</span>
-
-                  </div>
-                  {album.desc ? (
-                    <p
-                      style={{
-                        color: "var(--text)",
-                        fontSize: isFocused ? "1rem" : 15,
-                        margin: "0 0 16px 0",
-                        lineHeight: 1.6,
-                        paddingLeft: isFocused ? 22 : 0,
-                      }}
-                    >
-                      {album.desc}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div
-                  className={album.wrapper_class}
-                  style={{ boxShadow: "none", border: "none", padding: 0, background: "transparent" }}
-                >
-                  <div className="carousel-container" id={`carousel-${album.path_name}`}>
-                    {album.images.map((imageUrl) => (
-                      <div
-                        className="carousel-slide"
-                        onClick={() => setLightboxUrl(imageUrl)}
-                        key={imageUrl}
-                      >
-                        <img src={imageUrl} loading="lazy" alt="Photo" />
+                        <h2
+                          style={{
+                            fontSize: "2.5rem",
+                            fontWeight: 600,
+                            margin: "0 0 12px 0",
+                            textTransform: "capitalize",
+                            lineHeight: 1.2,
+                            color: "var(--heading)",
+                          }}
+                        >
+                          {album.title}
+                        </h2>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 24,
+                            color: "var(--muted)",
+                            fontSize: 15,
+                            marginBottom: 12,
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
+                          <span><UserIcon width={14} height={14} /> {album.author}</span>
+                        </div>
+                        {album.desc ? (
+                          <p
+                            style={{
+                              color: "var(--text)",
+                              fontSize: "1rem",
+                              margin: "0 0 16px 0",
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {album.desc}
+                          </p>
+                        ) : null}
                       </div>
-                    ))}
+                    </div>
+
+                    <div
+                      className={album.wrapper_class}
+                      style={{ boxShadow: "none", border: "none", padding: 0, background: "transparent" }}
+                    >
+                      <div className="carousel-container" id={`carousel-${album.path_name}`}>
+                        {album.images.map((imageUrl) => (
+                          <div
+                            className="carousel-slide"
+                            onClick={() => setLightboxUrl(imageUrl)}
+                            key={imageUrl}
+                          >
+                            <img src={imageUrl} loading="lazy" alt="Photo" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="card home-glass">
+                    <div className="home-glass-body" style={{ padding: "28px 32px" }}>
+                      <div style={{ marginBottom: 16 }}>
+                        <h2
+                          style={{
+                            fontSize: "1.5rem",
+                            fontWeight: 700,
+                            margin: "0 0 12px 0",
+                            textTransform: "capitalize",
+                            lineHeight: 1.2,
+                            color: "var(--heading)",
+                          }}
+                        >
+                          <Link href={`/gallery?focus=${encodeURIComponent(album.rel_path)}`}>
+                            {album.title}
+                          </Link>
+                        </h2>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 16,
+                            color: "var(--muted)",
+                            fontSize: 13,
+                            marginBottom: 12,
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
+                          <span><UserIcon width={14} height={14} /> {album.author}</span>
+                        </div>
+                        {album.desc ? (
+                          <p
+                            style={{
+                              color: "var(--text)",
+                              fontSize: 15,
+                              margin: "0 0 16px 0",
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {album.desc}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div
+                        className={album.wrapper_class}
+                        style={{ boxShadow: "none", border: "none", padding: 0, background: "transparent" }}
+                      >
+                        <div className="carousel-container" id={`carousel-${album.path_name}`}>
+                          {album.images.map((imageUrl) => (
+                            <div
+                              className="carousel-slide"
+                              onClick={() => setLightboxUrl(imageUrl)}
+                              key={imageUrl}
+                            >
+                              <img src={imageUrl} loading="lazy" alt="Photo" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                </div>
+                )}
               </section>
             ))
           ) : (

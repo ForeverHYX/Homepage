@@ -23,7 +23,16 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
         <div className="article-grid">
           <div className="page-stack">
+            <div className="card home-glass" style={{ marginBottom: 24 }}>
+              <div className="home-glass-body" style={{ padding: "28px 32px" }}>
+                <h2 style={{ margin: 0, fontSize: "1.8rem", fontWeight: 700, color: "var(--heading)" }}>
+                  Articles
+                </h2>
+              </div>
+            </div>
+
             {data.filter_tag ? (
+
               <div className="card home-glass article-card">
                 <div className="home-glass-body" style={{ padding: "24px 28px" }}>
                   <span className="article-filter-label">
