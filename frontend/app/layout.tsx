@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-css-tags */
 import type { Metadata } from "next";
 import "./globals.css";
+import { HomeLegacyEffects } from "@/components/home-legacy-effects";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -42,6 +42,8 @@ export default function RootLayout({
         <link rel="stylesheet" href="/static/css/styles.css?v=58" />
       </head>
       <body>
+        <div className="home-lightfield" aria-hidden="true" />
+        <HomeLegacyEffects />
         <SiteHeader />
         {children}
         <SiteFooter />

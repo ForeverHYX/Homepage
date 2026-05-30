@@ -55,12 +55,12 @@ export function HomeSidebar({
           <div
             className="lightbox-overlay active"
             onClick={() => setShowAllNews(false)}
-            style={{ display: "flex" }}
+            style={{ display: "flex", background: "rgba(0,0,0,0.12)" }}
           >
             <div
-              className="card lightbox-content news-modal-card"
+              className="card home-liquid-card lightbox-content"
               style={{
-                padding: 40,
+                padding: 0,
                 maxWidth: 600,
                 width: "90%",
                 maxHeight: "80vh",
@@ -69,36 +69,39 @@ export function HomeSidebar({
               }}
               onClick={(event) => event.stopPropagation()}
             >
-              <button
-                type="button"
-                onClick={() => setShowAllNews(false)}
-                aria-label="Close all news"
-                style={{
-                  position: "absolute",
-                  top: 20,
-                  right: 20,
-                  background: "none",
-                  border: "none",
-                  fontSize: 24,
-                  color: "var(--muted)",
-                  cursor: "pointer",
-                }}
-              >
-                &times;
-              </button>
-              <h2
-                style={{
-                  marginTop: 0,
-                  borderLeft: "5px solid var(--primary)",
-                  paddingLeft: 12,
-                }}
-              >
-                All News
-              </h2>
-              <div dangerouslySetInnerHTML={{ __html: allNewsHtml }} />
+              <span className="home-liquid-warp" aria-hidden="true" />
+              <div className="home-liquid-body" style={{ padding: 40 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAllNews(false)}
+                  aria-label="Close all news"
+                  style={{
+                    position: "absolute",
+                    top: 20,
+                    right: 20,
+                    background: "none",
+                    border: "none",
+                    fontSize: 24,
+                    color: "var(--muted)",
+                    cursor: "pointer",
+                  }}
+                >
+                  &times;
+                </button>
+                <h2
+                  style={{
+                    marginTop: 0,
+                    borderLeft: "5px solid var(--primary)",
+                    paddingLeft: 12,
+                  }}
+                >
+                  All News
+                </h2>
+                <div dangerouslySetInnerHTML={{ __html: allNewsHtml }} />
+              </div>
             </div>
           </div>,
-          document.body
+document.body
         )
       : null;
 

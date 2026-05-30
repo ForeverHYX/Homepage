@@ -76,7 +76,6 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
             >
               Gallery
             </h1>
-            <p className="page-lead">Travel photos, portraits, and moments.</p>
           </div>
         ) : null}
 
@@ -84,13 +83,15 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
           {albums.length ? (
             albums.map((album) => (
               <section
-                className="gallery-album mb-12 card"
+                className="gallery-album mb-12 card home-liquid-card"
                 style={{
-                  padding: isFocused ? 40 : 24,
+                  padding: 0,
                   marginBottom: isFocused ? 60 : 24,
                 }}
                 key={album.rel_path}
               >
+                <span className="home-liquid-warp" aria-hidden="true" />
+                <div className="home-liquid-body" style={{ padding: isFocused ? 40 : 24 }}>
                 {isFocused ? (
                   <div style={{ marginBottom: 20 }}>
                     <Link
@@ -174,6 +175,7 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                       </div>
                     ))}
                   </div>
+                </div>
                 </div>
               </section>
             ))
