@@ -10,6 +10,16 @@ export function SiteFooter() {
           Yixun&apos;s Homepage
         </a>
         .
+        <div style={{ marginTop: "10px" }}>
+          <a
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--muted)", textDecoration: "none", fontSize: "13px" }}
+          >
+            浙ICP备2023041507号-1
+          </a>
+        </div>
       </div>
     </footer>
   );
