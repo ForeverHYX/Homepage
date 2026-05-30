@@ -1,7 +1,6 @@
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 import uvicorn
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
@@ -15,9 +14,6 @@ app = FastAPI(title="Yixun Hong's Homepage", version="0.6.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Jinja2 Templates
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-app.state.templates = templates
 
 # Mount Static Files
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")

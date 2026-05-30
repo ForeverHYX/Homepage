@@ -9,8 +9,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 
 from app.config import (
     UPLOAD_DIR, ARTICLES_DIR,
-    ICON_MAIL, ICON_GITHUB, ICON_MAP, ICON_CALENDAR, ICON_USER_S, 
-    ICON_ARROW_LEFT, ICON_MAXIMIZE,
     limiter,
 )
 from app.utils import (
@@ -18,21 +16,10 @@ from app.utils import (
     safe_join, get_folder_meta, PdfExtension
 )
 from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles
-from app.auth import get_current_user, verify_credentials, create_session, get_cookie_settings
+from app.auth import verify_credentials, create_session, get_cookie_settings
 
 router = APIRouter()
 
-
-def _templates(request: Request):
-    return request.app.state.templates
-
-
-def _render(request, name, context=None):
-    t = _templates(request)
-    ctx = {"request": request}
-    if context:
-        ctx.update(context)
-    return t.TemplateResponse(request=request, name=name, context=ctx)
 
 
 def _build_home_payload() -> dict[str, Any]:
@@ -251,17 +238,6 @@ def _build_article_detail_payload(slug: str) -> dict[str, Any]:
     }
 
 
-@router.get("/", response_class=HTMLResponse)
-def index(request: Request) -> Any:
-    payload = _build_home_payload()
-    return _render(request, "index.html", {
-        **payload,
-        "icon_mail": ICON_MAIL,
-        "icon_github": ICON_GITHUB,
-        "icon_map": ICON_MAP,
-        "icon_maximize": ICON_MAXIMIZE,
-    })
-
 
 @router.get("/api/site/home")
 def home_api() -> Any:
@@ -290,24 +266,11 @@ def search_api():
     return JSONResponse(data)
 
 
-@router.get("/articles", response_class=HTMLResponse)
-def articles_index(request: Request, tag: Optional[str] = None) -> Any:
-    payload = _build_articles_payload(tag)
-    return _render(request, "articles.html", {
-        **payload,
-        "icon_calendar": ICON_CALENDAR, "icon_user": ICON_USER_S,
-    })
-
 
 @router.get("/api/site/articles")
 def articles_api(tag: Optional[str] = None) -> Any:
     return JSONResponse(_build_articles_payload(tag), headers={"Cache-Control": "public, max-age=60"})
 
-
-@router.get("/gallery", response_class=HTMLResponse)
-def gallery_index(request: Request, focus: Optional[str] = None) -> Any:
-    payload = _build_gallery_payload(focus)
-    return _render(request, "gallery.html", payload)
 
 
 @router.get("/api/site/gallery")
@@ -315,50 +278,12 @@ def gallery_api(focus: Optional[str] = None) -> Any:
     return JSONResponse(_build_gallery_payload(focus), headers={"Cache-Control": "public, max-age=60"})
 
 
-@router.get("/articles/{slug}", response_class=HTMLResponse)
-def article_detail(request: Request, slug: str) -> Any:
-    payload = _build_article_detail_payload(slug)
-    return _render(request, "article_detail.html", {
-        **payload,
-        "icon_calendar": ICON_CALENDAR,
-        "icon_user": ICON_USER_S,
-    })
-
 
 @router.get("/api/site/articles/{slug}")
 def article_detail_api(slug: str) -> Any:
     return JSONResponse(_build_article_detail_payload(slug), headers={"Cache-Control": "public, max-age=300"})
 
 
-@router.get("/login", response_class=HTMLResponse)
-def login_page(request: Request) -> Any:
-    if get_current_user(request):
-        return RedirectResponse("/upload")
-    return _render(request, "login.html", {})
-
-
-@router.post("/login")
-@limiter.limit("10/minute")
-def login(request: Request, username: str = Form(...), password: str = Form(...)) -> Any:
-    username = username.strip()
-    password = password.strip()
-    if verify_credentials(username, password):
-        token = create_session()
-        response = RedirectResponse(url="/upload", status_code=status.HTTP_303_SEE_OTHER)
-        cookie_cfg = get_cookie_settings()
-        response.set_cookie(
-            key=cookie_cfg["key"],
-            value=token,
-            httponly=cookie_cfg["httponly"],
-            secure=cookie_cfg["secure"],
-            samesite=cookie_cfg["samesite"],
-            max_age=cookie_cfg["max_age"],
-        )
-        return response
-    return HTMLResponse(
-        content="<script>alert('Invalid credentials'); history.back();</script>", 
-        status_code=status.HTTP_401_UNAUTHORIZED
-    )
 
 @router.post("/api/login")
 @limiter.limit("10/minute")
