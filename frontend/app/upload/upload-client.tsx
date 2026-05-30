@@ -321,8 +321,10 @@ export default function UploadManager() {
       )}
 
       {modalOpen && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div className="card" style={{ padding: "24px", borderRadius: "12px", width: "100%", maxWidth: "400px" }}>
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.12)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setModalOpen(false)}>
+          <div className="card home-liquid-card" style={{ padding: 0, borderRadius: "12px", width: "100%", maxWidth: "400px", position: "relative" }} onClick={(e) => e.stopPropagation()}>
+            <span className="home-liquid-warp" aria-hidden="true" />
+            <div className="home-liquid-body" style={{ padding: "32px" }}>
             <h3 style={{ margin: "0 0 16px", color: "var(--heading)" }}>Edit Folder Info</h3>
             <div style={{ marginBottom: "12px" }}>
               <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Title</label>
@@ -343,6 +345,7 @@ export default function UploadManager() {
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
               <button className="btn" style={{ background: "var(--surface-highlight)", color: "var(--text)" }} onClick={() => setModalOpen(false)}>Cancel</button>
               <button className="btn btn-primary" onClick={saveMeta}>Save</button>
+            </div>
             </div>
           </div>
         </div>
