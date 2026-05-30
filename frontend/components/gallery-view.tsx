@@ -75,70 +75,66 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                 key={album.rel_path}
               >
                 {isFocused ? (
-                  <>
-                    <div className="card home-glass" style={{ marginBottom: 24 }}>
-                      <div className="home-glass-body" style={{ padding: 40 }}>
-                        <div style={{ marginBottom: 20 }}>
-                          <Link
-                            href="/gallery"
-                            className="action-btn"
-                            style={{
-                              textDecoration: "none",
-                              paddingLeft: 0,
-                              color: "var(--text)",
-                              fontWeight: 500,
-                            }}
-                          >
-                            &larr; Back to All Galleries
-                          </Link>
-                        </div>
-
-                        <h2
+                  <div className="card home-glass">
+                    <div className="home-glass-body" style={{ padding: 40 }}>
+                      <div style={{ marginBottom: 20 }}>
+                        <Link
+                          href="/gallery"
+                          className="action-btn"
                           style={{
-                            fontSize: "2.5rem",
-                            fontWeight: 600,
-                            margin: "0 0 12px 0",
-                            textTransform: "capitalize",
-                            lineHeight: 1.2,
-                            color: "var(--heading)",
+                            textDecoration: "none",
+                            paddingLeft: 0,
+                            color: "var(--text)",
+                            fontWeight: 500,
                           }}
                         >
-                          {album.title}
-                        </h2>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 24,
-                            color: "var(--muted)",
-                            fontSize: 15,
-                            marginBottom: 12,
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
-                          <span><UserIcon width={14} height={14} /> {album.author}</span>
-                        </div>
-                        {album.desc ? (
-                          <p
-                            style={{
-                              color: "var(--text)",
-                              fontSize: "1rem",
-                              margin: "0 0 16px 0",
-                              lineHeight: 1.6,
-                            }}
-                          >
-                            {album.desc}
-                          </p>
-                        ) : null}
+                          &larr; Back to All Galleries
+                        </Link>
                       </div>
-                    </div>
 
-                    <div
-                      className="card home-glass"
-                      style={{ padding: 0, overflow: "hidden" }}
-                    >
-                      <div className="home-glass-body" style={{ padding: 24 }}>
+                      <h2
+                        style={{
+                          fontSize: "2.5rem",
+                          fontWeight: 600,
+                          margin: "0 0 12px 0",
+                          textTransform: "capitalize",
+                          lineHeight: 1.2,
+                          color: "var(--heading)",
+                        }}
+                      >
+                        {album.title}
+                      </h2>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 24,
+                          color: "var(--muted)",
+                          fontSize: 15,
+                          marginBottom: 12,
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
+                        <span><UserIcon width={14} height={14} /> {album.author}</span>
+                      </div>
+                      {album.desc ? (
+                        <p
+                          style={{
+                            color: "var(--text)",
+                            fontSize: "1rem",
+                            margin: "0 0 24px 0",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {album.desc}
+                        </p>
+                      ) : null}
+
+                      <div
+                        className={album.wrapper_class}
+                        style={{ boxShadow: "none", border: "none", padding: 0, background: "transparent" }}
+                      >
                         <div className="carousel-container" id={`carousel-${album.path_name}`}>
                           {album.images.map((imageUrl) => (
                             <div
@@ -152,7 +148,7 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                         </div>
                       </div>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="card home-glass">
                     <div className="home-glass-body" style={{ padding: "28px 32px" }}>
