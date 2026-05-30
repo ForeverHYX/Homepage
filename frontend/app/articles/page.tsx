@@ -27,8 +27,9 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
             {data.filter_tag ? (
 
-              <div className="card home-glass article-card">
-                <div className="home-glass-body" style={{ padding: "24px 28px" }}>
+              <div className="card home-liquid-card article-card">
+                <span className="home-liquid-warp" aria-hidden="true" />
+                <div className="home-liquid-body" style={{ padding: "24px 28px" }}>
                   <span className="article-filter-label">
                     Filtered by tag: <strong>{data.filter_tag}</strong>
                   </span>
@@ -41,8 +42,9 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
             {data.articles.length ? (
               data.articles.map((article) => (
-                <div className="card home-glass article-card" key={article.slug}>
-                  <div className="home-glass-body" style={{ padding: "28px 32px" }}>
+                <div className="card home-liquid-card article-card" key={article.slug}>
+                  <span className="home-liquid-warp" aria-hidden="true" />
+                  <div className="home-liquid-body" style={{ padding: "28px 32px" }}>
                     <h2 className="article-card-title">
                       <Link href={`/articles/${article.slug}`}>{article.title}</Link>
                     </h2>

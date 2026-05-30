@@ -78,59 +78,64 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                   <div className="card home-liquid-card">
                     <span className="home-liquid-warp" aria-hidden="true" />
                     <div className="home-liquid-body" style={{ padding: 40 }}>
-                      <div style={{ marginBottom: 20 }}>
-                        <Link
-                          href="/gallery"
-                          className="action-btn"
-                          style={{
-                            textDecoration: "none",
-                            paddingLeft: 0,
-                            color: "var(--text)",
-                            fontWeight: 500,
-                          }}
-                        >
-                          &larr; Back to All Galleries
-                        </Link>
-                      </div>
+                      <div className="card home-liquid-card" style={{ marginBottom: 24 }}>
+                        <span className="home-liquid-warp" aria-hidden="true" />
+                        <div className="home-liquid-body" style={{ padding: "28px 32px" }}>
+                          <div style={{ marginBottom: 20 }}>
+                            <Link
+                              href="/gallery"
+                              className="action-btn"
+                              style={{
+                                textDecoration: "none",
+                                paddingLeft: 0,
+                                color: "var(--text)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              &larr; Back to All Galleries
+                            </Link>
+                          </div>
 
-                      <h2
-                        style={{
-                          fontSize: "2.5rem",
-                          fontWeight: 600,
-                          margin: "0 0 12px 0",
-                          textTransform: "capitalize",
-                          lineHeight: 1.2,
-                          color: "var(--heading)",
-                        }}
-                      >
-                        {album.title}
-                      </h2>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 24,
-                          color: "var(--muted)",
-                          fontSize: 15,
-                          marginBottom: 12,
-                          alignItems: "center",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
-                        <span><UserIcon width={14} height={14} /> {album.author}</span>
+                          <h2
+                            style={{
+                              fontSize: "2.5rem",
+                              fontWeight: 600,
+                              margin: "0 0 12px 0",
+                              textTransform: "capitalize",
+                              lineHeight: 1.2,
+                              color: "var(--heading)",
+                            }}
+                          >
+                            {album.title}
+                          </h2>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 24,
+                              color: "var(--muted)",
+                              fontSize: 15,
+                              marginBottom: 12,
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
+                            <span><UserIcon width={14} height={14} /> {album.author}</span>
+                          </div>
+                          {album.desc ? (
+                            <p
+                              style={{
+                                color: "var(--text)",
+                                fontSize: "1rem",
+                                margin: "0 0 24px 0",
+                                lineHeight: 1.6,
+                              }}
+                            >
+                              {album.desc}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
-                      {album.desc ? (
-                        <p
-                          style={{
-                            color: "var(--text)",
-                            fontSize: "1rem",
-                            margin: "0 0 24px 0",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {album.desc}
-                        </p>
-                      ) : null}
 
                       <div
                         className={album.wrapper_class}
@@ -151,8 +156,9 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="card home-glass">
-                    <div className="home-glass-body" style={{ padding: "28px 32px" }}>
+                  <div className="card home-liquid-card">
+                    <span className="home-liquid-warp" aria-hidden="true" />
+                    <div className="home-liquid-body" style={{ padding: "28px 32px" }}>
                       <div style={{ marginBottom: 16 }}>
                         <h2
                           style={{
@@ -224,7 +230,7 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
       </div>
 
       <div
-        id="lightboxOverlay"
+        id="lightbox-overlay"
         className={`lightbox-overlay${lightboxUrl ? " active" : ""}`}
         onClick={() => setLightboxUrl(null)}
         style={{ display: lightboxUrl ? "flex" : "none" }}
