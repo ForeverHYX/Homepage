@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import { CalendarIcon, UserIcon } from "@/components/icons";
 import { useEffect, useState } from "react";
 import type { GalleryAlbum } from "@/lib/types";
 
@@ -128,7 +129,8 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                       flexWrap: "wrap",
                     }}
                   >
-                    <span>{album.date_str}</span>
+                    <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
+                    <span><UserIcon width={14} height={14} /> {album.author}</span>
                     <span>{album.author}</span>
                   </div>
                   {album.desc ? (
