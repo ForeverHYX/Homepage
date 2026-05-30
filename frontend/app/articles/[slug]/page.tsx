@@ -60,8 +60,9 @@ export default async function ArticleDetailPage({
             </Link>
           </div>
 
-          <div className="card home-glass" style={{ marginBottom: 24 }}>
-            <div className="home-glass-body" style={{ padding: "28px 32px" }}>
+          <div className="card home-liquid-card" style={{ marginBottom: 24 }}>
+            <span className="home-liquid-warp" aria-hidden="true" />
+            <div className="home-liquid-body" style={{ padding: "28px 32px" }}>
               <h1
                 style={{
                   fontSize: "2.5rem",

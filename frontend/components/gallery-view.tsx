@@ -75,8 +75,9 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                 key={album.rel_path}
               >
                 {isFocused ? (
-                  <div className="card home-glass">
-                    <div className="home-glass-body" style={{ padding: 40 }}>
+                  <div className="card home-liquid-card">
+                    <span className="home-liquid-warp" aria-hidden="true" />
+                    <div className="home-liquid-body" style={{ padding: 40 }}>
                       <div style={{ marginBottom: 20 }}>
                         <Link
                           href="/gallery"
