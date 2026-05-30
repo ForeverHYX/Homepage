@@ -131,7 +131,7 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                   >
                     <span><CalendarIcon width={14} height={14} /> {album.date_str}</span>
                     <span><UserIcon width={14} height={14} /> {album.author}</span>
-                    <span>{album.author}</span>
+
                   </div>
                   {album.desc ? (
                     <p
