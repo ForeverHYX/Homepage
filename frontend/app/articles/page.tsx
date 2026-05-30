@@ -20,17 +20,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
   return (
     <div className="container">
       <div className="page-shell">
-        <h1
-          className="section-title"
-          style={{
-            borderLeftColor: "var(--primary)",
-            marginBottom: 24,
-            fontSize: "3rem",
-            paddingBottom: 10,
-          }}
-        >
-          Articles
-        </h1>
+
 
         <div className="article-grid">
           <div className="page-stack">

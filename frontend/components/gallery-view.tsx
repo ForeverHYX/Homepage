@@ -63,21 +63,7 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
   return (
     <div className="container">
       <div className="page-shell">
-        {!isFocused ? (
-          <div>
-            <h1
-              className="section-title"
-              style={{
-                borderLeftColor: "var(--primary)",
-                marginBottom: 24,
-                fontSize: "3rem",
-                paddingBottom: 10,
-              }}
-            >
-              Gallery
-            </h1>
-          </div>
-        ) : null}
+
 
         <div className="gallery-list">
           {albums.length ? (
