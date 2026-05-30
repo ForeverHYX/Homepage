@@ -135,19 +135,21 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                     </div>
 
                     <div
-                      className={album.wrapper_class}
-                      style={{ boxShadow: "none", border: "none", padding: 0, background: "transparent" }}
+                      className="card home-glass"
+                      style={{ padding: 0, overflow: "hidden" }}
                     >
-                      <div className="carousel-container" id={`carousel-${album.path_name}`}>
-                        {album.images.map((imageUrl) => (
-                          <div
-                            className="carousel-slide"
-                            onClick={() => setLightboxUrl(imageUrl)}
-                            key={imageUrl}
-                          >
-                            <img src={imageUrl} loading="lazy" alt="Photo" />
-                          </div>
-                        ))}
+                      <div className="home-glass-body" style={{ padding: 24 }}>
+                        <div className="carousel-container" id={`carousel-${album.path_name}`}>
+                          {album.images.map((imageUrl) => (
+                            <div
+                              className="carousel-slide"
+                              onClick={() => setLightboxUrl(imageUrl)}
+                              key={imageUrl}
+                            >
+                              <img src={imageUrl} loading="lazy" alt="Photo" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </>

@@ -60,61 +60,60 @@ export default async function ArticleDetailPage({
             </Link>
           </div>
 
-          <header style={{ marginBottom: 24 }}>
-            <h1
-              style={{
-                fontSize: "2.5rem",
-                fontWeight: 600,
-                margin: "0 0 16px 0",
-                borderLeft: "6px solid var(--primary)",
-                paddingLeft: 16,
-                lineHeight: 1.2,
-                color: "var(--heading)",
-              }}
-            >
-              {article.title}
-            </h1>
-            <div
-              style={{
-                display: "flex",
-                gap: 24,
-                color: "var(--muted)",
-                fontSize: 15,
-                paddingLeft: 22,
-                marginBottom: 16,
-                flexWrap: "wrap",
-              }}
-            >
-              <span style={{ display: "flex", alignItems: "center" }}>
-                <CalendarIcon /> {article.date_str}
-              </span>
-              <span style={{ display: "flex", alignItems: "center" }}>
-                <UserIcon /> {article.author}
-              </span>
-              <span style={{ display: "flex", alignItems: "center" }}>
-                <ClockIcon /> {article.word_count} words &middot; {article.read_time} min read
-              </span>
-              {article.tags.length ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  {article.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        background: "var(--surface-highlight)",
-                        color: "var(--text)",
-                        fontSize: 11,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        border: "1px solid var(--border)",
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
+          <div className="card home-glass" style={{ marginBottom: 24 }}>
+            <div className="home-glass-body" style={{ padding: "28px 32px" }}>
+              <h1
+                style={{
+                  fontSize: "2.5rem",
+                  fontWeight: 600,
+                  margin: "0 0 16px 0",
+                  lineHeight: 1.2,
+                  color: "var(--heading)",
+                }}
+              >
+                {article.title}
+              </h1>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 24,
+                  color: "var(--muted)",
+                  fontSize: 15,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center" }}>
+                  <CalendarIcon /> {article.date_str}
+                </span>
+                <span style={{ display: "flex", alignItems: "center" }}>
+                  <UserIcon /> {article.author}
+                </span>
+                <span style={{ display: "flex", alignItems: "center" }}>
+                  <ClockIcon /> {article.word_count} words &middot; {article.read_time} min read
+                </span>
+                {article.tags.length ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    {article.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        style={{
+                          background: "var(--surface-highlight)",
+                          color: "var(--text)",
+                          fontSize: 11,
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          border: "1px solid var(--border)",
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </header>
+          </div>
 
           <article
             className="prose"
