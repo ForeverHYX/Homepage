@@ -56,7 +56,12 @@ export function getAnniversariesForMonth(
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const current = new Date(year, month, day);
+    // Use Date.UTC so the iteration date is timezone-agnostic. In CST (UTC+8)
+    // a local midnight sits 8h behind UTC, so `new Date(year, month, day)`
+    // would read as the PREVIOUS day in UTC and the start-date marker would
+    // land on Sept 27 instead of Sept 26. Anchoring both START_DATE and the
+    // iteration to UTC keeps the comparison correct regardless of TZ.
+    const current = new Date(Date.UTC(year, month, day));
     const events: AnniversaryEvent[] = [];
 
     // 1) Start date itself (2025-09-26).

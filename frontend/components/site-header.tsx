@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   HomeIcon,
   MenuIcon,
@@ -23,6 +24,8 @@ export function SiteHeader() {
   const [searchIndex, setSearchIndex] = useState<SearchEntry[] | null>(null);
   const navClusterRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+const [mounted, setMounted] = useState(false);
+const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const closeSearch = () => {
     setSearchOpen(false);
@@ -34,6 +37,9 @@ export function SiteHeader() {
     setMobileMenuOpen(false);
   };
 
+useEffect(() => {
+  setMounted(true);
+}, []);
   useEffect(() => {
     if (searchOpen) {
       window.setTimeout(() => searchInputRef.current?.focus(), 100);
@@ -49,6 +55,9 @@ export function SiteHeader() {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target as Node;
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return;
+      }
       if (navClusterRef.current && !navClusterRef.current.contains(target)) {
         if (searchOpen) {
           setSearchOpen(false);
@@ -118,6 +127,26 @@ export function SiteHeader() {
     },
   ];
 
+const [dropdownRect, setDropdownRect] = useState<{ left: number; top: number; width: number } | null>(null);
+useEffect(() => {
+  if (!searchOpen) {
+    setDropdownRect(null);
+    return;
+  }
+  const updateRect = () => {
+    const input = searchInputRef.current;
+    if (!input) return;
+    const rect = input.getBoundingClientRect();
+    setDropdownRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
+  };
+  updateRect();
+  window.addEventListener("resize", updateRect);
+  window.addEventListener("scroll", updateRect, true);
+  return () => {
+    window.removeEventListener("resize", updateRect);
+    window.removeEventListener("scroll", updateRect, true);
+  };
+}, [searchOpen]);
   return (
     <header className="site-header">
       <div className="container nav-shell">
@@ -183,35 +212,45 @@ export function SiteHeader() {
                   >
                     &times;
                   </button>
-                  <div
-                    id="searchDropdown"
-                    className={`search-dropdown${query.trim() ? " has-results" : ""}`}
-                  >
-                    <div id="inlineSearchResults" style={{ padding: "8px 0" }}>
-                      {query.trim() ? (
-                        hits.length ? (
-                          hits.map((hit) => (
-                            <Link
-                              href={hit.url}
-                              key={`${hit.type}-${hit.url}`}
-                              onClick={resetNavigationState}
+                  {mounted && searchOpen && dropdownRect && createPortal(
+                    <div
+                      ref={dropdownRef}
+                      id="searchDropdown"
+                      className={`search-dropdown${query.trim() ? " has-results" : ""}`}
+                      style={{
+                        position: "fixed",
+                        left: dropdownRect.left,
+                        top: dropdownRect.top,
+                        width: dropdownRect.width,
+                      }}
+                    >
+                      <div id="inlineSearchResults" style={{ padding: "8px 0" }}>
+                        {query.trim() ? (
+                          hits.length ? (
+                            hits.map((hit) => (
+                              <Link
+                                href={hit.url}
+                                key={`${hit.type}-${hit.url}`}
+                                onClick={resetNavigationState}
+                              >
+                                <div className="search-result-title">
+                                  <span className="search-result-chip">{hit.type}</span>
+                                  {hit.title}
+                                </div>
+                              </Link>
+                            ))
+                          ) : (
+                            <div
+                              style={{ padding: 12, textAlign: "center", color: "var(--muted)" }}
                             >
-                              <div className="search-result-title">
-                                <span className="search-result-chip">{hit.type}</span>
-                                {hit.title}
-                              </div>
-                            </Link>
-                          ))
-                        ) : (
-                          <div
-                            style={{ padding: 12, textAlign: "center", color: "var(--muted)" }}
-                          >
-                            No results found.
-                          </div>
-                        )
-                      ) : null}
-                    </div>
-                  </div>
+                              No results found.
+                            </div>
+                          )
+                        ) : null}
+                      </div>
+                    </div>,
+                    document.body,
+                  )}
                 </div>
 
                 <div className="nav-actions">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnniversaryCalendar } from "@/components/anniversary-calendar";
 
 
@@ -32,6 +33,7 @@ export default function UploadManager() {
   const [editMode, setEditMode] = useState(false);
   const [modalData, setModalData] = useState({ path: "", title: "", description: "", date: "", author: "Yixun Hong" });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -109,21 +111,21 @@ export default function UploadManager() {
     fetchFiles(currentPath);
   };
 
-const deleteItem = async (path: string) => {
+  const deleteItem = async (path: string) => {
     if (!confirm(`Permanently delete ${path}? Folder contents will be lost.`)) return;
     try {
-const res = await fetch(`/api/files/${encodeURIComponent(path)}`, { method: "DELETE", credentials: "include" });
-if (res.ok) {
-showToast("Deleted");
-fetchFiles(currentPath);
-    } else {
+      const res = await fetch(`/api/files/${encodeURIComponent(path)}`, { method: "DELETE", credentials: "include" });
+      if (res.ok) {
+        showToast("Deleted");
+        fetchFiles(currentPath);
+      } else {
         const data = await res.json().catch(() => ({}));
         showToast(`Delete failed: ${data.detail || res.statusText}`);
       }
     } catch (e: any) {
       showToast(`Delete failed: ${e.message}`);
     }
-};
+  };
 
   const openMeta = (item: FileItem) => {
     setModalData({
@@ -160,6 +162,10 @@ fetchFiles(currentPath);
     form.append("enable", String(enable));
     await fetch("/api/gallery/toggle", { method: "POST", body: form, credentials: "include" });
     fetchFiles(currentPath);
+    // Invalidate /gallery's 60s ISR cache so the unstarred folder disappears
+    // from the public gallery immediately instead of after the cache window.
+    await fetch("/api/revalidate-gallery", { method: "POST", credentials: "include" });
+    router.refresh();
     showToast("Gallery Updated");
   };
 
@@ -290,18 +296,40 @@ fetchFiles(currentPath);
                       </div>
                       <div>
                         <div style={{ fontWeight: 600, color: "var(--text)" }}>{f.title || f.name}</div>
-                        {f.is_gallery && <small style={{ color: "#eab308" }}>★ Gallery Album</small>}
+                        {f.is_gallery && (
+                          <small>
+                            <span style={{
+                              background: "linear-gradient(135deg, #93c5fd, #2563eb)",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                              fontWeight: "bold",
+                            }}>★</span>
+                            {" Gallery Album"}
+                          </small>
+                        )}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "4px" }}>
                       <button className="action-btn" onClick={() => openMeta(f)} title="Edit Info">✎</button>
                       <button className="action-btn" onClick={() => toggleGallery(f.path, !f.is_gallery)} title="Toggle Gallery">
                         {f.is_gallery ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="#eab308" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="url(#star-grad-on)" stroke="url(#star-grad-on)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <defs>
+                              <linearGradient id="star-grad-on" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#93c5fd" />
+                                <stop offset="100%" stopColor="#2563eb" />
+                              </linearGradient>
+                            </defs>
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                           </svg>
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="url(#star-grad-off)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <defs>
+                              <linearGradient id="star-grad-off" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#93c5fd" />
+                                <stop offset="100%" stopColor="#2563eb" />
+                              </linearGradient>
+                            </defs>
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                           </svg>
                         )}

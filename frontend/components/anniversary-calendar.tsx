@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { createPortal } from "react-dom";
 import {
   ANNIVERSARY_YEAR_MAX,
   ANNIVERSARY_YEAR_MIN,
@@ -33,6 +34,16 @@ type TooltipState = {
 } | null;
 
 export function AnniversaryCalendar() {
+  // The tooltip is rendered into document.body via a portal so it escapes
+  // any stacking-context or overflow:hidden ancestor (the home-liquid-card
+  // sets `isolation: isolate`, which would otherwise cap z-index locally).
+  // `mounted` is flipped on the client only, since `document` doesn't exist
+  // during SSR.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Initial view: the current month.
   const now = new Date();
   const [viewYear, setViewYear] = useState<number>(now.getFullYear());
@@ -89,7 +100,6 @@ export function AnniversaryCalendar() {
     e: SyntheticEvent<HTMLSpanElement>,
     event: AnniversaryEvent,
   ) => {
-
     const rect = e.currentTarget.getBoundingClientRect();
     const TOOLTIP_ESTIMATED_HEIGHT = 72;
     const spaceAbove = rect.top;
@@ -111,7 +121,7 @@ export function AnniversaryCalendar() {
     <div className="card home-liquid-card anniversary-card">
       <span className="home-liquid-warp" aria-hidden="true" />
       <div className="home-liquid-body anniversary-body">
-        <h3 className="anniversary-card-title">纪念日</h3>
+        <h3 className="anniversary-card-title">Anniversaries</h3>
 
         {/* Year navigation */}
         <div className="anniversary-year-row">
@@ -193,18 +203,22 @@ export function AnniversaryCalendar() {
         </div>
       </div>
 
-      {/* Fixed-position tooltip — escapes any parent overflow: hidden */}
-      {tooltip && (
-        <div
-          className="anniversary-tooltip"
-          data-placement={tooltip.placement}
-          style={{ left: tooltip.x, top: tooltip.y }}
-          role="tooltip"
-        >
-          <div className="anniversary-tooltip-title">{tooltip.title}</div>
-          <div className="anniversary-tooltip-desc">{tooltip.desc}</div>
-        </div>
-      )}
+      {/* Portal-rendered tooltip — escapes any parent overflow: hidden or
+          stacking-context (the surrounding home-liquid-card sets
+          `isolation: isolate`, which would otherwise cap z-index). */}
+      {mounted && tooltip &&
+        createPortal(
+          <div
+            className="anniversary-tooltip"
+            data-placement={tooltip.placement}
+            style={{ left: tooltip.x, top: tooltip.y }}
+            role="tooltip"
+          >
+            <div className="anniversary-tooltip-title">{tooltip.title}</div>
+            <div className="anniversary-tooltip-desc">{tooltip.desc}</div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
