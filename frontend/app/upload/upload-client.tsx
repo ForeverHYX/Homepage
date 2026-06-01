@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AnniversaryCalendar } from "@/components/anniversary-calendar";
+
 
 interface FileItem {
   name: string;
@@ -246,7 +248,10 @@ fetchFiles(currentPath);
             </>
           )}
         </div>
+        <AnniversaryCalendar />
+
       </section>
+
 
       <section>
         <div className="card" style={{ padding: "32px", minHeight: "400px" }}>

@@ -3039,3 +3039,195 @@ footer {
 [data-theme="dark"] .news-item a {
     border-bottom-color: #60a5fa;
 }
+/* ============================================
+   Anniversary Calendar
+   ============================================ */
+.anniversary-card {
+    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);
+    margin-top: 24px;
+}
+
+.anniversary-body {
+    padding: 24px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.anniversary-card-title {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--heading);
+    letter-spacing: 0.02em;
+    text-align: center;
+}
+
+.anniversary-year-row,
+.anniversary-month-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.anniversary-year-text {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: var(--anniv-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    min-width: 70px;
+    text-align: center;
+}
+
+.anniversary-month-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--heading);
+    min-width: 60px;
+    text-align: center;
+}
+
+.anniversary-nav-btn {
+    background: transparent;
+    border: 1px solid var(--glass-hi-border);
+    color: var(--text);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    padding: 0;
+}
+
+.anniversary-nav-btn:hover:not(:disabled) {
+    background: var(--glass-md-bg);
+    color: var(--primary);
+    transform: scale(1.08);
+}
+
+.anniversary-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.anniversary-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 0 2px;
+}
+
+.anniversary-weekday {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.anniversary-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.anniversary-day {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    line-height: 1;
+    cursor: default;
+    user-select: none;
+}
+
+.anniversary-day.empty {
+    visibility: hidden;
+}
+
+.anniversary-day.is-important {
+    background: var(--anniv-grad);
+    color: #fff;
+    font-weight: 600;
+    cursor: help;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+}
+
+.anniversary-day.is-important:hover,
+.anniversary-day.is-important:focus {
+    outline: none;
+    transform: scale(1.12);
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.anniversary-day.is-important::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--glass-hi-bg);
+    color: var(--text);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-hi-border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: pre;
+    line-height: 1.5;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s, transform 0.18s;
+    z-index: 20;
+    min-width: max-content;
+    max-width: 240px;
+    text-align: left;
+}
+
+.anniversary-day.is-important::before {
+    content: "";
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--glass-hi-border);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s;
+    z-index: 20;
+}
+
+.anniversary-day.is-important:hover::after,
+.anniversary-day.is-important:focus::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.anniversary-day.is-important:hover::before,
+.anniversary-day.is-important:focus::before {
+    opacity: 1;
+}
+
+[data-theme="dark"] .anniversary-card {
+    --anniv-grad: linear-gradient(135deg, #93c5fd, #60a5fa);
+}
+
