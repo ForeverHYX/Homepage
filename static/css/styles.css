@@ -2430,7 +2430,7 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.12));
     pointer-events: none; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.nav-island.search-mode .search-dropdown.has-results { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.search-dropdown.has-results { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 
 .nav-mobile-panel {
     display: none;

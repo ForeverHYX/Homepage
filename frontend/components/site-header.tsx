@@ -133,16 +133,28 @@ useEffect(() => {
     setDropdownRect(null);
     return;
   }
+  let raf1 = 0;
+  let raf2 = 0;
   const updateRect = () => {
     const input = searchInputRef.current;
     if (!input) return;
     const rect = input.getBoundingClientRect();
     setDropdownRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
   };
-  updateRect();
-  window.addEventListener("resize", updateRect);
-  window.addEventListener("scroll", updateRect, true);
+  // The .search-bar-container is hidden (visibility:hidden, max-width:0) until
+  // the .search-mode class lands. Measure after a double rAF so the CSS transition
+  // has begun — otherwise getBoundingClientRect returns 0,0,0,0 and the portalled
+  // dropdown lands at the top-left with zero width.
+  raf1 = requestAnimationFrame(() => {
+    raf2 = requestAnimationFrame(() => {
+      updateRect();
+      window.addEventListener("resize", updateRect);
+      window.addEventListener("scroll", updateRect, true);
+    });
+  });
   return () => {
+    cancelAnimationFrame(raf1);
+    cancelAnimationFrame(raf2);
     window.removeEventListener("resize", updateRect);
     window.removeEventListener("scroll", updateRect, true);
   };
