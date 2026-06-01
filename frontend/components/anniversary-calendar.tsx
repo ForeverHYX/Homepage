@@ -105,34 +105,36 @@ export function AnniversaryCalendar() {
           </button>
         </div>
 
-        {/* Day-of-week header */}
-        <div className="anniversary-weekdays">
-          {WEEKDAYS.map((w, i) => (
-            <span key={i} className="anniversary-weekday">
-              {w}
-            </span>
-          ))}
+        {/* Inner rounded rectangle: the wall-calendar block */}
+        <div className="anniversary-grid-wrap">
+          <div className="anniversary-weekdays">
+            {WEEKDAYS.map((w, i) => (
+              <span key={i} className="anniversary-weekday">
+                {w}
+              </span>
+            ))}
+          </div>
+
+          <div className="anniversary-grid">
+            {cells.map((cell, idx) => {
+              if (!cell) {
+                return <span key={`blank-${idx}`} className="anniversary-day empty" />;
+              }
+              const isImportant = Boolean(cell.event);
+              return (
+                <span
+                  key={cell.day}
+                  className={`anniversary-day${isImportant ? " is-important" : ""}`}
+                  data-tooltip={cell.event ? `${cell.event.title} — ${cell.event.desc}` : undefined}
+                  tabIndex={isImportant ? 0 : -1}
+                >
+                  {cell.day}
+                </span>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Day grid */}
-        <div className="anniversary-grid">
-          {cells.map((cell, idx) => {
-            if (!cell) {
-              return <span key={`blank-${idx}`} className="anniversary-day empty" />;
-            }
-            const isImportant = Boolean(cell.event);
-            return (
-              <span
-                key={cell.day}
-                className={`anniversary-day${isImportant ? " is-important" : ""}`}
-                data-tooltip={cell.event ? `${cell.event.title} — ${cell.event.desc}` : undefined}
-                tabIndex={isImportant ? 0 : -1}
-              >
-                {cell.day}
-              </span>
-            );
-          })}
-        </div>
 
         {/* Month navigation */}
         <div className="anniversary-month-row">
