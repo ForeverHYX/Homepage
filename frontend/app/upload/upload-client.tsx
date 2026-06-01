@@ -161,12 +161,12 @@ export default function UploadManager() {
     form.append("path", path);
     form.append("enable", String(enable));
     await fetch("/api/gallery/toggle", { method: "POST", body: form, credentials: "include" });
-    fetchFiles(currentPath);
+    await fetchFiles(currentPath);
     // Invalidate /gallery's 60s ISR cache so the unstarred folder disappears
     // from the public gallery immediately instead of after the cache window.
     await fetch("/api/revalidate-gallery", { method: "POST", credentials: "include" });
     router.refresh();
-    showToast("Gallery Updated");
+    showToast(enable ? "Added to Gallery" : "Removed from Gallery");
   };
 
   const parentPath = currentPath ? currentPath.split("/").slice(0, -1).join("/") : "";
@@ -388,7 +388,7 @@ export default function UploadManager() {
       </section>
 
       {toast && (
-        <div className="toast show" style={{ position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 1000 }}>
+        <div className="toast show" style={{ position: "fixed", bottom: "80px", left: "50%", right: "auto", transform: "translateX(-50%)", zIndex: 10000 }}>
           {toast}
         </div>
       )}

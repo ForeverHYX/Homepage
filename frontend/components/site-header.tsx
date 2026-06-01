@@ -234,6 +234,7 @@ useEffect(() => {
                         left: dropdownRect.left,
                         top: dropdownRect.top,
                         width: dropdownRect.width,
+                        zIndex: 9999,
                       }}
                     >
                       <div id="inlineSearchResults" style={{ padding: "8px 0" }}>
