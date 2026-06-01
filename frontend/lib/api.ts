@@ -12,10 +12,11 @@ const API_BASE_URL =
   "http://127.0.0.1:8000";
 const REVALIDATE_SECONDS = 60;
 
-async function requestJson<T>(path: string): Promise<T> {
+async function requestJson<T>(path: string, tag?: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     next: {
       revalidate: REVALIDATE_SECONDS,
+      ...(tag ? { tags: [tag] } : {}),
     },
   });
 
@@ -37,7 +38,7 @@ export const getArticlesPayload = cache(async (tag?: string) => {
 
 export const getGalleryPayload = cache(async (focus?: string) => {
   const query = focus ? `?focus=${encodeURIComponent(focus)}` : "";
-  return requestJson<GalleryPayload>(`/api/site/gallery${query}`);
+  return requestJson<GalleryPayload>(`/api/site/gallery${query}`, "gallery");
 });
 
 export const getArticleDetailPayload = cache(async (slug: string) =>
