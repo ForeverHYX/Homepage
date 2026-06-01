@@ -433,7 +433,26 @@ body {
     border-bottom-color: #2563eb;
 }
 
-.profile-name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.profile-name {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg,
+        rgba(191, 219, 254, 0.92) 0%,
+        rgba(147, 197, 253, 0.95) 35%,
+        rgba(59, 130, 246, 0.88) 70%,
+        rgba(30, 64, 175, 0.82) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    position: relative;
+    filter:
+        drop-shadow(0 1px 1px rgba(37, 99, 235, 0.4))
+        drop-shadow(0 3px 8px rgba(37, 99, 235, 0.2))
+        drop-shadow(0 6px 18px rgba(30, 64, 175, 0.12));
+}
 .profile-role { color: var(--muted); margin: 6px 0 0; font-size: 15px; font-weight: 400; }
 
 .contact-links {
@@ -1497,7 +1516,38 @@ body {
 
 }
 
-[data-theme="dark"] .home-glass.profile-card .contact-icon,
+
+
+[data-theme="dark"] .profile-name {
+
+    background: linear-gradient(135deg,
+
+        rgba(219, 234, 254, 0.95) 0%,
+
+        rgba(147, 197, 253, 0.95) 35%,
+
+        rgba(96, 165, 250, 0.92) 70%,
+
+        rgba(59, 130, 246, 0.88) 100%);
+
+    -webkit-background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+
+    background-clip: text;
+
+    filter:
+
+        drop-shadow(0 1px 1px rgba(96, 165, 250, 0.45))
+
+        drop-shadow(0 3px 10px rgba(59, 130, 246, 0.28))
+
+        drop-shadow(0 6px 20px rgba(37, 99, 235, 0.18));
+
+}
+
+
+
 [data-theme="dark"] .home-glass.profile-card .contact-icon,
 [data-theme="dark"] .home-glass.news-card .news-expand-btn {
     background: rgba(255, 255, 255, 0.04);

@@ -77,7 +77,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
-        <link rel="stylesheet" href="/static/css/styles.css?v=70" />
+        <link rel="stylesheet" href="/static/css/styles.css?v=71" />
       </head>
       <body>
         <div className="home-lightfield" aria-hidden="true" />
