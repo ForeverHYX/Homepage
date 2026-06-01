@@ -454,26 +454,15 @@ drop-shadow(0 1px 1px rgba(37, 99, 235, 0.4))
 drop-shadow(0 3px 8px rgba(37, 99, 235, 0.2))
 drop-shadow(0 6px 18px rgba(30, 64, 175, 0.12));
 }
-.profile-name-cn {
-    margin: 2px 0 0;
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    font-family: 'Noto Serif SC', 'Playfair Display', Georgia, 'Times New Roman', serif;
-    background: linear-gradient(135deg,
-        rgba(30, 64, 175, 0.95) 0%,
-        rgba(29, 78, 216, 0.92) 30%,
-        rgba(30, 58, 138, 0.95) 65%,
-        rgba(15, 23, 42, 0.88) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: none;
-    position: relative;
-    filter:
-        drop-shadow(0 1px 1px rgba(15, 23, 42, 0.35))
-        drop-shadow(0 2px 6px rgba(30, 64, 175, 0.22))
-        drop-shadow(0 4px 14px rgba(15, 23, 42, 0.14));
+.profile-name-flip {
+    display: inline-block;
+    perspective: 600px;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+    will-change: transform;
+}
+.profile-name-flip.is-flipping {
+    transform: rotateX(360deg);
 }
 .profile-role { color: var(--muted); margin: 6px 0 0; font-size: 15px; font-weight: 400; }
 
@@ -1568,20 +1557,7 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.12));
 
 }
 
-[data-theme="dark"] .profile-name-cn {
-    background: linear-gradient(135deg,
-        rgba(96, 165, 250, 0.95) 0%,
-        rgba(59, 130, 246, 0.95) 35%,
-        rgba(37, 99, 235, 0.92) 70%,
-        rgba(29, 78, 216, 0.88) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter:
-        drop-shadow(0 1px 1px rgba(59, 130, 246, 0.4))
-        drop-shadow(0 2px 8px rgba(37, 99, 235, 0.25))
-        drop-shadow(0 4px 16px rgba(15, 23, 42, 0.2));
-}
+
 
 
 
