@@ -11,31 +11,6 @@ type HomeSidebarProps = {
   newsHtml: string;
   allNewsHtml: string;
 };
-function NameFlip({ english, chinese }: { english: string; chinese: string }) {
-  const [name, setName] = useState<string>(english);
-  const [flipping, setFlipping] = useState(false);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setFlipping(true);
-      const swap = setTimeout(() => {
-        setName((prev) => (prev === english ? chinese : english));
-      }, 300);
-      const reset = setTimeout(() => {
-        setFlipping(false);
-      }, 700);
-      return () => {
-        clearTimeout(swap);
-        clearTimeout(reset);
-      };
-    }, 10000);
-    return () => clearInterval(id);
-  }, [english, chinese]);
-
-  return (
-    <h1 className={`profile-name profile-name-flip${flipping ? " is-flipping" : ""}`}>{name}</h1>
-  );
-}
 
 export function HomeSidebar({
   about,
@@ -145,7 +120,9 @@ document.body
                   "https://ui-avatars.com/api/?name=YH&background=3b82f6&color=fff&size=128";
               }}
             />
-            <NameFlip english={about.name} chinese="洪奕迅" />
+            <h1 className="profile-name">{about.name}</h1>
+            <p className="profile-name-cn">洪奕迅</p>
+            <p className="profile-role">{about.role}</p>
 
 
             <div className="contact-links">
