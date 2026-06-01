@@ -105,10 +105,10 @@ export function SiteHeader() {
       external: false,
     },
     {
-      href: "/uploads/transcript.pdf",
+      href: "/resume",
       label: "Resume",
-      active: false,
-      external: true,
+      active: pathname === "/resume",
+      external: false,
     },
     {
       href: "/upload",
