@@ -107,14 +107,21 @@ export default function UploadManager() {
     fetchFiles(currentPath);
   };
 
-  const deleteItem = async (path: string) => {
+const deleteItem = async (path: string) => {
     if (!confirm(`Permanently delete ${path}? Folder contents will be lost.`)) return;
-    const res = await fetch(`/api/files/${encodeURIComponent(path)}`, { method: "DELETE", credentials: "include" });
-    if (res.ok) {
-      showToast("Deleted");
-      fetchFiles(currentPath);
+    try {
+const res = await fetch(`/api/files/${encodeURIComponent(path)}`, { method: "DELETE", credentials: "include" });
+if (res.ok) {
+showToast("Deleted");
+fetchFiles(currentPath);
+    } else {
+        const data = await res.json().catch(() => ({}));
+        showToast(`Delete failed: ${data.detail || res.statusText}`);
+      }
+    } catch (e: any) {
+      showToast(`Delete failed: ${e.message}`);
     }
-  };
+};
 
   const openMeta = (item: FileItem) => {
     setModalData({
