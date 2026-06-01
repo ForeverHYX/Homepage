@@ -123,7 +123,7 @@ document.body
             <h1 className="profile-name">{about.name}</h1>
             <p className="profile-name-cn">洪奕迅</p>
             <p className="profile-role">{about.role}</p>
-            <p className="profile-role">{about.role}</p>
+
 
             <div className="contact-links">
               <a href={about.email} className="contact-icon" title="Email">
