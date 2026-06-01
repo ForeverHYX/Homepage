@@ -160,6 +160,7 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                     <div className="home-glass-body" style={{ padding: "28px 32px" }}>
                       <div style={{ marginBottom: 16 }}>
                         <h2
+                          className="article-card-title"
                           style={{
                             fontSize: "1.5rem",
                             fontWeight: 700,
