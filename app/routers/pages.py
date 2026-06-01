@@ -15,7 +15,7 @@ from app.utils import (
     parse_markdown_sections, render_markdown_file, get_gallery_folders, 
     safe_join, get_folder_meta, PdfExtension
 )
-from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles
+from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles, parse_education_timeline, get_raw_section_body
 from app.auth import verify_credentials, create_session, get_cookie_settings
 
 router = APIRouter()
@@ -30,6 +30,12 @@ def _build_home_payload() -> dict[str, Any]:
     section_colors = ["#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6"]
     sections = []
     for index, (title, body_html) in enumerate(raw_sections):
+        # Use special timeline renderer for Education section
+        if title.lower() == "education":
+            raw_edu_md = get_raw_section_body("content.md", "Education")
+            timeline_html = parse_education_timeline(raw_edu_md)
+            if timeline_html:
+                body_html = timeline_html
         sections.append({
             "title": title,
             "body_html": body_html,
