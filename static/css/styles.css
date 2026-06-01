@@ -435,23 +435,45 @@ body {
 
 .profile-name {
     margin: 0;
-    font-size: 22px;
-    font-weight: 700;
+font-size: 22px;
+font-weight: 700;
     letter-spacing: -0.01em;
+    font-family: 'Playfair Display', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+background: linear-gradient(135deg,
+rgba(191, 219, 254, 0.92) 0%,
+rgba(147, 197, 253, 0.95) 35%,
+rgba(59, 130, 246, 0.88) 70%,
+rgba(30, 64, 175, 0.82) 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+text-shadow: none;
+position: relative;
+filter:
+drop-shadow(0 1px 1px rgba(37, 99, 235, 0.4))
+drop-shadow(0 3px 8px rgba(37, 99, 235, 0.2))
+drop-shadow(0 6px 18px rgba(30, 64, 175, 0.12));
+}
+.profile-name-cn {
+    margin: 2px 0 0;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    font-family: 'Noto Serif SC', 'Playfair Display', Georgia, 'Times New Roman', serif;
     background: linear-gradient(135deg,
-        rgba(191, 219, 254, 0.92) 0%,
-        rgba(147, 197, 253, 0.95) 35%,
-        rgba(59, 130, 246, 0.88) 70%,
-        rgba(30, 64, 175, 0.82) 100%);
+        rgba(30, 64, 175, 0.95) 0%,
+        rgba(29, 78, 216, 0.92) 30%,
+        rgba(30, 58, 138, 0.95) 65%,
+        rgba(15, 23, 42, 0.88) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-shadow: none;
     position: relative;
     filter:
-        drop-shadow(0 1px 1px rgba(37, 99, 235, 0.4))
-        drop-shadow(0 3px 8px rgba(37, 99, 235, 0.2))
-        drop-shadow(0 6px 18px rgba(30, 64, 175, 0.12));
+        drop-shadow(0 1px 1px rgba(15, 23, 42, 0.35))
+        drop-shadow(0 2px 6px rgba(30, 64, 175, 0.22))
+        drop-shadow(0 4px 14px rgba(15, 23, 42, 0.14));
 }
 .profile-role { color: var(--muted); margin: 6px 0 0; font-size: 15px; font-weight: 400; }
 
@@ -1544,6 +1566,21 @@ body {
 
         drop-shadow(0 6px 20px rgba(37, 99, 235, 0.18));
 
+}
+
+[data-theme="dark"] .profile-name-cn {
+    background: linear-gradient(135deg,
+        rgba(96, 165, 250, 0.95) 0%,
+        rgba(59, 130, 246, 0.95) 35%,
+        rgba(37, 99, 235, 0.92) 70%,
+        rgba(29, 78, 216, 0.88) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter:
+        drop-shadow(0 1px 1px rgba(59, 130, 246, 0.4))
+        drop-shadow(0 2px 8px rgba(37, 99, 235, 0.25))
+        drop-shadow(0 4px 16px rgba(15, 23, 42, 0.2));
 }
 
 
