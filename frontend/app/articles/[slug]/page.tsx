@@ -18,8 +18,18 @@ export async function generateMetadata({
   const { slug } = await params;
   try {
     const article = await getArticleDetailPayload(slug);
+    const tagsText = article.tags.length > 0 ? ` Tags: ${article.tags.join(", ")}.` : "";
     return {
       title: article.title,
+      description: `${article.title} - Article by Yixun Hong, ${article.date_str}.${tagsText}`,
+      openGraph: {
+        type: "article",
+        title: article.title,
+        description: `Article by Yixun Hong, ${article.date_str}.${tagsText}`,
+        authors: [article.author],
+        publishedTime: article.date_str,
+        tags: article.tags,
+      },
     };
   } catch {
     return {

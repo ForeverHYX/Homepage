@@ -3,7 +3,8 @@ import { HomeSidebar } from "@/components/home-sidebar";
 import { getHomePayload } from "@/lib/api";
 
 export const metadata: Metadata = {
-  title: "Home",
+  title: "Yixun Hong",
+  description: "Yixun Hong's personal academic homepage. Undergraduate student at Zhejiang University, Information Security. Research interests: Computer Architecture, GPU simulation, HPC.",
 };
 
 export default async function HomePage() {

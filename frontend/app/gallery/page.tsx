@@ -10,6 +10,7 @@ type GalleryPageProps = {
 
 export const metadata: Metadata = {
   title: "Gallery",
+  description: "Photo gallery by Yixun Hong. Cycling, hiking, and travel photography.",
 };
 
 export default async function GalleryPage({ searchParams }: GalleryPageProps) {

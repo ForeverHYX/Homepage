@@ -11,6 +11,7 @@ type ArticlesPageProps = {
 
 export const metadata: Metadata = {
   title: "Articles",
+  description: "Articles and blog posts by Yixun Hong on Computer Architecture, GPU simulation, High-Performance Computing, and more.",
 };
 
 export default async function ArticlesPage({ searchParams }: ArticlesPageProps) {
