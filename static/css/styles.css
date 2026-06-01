@@ -419,10 +419,21 @@ body {
 
 .news-list { list-style: none; padding: 0; margin: 0; }
 .news-item { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
-.news-item a { color: inherit; text-decoration: none; border-bottom: 1px dashed var(--muted); transition: all 0.3s ease; }
-.news-item a:hover { color: var(--primary); border-bottom-color: var(--primary); }
+.news-item a {
+    background: linear-gradient(135deg, #93c5fd, #2563eb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+    border-bottom: 1px dashed #93c5fd;
+    transition: all 0.3s ease;
+}
+.news-item a:hover {
+    filter: brightness(1.2);
+    border-bottom-color: #2563eb;
+}
 
-.profile-name { margin: 0; font-size: 22px; font-weight: 700; color: var(--heading); letter-spacing: -0.01em; }
+.profile-name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .profile-role { color: var(--muted); margin: 6px 0 0; font-size: 15px; font-weight: 400; }
 
 .contact-links {
@@ -1483,8 +1494,10 @@ body {
         0 0 0 1px rgba(255, 255, 255, 0.16),
         0 0 0 8px rgba(255, 255, 255, 0.04),
         0 18px 34px rgba(0, 0, 0, 0.34);
+
 }
 
+[data-theme="dark"] .home-glass.profile-card .contact-icon,
 [data-theme="dark"] .home-glass.profile-card .contact-icon,
 [data-theme="dark"] .home-glass.news-card .news-expand-btn {
     background: rgba(255, 255, 255, 0.04);
@@ -1577,7 +1590,21 @@ body {
 .article-card {
     padding: 0;
 }
-    padding: 24px;
+
+.home-glass.article-card::before {
+    background:
+        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.1) 12%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 82% 14%, rgba(191, 219, 254, 0.16) 0%, rgba(191, 219, 254, 0.06) 16%, rgba(191, 219, 254, 0) 30%),
+        linear-gradient(130deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 34%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.08) 100%);
+    opacity: 0.6;
+}
+
+[data-theme="dark"] .home-glass.article-card::before {
+    background:
+        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 12%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 82% 18%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.04) 16%, rgba(96, 165, 250, 0) 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 36%, rgba(15, 23, 42, 0) 60%, rgba(96, 165, 250, 0.04) 100%);
+    opacity: 0.5;
 }
 
 .article-card-title {
@@ -1587,13 +1614,16 @@ body {
 }
 
 .article-card-title a {
-    color: var(--heading);
+    background: linear-gradient(135deg, #93c5fd, #2563eb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     text-decoration: none;
-    transition: color 0.3s ease;
+    transition: filter 0.3s ease;
 }
 
 .article-card-title a:hover {
-    color: var(--primary);
+    filter: brightness(1.2);
 }
 
 .article-card-meta {
@@ -1968,8 +1998,11 @@ body {
 .nav-links a[data-active="true"] {
     opacity: 1;
     transform: translateY(-1px);
-    color: var(--heading);
-    background: rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, #93c5fd, #2563eb), rgba(255, 255, 255, 0.12);
+    -webkit-background-clip: text, border-box;
+    background-clip: text, border-box;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
     border-color: rgba(255, 255, 255, 0.18);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
@@ -1977,7 +2010,11 @@ body {
 }
 
 .nav-links a[data-active="true"] {
-    background: rgba(255, 255, 255, 0.18);
+    background: linear-gradient(135deg, #93c5fd, #2563eb), rgba(255, 255, 255, 0.18);
+    -webkit-background-clip: text, border-box;
+    background-clip: text, border-box;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
 .nav-divider {
@@ -1992,8 +2029,21 @@ body {
         width 0.28s ease;
 }
 
-.prose a { color: var(--primary); text-decoration: none; font-weight: 500; transition: color 0.3s ease; }
-.prose a:hover { color: var(--primary-hover); text-decoration: underline; }
+.prose a {
+    background: linear-gradient(135deg, #93c5fd, #2563eb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+    font-weight: 500;
+    transition: filter 0.3s ease;
+}
+.prose a:hover {
+    filter: brightness(1.2);
+    text-decoration: underline;
+    text-decoration-color: #2563eb;
+    -webkit-text-fill-color: transparent;
+}
 
 /* --- Article Grid --- */
 .article-grid { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: stretch; }
@@ -2011,8 +2061,19 @@ body {
 
 .toc ul { list-style: none; padding: 0; margin: 0; }
 .toc li { margin-bottom: 8px; font-size: 14px; }
-.toc a { color: var(--muted); text-decoration: none; transition: all 0.3s ease; display: block; }
-.toc a:hover { color: var(--primary); padding-left: 4px; }
+.toc a {
+    background: linear-gradient(135deg, #93c5fd, #2563eb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: block;
+}
+.toc a:hover {
+    filter: brightness(1.2);
+    padding-left: 4px;
+}
 
 /* --- News Card Markdown --- */
 .news-card ul { list-style: none; padding: 0; margin: 0; }
@@ -2339,7 +2400,11 @@ body {
 .nav-mobile-link:hover,
 .nav-mobile-link[data-active="true"] {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(135deg, #93c5fd, #2563eb), rgba(255, 255, 255, 0.16);
+    -webkit-background-clip: text, border-box;
+    background-clip: text, border-box;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
     border-color: rgba(255, 255, 255, 0.24);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
@@ -2350,7 +2415,11 @@ body {
 [data-theme="dark"] .nav-links a[data-active="true"],
 [data-theme="dark"] .nav-mobile-link:hover,
 [data-theme="dark"] .nav-mobile-link[data-active="true"] {
-    background: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, #93c5fd, #60a5fa), rgba(255, 255, 255, 0.08);
+    -webkit-background-clip: text, border-box;
+    background-clip: text, border-box;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
     border-color: rgba(255, 255, 255, 0.14);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -2524,10 +2593,210 @@ footer {
     }
 }
 
+/* ============================================
+   Education Timeline
+   ============================================ */
+.edu-timeline {
+    position: relative;
+    padding: 4px 0;
+}
+
+.edu-timeline-item {
+    display: grid;
+    grid-template-columns: 150px 40px 1fr;
+    align-items: start;
+    position: relative;
+}
+
+.edu-timeline-item + .edu-timeline-item {
+    margin-top: 32px;
+}
+
+/* Vertical connector line between markers */
+.edu-timeline-item::after {
+    content: '';
+    position: absolute;
+    left: calc(150px + 19px);
+    top: 22px;
+    bottom: -32px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--primary) 0%, var(--glass-lo-border) 100%);
+    opacity: 0.35;
+    z-index: 1;
+}
+
+.edu-timeline-item:last-child::after {
+    display: none;
+}
+
+.edu-timeline-date {
+    text-align: right;
+    padding-right: 16px;
+    padding-top: 2px;
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+}
+
+.edu-timeline-marker {
+    display: flex;
+    justify-content: center;
+    padding-top: 5px;
+    position: relative;
+    z-index: 2;
+}
+
+.edu-timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2.5px solid var(--glass-lo-border);
+    transition: all 0.3s ease;
+}
+
+.edu-timeline-item.is-active .edu-timeline-dot {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.edu-timeline-content {
+    padding-left: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.edu-timeline-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.edu-institution {
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--heading);
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+}
+
+.edu-logo-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: -14px;
+}
+
+.edu-logo {
+    height: 52px;
+    width: auto;
+    object-fit: contain;
+    opacity: 0.85;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06));
+}
+
+.edu-logo:hover {
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+.edu-role {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.65;
+    margin: 0;
+}
+
+.edu-role a {
+    background: linear-gradient(135deg, #93c5fd, #2563eb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+    font-weight: 500;
+    transition: filter 0.3s ease;
+}
+
+.edu-role a:hover {
+    filter: brightness(1.2);
+    text-decoration: underline;
+    text-decoration-color: #2563eb;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Dark mode timeline adjustments */
+[data-theme="dark"] .edu-timeline-item::after {
+    background: linear-gradient(180deg, var(--primary) 0%, rgba(255, 255, 255, 0.08) 100%);
+    opacity: 0.3;
+}
+
+[data-theme="dark"] .edu-timeline-dot {
+    background: var(--bg);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .edu-timeline-item.is-active .edu-timeline-dot {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
+}
+
+[data-theme="dark"] .edu-logo {
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3)) brightness(1.15);
+}
+
+
 @media (max-width: 800px) {
     .carousel-slide { height: 300px; }
     .carousel-wrapper.focused .carousel-slide { height: 200px; }
     .page-shell { gap: 28px; padding-bottom: 40px; }
+    /* Timeline responsive */
+    .edu-timeline-item {
+        grid-template-columns: 28px 1fr;
+        gap: 0;
+    }
+    .edu-timeline-date {
+        grid-column: 2;
+        grid-row: 1;
+        text-align: left;
+        padding: 0 0 4px 12px;
+        font-size: 0.82rem;
+    }
+    .edu-timeline-marker {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        padding-top: 4px;
+    }
+    .edu-timeline-content {
+        grid-column: 2;
+        grid-row: 2;
+        padding-left: 12px;
+    }
+    .edu-timeline-item::after {
+        left: 13px;
+    }
+    .edu-timeline-item + .edu-timeline-item {
+        margin-top: 24px;
+    }
+    .edu-institution {
+        font-size: 1rem;
+    }
+    .edu-timeline-content {
+        gap: 12px;
+    }
+    .edu-logo {
+        height: 48px;
+    }
+
     .home-layout {
         gap: 28px;
         padding-bottom: 48px;
@@ -2655,3 +2924,31 @@ footer {
 ::-webkit-scrollbar-thumb { background: var(--glass-hi-border); border-radius: 4px; transition: background 0.3s; }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 * { scrollbar-width: thin; scrollbar-color: var(--glass-hi-border) transparent; }
+
+/* ============================================
+   Dark Mode Gradient Links
+   ============================================ */
+[data-theme="dark"] .prose a,
+[data-theme="dark"] .news-item a,
+[data-theme="dark"] .edu-role a,
+[data-theme="dark"] .toc a,
+[data-theme="dark"] .article-card-title a {
+    background: linear-gradient(135deg, #93c5fd, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .prose a:hover,
+[data-theme="dark"] .news-item a:hover,
+[data-theme="dark"] .edu-role a:hover,
+[data-theme="dark"] .toc a:hover,
+[data-theme="dark"] .article-card-title a:hover {
+    filter: brightness(1.3);
+    -webkit-text-fill-color: transparent;
+    text-decoration-color: #60a5fa;
+}
+
+[data-theme="dark"] .news-item a {
+    border-bottom-color: #60a5fa;
+}
