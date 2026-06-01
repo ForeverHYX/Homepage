@@ -30,6 +30,7 @@ export default function UploadManager() {
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState("");
+  const [galleryToast, setGalleryToast] = useState<{ path: string; msg: string } | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [modalData, setModalData] = useState({ path: "", title: "", description: "", date: "", author: "Yixun Hong" });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -162,11 +163,10 @@ export default function UploadManager() {
     form.append("enable", String(enable));
     await fetch("/api/gallery/toggle", { method: "POST", body: form, credentials: "include" });
     await fetchFiles(currentPath);
-    // Invalidate /gallery's 60s ISR cache so the unstarred folder disappears
-    // from the public gallery immediately instead of after the cache window.
     await fetch("/api/revalidate-gallery", { method: "POST", credentials: "include" });
     router.refresh();
-    showToast(enable ? "Added to Gallery" : "Removed from Gallery");
+    setGalleryToast({ path, msg: enable ? "Added to Gallery" : "Removed from Gallery" });
+    setTimeout(() => setGalleryToast(null), 1500);
   };
 
   const parentPath = currentPath ? currentPath.split("/").slice(0, -1).join("/") : "";
@@ -309,6 +309,22 @@ export default function UploadManager() {
                         )}
                       </div>
                     </div>
+                    {galleryToast && galleryToast.path === f.path ? (
+                      <div style={{
+                        background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                        color: "#ffffff",
+                        border: "1px solid rgba(255, 255, 255, 0.25)",
+                        borderRadius: "10px",
+                        padding: "6px 16px",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 4px 14px rgba(37, 99, 235, 0.42)",
+                        animation: "gallery-toast-in 0.2s ease-out",
+                      }}>
+                        {galleryToast.msg}
+                      </div>
+                    ) : (
                     <div style={{ display: "flex", gap: "4px" }}>
                       <button className="action-btn" onClick={() => openMeta(f)} title="Edit Info">✎</button>
                       <button className="action-btn" onClick={() => toggleGallery(f.path, !f.is_gallery)} title="Toggle Gallery">
@@ -340,6 +356,7 @@ export default function UploadManager() {
                         </svg>
                       </button>
                     </div>
+                    )}
                   </>
                 ) : (
                   <>
