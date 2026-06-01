@@ -23,7 +23,7 @@ export function SiteHeader() {
   const [query, setQuery] = useState("");
   const [searchIndex, setSearchIndex] = useState<SearchEntry[] | null>(null);
   const navClusterRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
+const searchInputRef = useRef<HTMLInputElement | null>(null);
 const [mounted, setMounted] = useState(false);
 const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -133,28 +133,28 @@ useEffect(() => {
     setDropdownRect(null);
     return;
   }
-  let raf1 = 0;
-  let raf2 = 0;
+  let cancelled = false;
+  let intervalId = 0;
   const updateRect = () => {
     const input = searchInputRef.current;
-    if (!input) return;
+    if (!input || cancelled) return;
     const rect = input.getBoundingClientRect();
-    setDropdownRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
+    if (rect.width > 100) {
+      setDropdownRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
+      clearInterval(intervalId);
+    }
   };
-  // The .search-bar-container is hidden (visibility:hidden, max-width:0) until
-  // the .search-mode class lands. Measure after a double rAF so the CSS transition
-  // has begun — otherwise getBoundingClientRect returns 0,0,0,0 and the portalled
-  // dropdown lands at the top-left with zero width.
-  raf1 = requestAnimationFrame(() => {
-    raf2 = requestAnimationFrame(() => {
-      updateRect();
-      window.addEventListener("resize", updateRect);
-      window.addEventListener("scroll", updateRect, true);
-    });
-  });
+  intervalId = window.setInterval(updateRect, 50);
+  const timeout = window.setTimeout(() => {
+    clearInterval(intervalId);
+    updateRect();
+  }, 500);
+  window.addEventListener("resize", updateRect);
+  window.addEventListener("scroll", updateRect, true);
   return () => {
-    cancelAnimationFrame(raf1);
-    cancelAnimationFrame(raf2);
+    cancelled = true;
+    clearInterval(intervalId);
+    clearTimeout(timeout);
     window.removeEventListener("resize", updateRect);
     window.removeEventListener("scroll", updateRect, true);
   };
