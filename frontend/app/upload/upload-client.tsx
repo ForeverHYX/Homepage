@@ -3,25 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnniversaryCalendar } from "@/components/anniversary-calendar";
+import { FileItem, getIcon } from "./types";
+import { UploadMetaModal } from "./upload-meta-modal";
 
-
-interface FileItem {
-  name: string;
-  type: "file" | "dir";
-  size?: number;
-  url?: string;
-  is_gallery?: boolean;
-  path: string;
-  title?: string;
-  description?: string;
-  date?: string;
-  author?: string;
-}
-
-function getIcon(filename: string) {
-  const ext = filename.split(".").pop()?.toLowerCase() || "";
-  return ["jpg", "jpeg", "png", "gif", "webp"].includes(ext) ? "img" : "file";
-}
 
 export default function UploadManager() {
   const [currentPath, setCurrentPath] = useState("");
@@ -176,29 +160,7 @@ export default function UploadManager() {
       <section>
         <div className="card" style={{ padding: "24px", position: "sticky", top: "100px" }}>
           {editMode ? (
-            <>
-              <h2 style={{ marginTop: 0, fontSize: "18px", color: "var(--heading)" }}>Edit Folder Info</h2>
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Title</label>
-                <input value={modalData.title} onChange={(e) => setModalData({ ...modalData, title: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} />
-              </div>
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Shoot Date</label>
-                <input type="date" value={modalData.date} onChange={(e) => setModalData({ ...modalData, date: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} />
-              </div>
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Author</label>
-                <input value={modalData.author} onChange={(e) => setModalData({ ...modalData, author: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)" }} placeholder="Yixun Hong" />
-              </div>
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ display: "block", marginBottom: "4px", fontWeight: 500, color: "var(--text)" }}>Description</label>
-                <textarea rows={3} value={modalData.description} onChange={(e) => setModalData({ ...modalData, description: e.target.value })} style={{ width: "100%", padding: "8px", border: "1px solid var(--border)", borderRadius: "6px", background: "var(--surface)", color: "var(--text)", fontFamily: "inherit" }} />
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                <button className="btn" style={{ background: "var(--surface-highlight)", color: "var(--text)" }} onClick={closeMeta}>Cancel</button>
-                <button className="btn btn-primary" onClick={saveMeta}>Save</button>
-              </div>
-            </>
+            <UploadMetaModal modalData={modalData} setModalData={setModalData} onSave={saveMeta} onCancel={closeMeta} />
           ) : (
             <>
               <h2 style={{ marginTop: 0, fontSize: "18px", color: "var(--heading)" }}>Upload Manager</h2>

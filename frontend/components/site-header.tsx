@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   HomeIcon,
   MenuIcon,
@@ -14,6 +13,7 @@ import {
 } from "@/components/icons";
 import type { SearchEntry } from "@/lib/types";
 import { useActiveTheme } from "@/components/use-active-theme";
+import { SiteSearchDropdown } from "@/components/site-search-dropdown";
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -24,8 +24,6 @@ export function SiteHeader() {
   const [searchIndex, setSearchIndex] = useState<SearchEntry[] | null>(null);
   const navClusterRef = useRef<HTMLDivElement | null>(null);
 const searchInputRef = useRef<HTMLInputElement | null>(null);
-const [mounted, setMounted] = useState(false);
-const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const closeSearch = () => {
     setSearchOpen(false);
@@ -37,9 +35,6 @@ const dropdownRef = useRef<HTMLDivElement | null>(null);
     setMobileMenuOpen(false);
   };
 
-useEffect(() => {
-  setMounted(true);
-}, []);
   useEffect(() => {
     if (searchOpen) {
       window.setTimeout(() => searchInputRef.current?.focus(), 100);
@@ -55,9 +50,6 @@ useEffect(() => {
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (dropdownRef.current && dropdownRef.current.contains(target)) {
-        return;
-      }
       if (navClusterRef.current && !navClusterRef.current.contains(target)) {
         if (searchOpen) {
           setSearchOpen(false);
@@ -127,38 +119,6 @@ useEffect(() => {
     },
   ];
 
-const [dropdownRect, setDropdownRect] = useState<{ left: number; top: number; width: number } | null>(null);
-useEffect(() => {
-  if (!searchOpen) {
-    setDropdownRect(null);
-    return;
-  }
-  let cancelled = false;
-  let intervalId = 0;
-  const updateRect = () => {
-    const input = searchInputRef.current;
-    if (!input || cancelled) return;
-    const rect = input.getBoundingClientRect();
-    if (rect.width > 100) {
-      setDropdownRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
-      clearInterval(intervalId);
-    }
-  };
-  intervalId = window.setInterval(updateRect, 50);
-  const timeout = window.setTimeout(() => {
-    clearInterval(intervalId);
-    updateRect();
-  }, 500);
-  window.addEventListener("resize", updateRect);
-  window.addEventListener("scroll", updateRect, true);
-  return () => {
-    cancelled = true;
-    clearInterval(intervalId);
-    clearTimeout(timeout);
-    window.removeEventListener("resize", updateRect);
-    window.removeEventListener("scroll", updateRect, true);
-  };
-}, [searchOpen]);
   return (
     <header className="site-header">
       <div className="container nav-shell">
@@ -224,46 +184,13 @@ useEffect(() => {
                   >
                     &times;
                   </button>
-                  {mounted && searchOpen && dropdownRect && createPortal(
-                    <div
-                      ref={dropdownRef}
-                      id="searchDropdown"
-                      className={`search-dropdown${query.trim() ? " has-results" : ""}`}
-                      style={{
-                        position: "fixed",
-                        left: dropdownRect.left,
-                        top: dropdownRect.top,
-                        width: dropdownRect.width,
-                        zIndex: 9999,
-                      }}
-                    >
-                      <div id="inlineSearchResults" style={{ padding: "8px 0" }}>
-                        {query.trim() ? (
-                          hits.length ? (
-                            hits.map((hit) => (
-                              <Link
-                                href={hit.url}
-                                key={`${hit.type}-${hit.url}`}
-                                onClick={resetNavigationState}
-                              >
-                                <div className="search-result-title">
-                                  <span className="search-result-chip">{hit.type}</span>
-                                  {hit.title}
-                                </div>
-                              </Link>
-                            ))
-                          ) : (
-                            <div
-                              style={{ padding: 12, textAlign: "center", color: "var(--muted)" }}
-                            >
-                              No results found.
-                            </div>
-                          )
-                        ) : null}
-                      </div>
-                    </div>,
-                    document.body,
-                  )}
+                  <SiteSearchDropdown
+                    searchOpen={searchOpen}
+                    query={query}
+                    hits={hits}
+                    searchInputRef={searchInputRef}
+                    onNavigate={resetNavigationState}
+                  />
                 </div>
 
                 <div className="nav-actions">

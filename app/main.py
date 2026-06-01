@@ -6,7 +6,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
 from app.config import UPLOAD_DIR, limiter
-from app.routers import pages, upload
+from app.routers import pages, upload, auth
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,6 +22,7 @@ app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 # Include Routers
 app.include_router(pages.router)
 app.include_router(upload.router)
+app.include_router(auth.router)
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

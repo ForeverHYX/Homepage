@@ -20,8 +20,6 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
 # Security
-SESSION_KEY = "session_token"
 
 UPLOAD_USERNAME = os.getenv("HOMEPAGE_UPLOAD_USER", "admin")
-UPLOAD_PASSWORD = os.getenv("HOMEPAGE_UPLOAD_PASS", "changeme")
 

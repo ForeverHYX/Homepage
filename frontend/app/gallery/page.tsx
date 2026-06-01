@@ -8,6 +8,7 @@ type GalleryPageProps = {
   }>;
 };
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Gallery",
   description: "Photo gallery by Yixun Hong. Cycling, hiking, and travel photography.",

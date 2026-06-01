@@ -16,7 +16,6 @@ from app.utils import (
     safe_join, get_folder_meta, PdfExtension
 )
 from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles, parse_education_timeline, get_raw_section_body
-from app.auth import verify_credentials, create_session, get_cookie_settings
 
 router = APIRouter()
 
@@ -290,26 +289,3 @@ def article_detail_api(slug: str) -> Any:
     return JSONResponse(_build_article_detail_payload(slug), headers={"Cache-Control": "public, max-age=300"})
 
 
-
-@router.post("/api/login")
-@limiter.limit("10/minute")
-def api_login(request: Request, username: str = Form(...), password: str = Form(...)) -> Any:
-    username = username.strip()
-    password = password.strip()
-    if verify_credentials(username, password):
-        token = create_session()
-        response = RedirectResponse(url="/upload", status_code=status.HTTP_303_SEE_OTHER)
-        cookie_cfg = get_cookie_settings()
-        response.set_cookie(
-            key=cookie_cfg["key"],
-            value=token,
-            httponly=cookie_cfg["httponly"],
-            secure=cookie_cfg["secure"],
-            samesite=cookie_cfg["samesite"],
-            max_age=cookie_cfg["max_age"],
-        )
-        return response
-    return HTMLResponse(
-        content="<script>alert('Invalid credentials'); history.back();</script>", 
-        status_code=status.HTTP_401_UNAUTHORIZED
-    )
