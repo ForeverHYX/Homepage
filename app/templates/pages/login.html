@@ -10,13 +10,13 @@
         <form action="/api/login" method="POST">
             <div style="margin-bottom:20px">
                 <label style="display:block;margin-bottom:8px;font-weight:500;color:var(--text)">Username</label>
-                <input name="username" required autofocus style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-xs);font-size:16px;background:var(--bg);color:var(--text)">
+                <input name="username" required autofocus class="form-input" placeholder="Enter username">
             </div>
             <div style="margin-bottom:32px">
                 <label style="display:block;margin-bottom:8px;font-weight:500;color:var(--text)">Password</label>
-                <input type="password" name="password" required style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-xs);font-size:16px;background:var(--bg);color:var(--text)">
+                <input type="password" name="password" required class="form-input" placeholder="Enter password">
             </div>
-            <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+            <button type="submit" class="btn btn-primary">Sign In</button>
         </form>
     </div>
 </div>
