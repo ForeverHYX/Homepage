@@ -230,10 +230,10 @@ export function initHomeLiquidGlass() {
 
     const filter = createNode("filter", {
       id,
-      x: "-35%",
-      y: "-35%",
-      width: "170%",
-      height: "170%",
+      x: "-2%",
+      y: "-2%",
+      width: "104%",
+      height: "104%",
       "color-interpolation-filters": "sRGB",
     });
 
@@ -363,6 +363,16 @@ export function initHomeLiquidGlass() {
         in: "EDGE_ABERRATION",
         in2: "CENTER_CLEAN",
         operator: "over",
+        result: "FINAL_COMPOSITE",
+      })
+    );
+    // Clip the final output to the original graphic bounds to prevent
+    // out-of-bounds samples from bleeding dark artifacts past the edge.
+    filter.appendChild(
+      createNode("feComposite", {
+        in: "FINAL_COMPOSITE",
+        in2: "SourceAlpha",
+        operator: "in",
       })
     );
 
