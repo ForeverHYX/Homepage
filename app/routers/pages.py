@@ -248,7 +248,7 @@ def _build_article_detail_payload(slug: str) -> dict[str, Any]:
 
     tags_html = ""
     for tag in tags:
-        tags_html += f'<span style="background:var(--surface-highlight); color:var(--text); font-size:11px; padding:2px 6px; border-radius:4px; margin-right:6px; border: 1px solid var(--border);">{tag}</span>'
+        tags_html += f'<span class="chip article-tag-chip">{tag}</span>'
 
     return {
         "slug": slug,
