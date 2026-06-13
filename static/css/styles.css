@@ -1764,6 +1764,7 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
     margin-bottom: 12px;
     color: var(--muted);
     font-size: 13px;
+    font-variant-numeric: tabular-nums;
 }
 
 .article-card-summary {
@@ -1911,6 +1912,7 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
     padding-left: 22px;
     color: var(--muted);
     font-size: 15px;
+    font-variant-numeric: tabular-nums;
 }
 
 .article-hero-meta > span,
