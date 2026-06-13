@@ -1,67 +1,77 @@
 # Homepage
 
-This repository powers a personal academic homepage with a hybrid architecture:
+This repository powers a personal academic homepage. It runs as a **single
+process** built entirely on **FastAPI + Jinja2 templates + vanilla JS** — no
+React, no Next.js, no build step, no database. Markdown files in `content/`
+are the sole data source.
 
-- `Next.js` serves the public-facing pages
-- `FastAPI` serves content APIs, uploads, auth, static assets, and the admin dashboard
+> **Note on `frontend/`**: the original Next.js app still lives in the
+> `frontend/` directory for reference, but it is **no longer part of the
+> deployment**. Everything described below is the current, live system.
 
-The current production site is built around this split rather than the older pure-FastAPI template system. If you are reading the repository for the first time, treat this README as the source of truth for how the project works today.
+### Why Next.js was removed
+
+The production server is a 2-core / 1.7 GB Debian 12 box. Under the previous
+hybrid setup, Next.js consumed ~150 MB of RAM even though nearly every
+component was marked `"use client"`, making it effectively a thin proxy in
+front of FastAPI. Removing it:
+
+- freed ~130 MB of RAM,
+- cut TTFB from ~80–120 ms down to **17–27 ms**,
+- eliminated the frontend build step, and
+- collapsed the deployment into a single gunicorn-managed process.
 
 ## Architecture
 
-### Public app
+A single FastAPI application (run under gunicorn with 2 uvicorn workers in
+production) serves both HTML pages and JSON APIs out of one process:
 
-The public site lives in `frontend/` and is built with:
+- **FastAPI 0.115.8** serves HTML pages (via Jinja2 templates) **and** JSON APIs
+- **Uvicorn workers** managed by **gunicorn** (2 workers in production)
+- **Vanilla JS** for all client-side interactivity — no React, no Next.js,
+  no build step
+- **Markdown files in `content/`** as the sole data source — zero database
+- **Deployed on Debian 12** (2-core / 1.7 GB RAM), managed by **systemd**
+  with **Nginx** as the reverse proxy
 
-- Next.js 16
-- React 19
-- TypeScript
-- App Router
+The backend lives in `app/` and is organized as:
 
-Current public routes:
-
-- `/`
-- `/articles`
-- `/articles/[slug]`
-- `/gallery`
-
-These routes fetch their data from FastAPI JSON endpoints and render through Next.js.
-
-### Backend app
-
-The backend lives in `app/` and is built with:
-
-- FastAPI
-- Uvicorn
-- Jinja2
-- Markdown-based content parsing
-- Pillow for image processing
-
-The backend is still responsible for:
-
-- `/api/site/*` content APIs
-- `/api/search-index`
-- `/upload` admin dashboard
-- `/login` admin login
-- file upload / delete / folder management APIs
-- `/static/*`
-- `/uploads/*`
-
-Important detail: the shared site stylesheet is still served by FastAPI from `static/css/styles.css`, even when the public page itself is rendered by Next.js.
+| Module | Responsibility |
+| --- | --- |
+| `app/main.py` | App entry + Jinja2Templates setup |
+| `app/config.py` | Paths, rate limiter, env vars |
+| `app/auth.py` | bcrypt + session tokens |
+| `app/cache.py` | mtime-based in-memory cache |
+| `app/articles.py` | Article parsing |
+| `app/news.py` | News aggregation |
+| `app/content_utils.py` | Section extraction, about parsing |
+| `app/markdown_utils.py` | Markdown renderer (with PDF embed extension) |
+| `app/education.py` | Education timeline parser |
+| `app/file_utils.py` | Image conversion, safe path join |
+| `app/gallery_utils.py` | Gallery config management |
+| `app/utils.py` | Unified re-exports |
+| `app/routers/pages.py` | HTML page routes + JSON API + payload builders |
+| `app/routers/upload.py` | File upload APIs |
+| `app/routers/auth.py` | Login API |
 
 ## Route split
 
-| Route group | Runtime | Purpose |
+| Route group | Handler | Purpose |
 | --- | --- | --- |
-| `/`, `/articles`, `/articles/[slug]`, `/gallery` | Next.js | Public pages |
-| `/api/site/*`, `/api/search-index` | FastAPI | Data for the public app |
-| `/upload`, `/login`, `/api/upload`, `/api/files*`, `/api/folder*`, `/api/gallery/toggle` | FastAPI | Admin and file management |
-| `/static/*`, `/uploads/*` | FastAPI | Shared assets and uploaded files |
+| `/`, `/articles`, `/articles/{slug}`, `/gallery`, `/resume` | FastAPI + Jinja2 | Public HTML pages |
+| `/login`, `/upload` | FastAPI + Jinja2 | Admin pages (auth-gated) |
+| `/api/site/*`, `/api/search-index` | FastAPI JSON | Data for client-side JS fetches |
+| `/api/upload`, `/api/files*`, `/api/folder*`, `/api/gallery/toggle`, `/api/login` | FastAPI JSON | Admin operations (auth-gated) |
+| `/static/*` | Nginx direct | CSS + JS assets (7-day immutable cache) |
+| `/uploads/*` | Nginx direct | Uploaded files (7-day cache) |
 
 ## Current feature set
 
 - Public academic homepage with a floating capsule-style navigation bar
-- Desktop liquid-glass homepage treatment with a lower-cost custom runtime
+- Custom SVG `feDisplacementMap` liquid-glass effect (880-line vanilla JS
+  engine, no libraries)
+- Custom lightfield animation engine (6 gradient light spots, mouse parallax,
+  theme-adaptive)
 - Mobile fallback to standard frosted glass for better performance
 - Markdown-driven homepage sections
 - Markdown-driven article system with:
@@ -69,42 +79,84 @@ Important detail: the shared site stylesheet is still served by FastAPI from `st
   - summaries
   - automatic TOC generation
   - fenced code blocks
-  - PDF embedding inside markdown
+  - inline PDF embedding (via a custom Python-Markdown `PdfExtension`)
 - Folder-based gallery publishing with metadata
 - Search across articles and albums
-- Dark/light theme support
+- Dark/light theme via `data-theme` attribute + CSS custom properties
 - Secure upload dashboard for:
   - drag-and-drop uploads
   - folder creation
   - file deletion
   - gallery publish/unpublish toggles
   - album metadata editing
+  - automatic JPG→WebP conversion (quality 80, max 1920px) on upload
 
 ## Repository layout
 
 ```text
 .
-├── app/                     # FastAPI app, APIs, auth, upload manager
-│   ├── main.py
-│   ├── auth.py
-│   ├── config.py
-│   ├── content_utils.py
-│   ├── utils.py
-│   └── routers/
-├── frontend/                # Next.js public frontend
-│   ├── app/
-│   ├── components/
-│   ├── lib/
-│   └── next.config.ts
-├── static/                  # Shared CSS/JS served by FastAPI
-├── templates/               # Jinja templates, mainly admin / compatibility paths
-├── content/                 # Markdown content source
-└── uploads/                 # User uploads, gallery albums, avatar, documents
+├── app/                          # FastAPI application
+│   ├── main.py                   # App entry + Jinja2Templates setup
+│   ├── config.py                 # Paths, rate limiter, env vars
+│   ├── auth.py                   # bcrypt + session tokens
+│   ├── cache.py                  # mtime-based in-memory cache
+│   ├── articles.py               # Article parsing
+│   ├── news.py                   # News aggregation
+│   ├── content_utils.py          # Section extraction, about parsing
+│   ├── markdown_utils.py         # Markdown renderer (with PDF embed extension)
+│   ├── education.py              # Education timeline parser
+│   ├── file_utils.py             # Image conversion, safe path join
+│   ├── gallery_utils.py          # Gallery config management
+│   ├── utils.py                  # Unified re-exports
+│   ├── routers/
+│   │   ├── pages.py              # HTML page routes + JSON API + payload builders
+│   │   ├── upload.py             # File upload APIs
+│   │   └── auth.py               # Login API
+│   └── templates/
+│       ├── base.html             # Layout: nav island, lightfield, footer, scripts
+│       └── pages/
+│           ├── home.html
+│           ├── articles.html
+│           ├── article_detail.html
+│           ├── gallery.html
+│           ├── resume.html
+│           ├── login.html
+│           ├── upload.html
+│           └── 404.html
+├── static/
+│   ├── css/styles.css            # Single stylesheet (~3400 lines)
+│   └── js/
+│       ├── effects/
+│       │   ├── liquid-glass.js   # SVG feDisplacementMap glass effect
+│       │   └── lightfield.js     # Animated gradient light field
+│       └── components/
+│           ├── site-header.js    # Nav island, search, theme toggle
+│           ├── content-enhancer.js  # Code highlighting + GitHub cards
+│           ├── gallery-view.js   # Carousel + lightbox
+│           ├── upload-manager.js # Drag-drop upload dashboard
+│           ├── anniversary-calendar.js
+│           └── anniversary-data.js
+├── content/                      # Markdown content (the "database")
+│   ├── about.md                  # Profile info
+│   ├── content.md                # Homepage sections
+│   ├── news.md                   # Manual news entries
+│   └── articles/*.md             # One file per article
+├── uploads/                      # Gallery albums, avatar, documents
+│   ├── <album>/                  # Images + meta.json per album
+│   ├── avatar.png
+│   └── transcript.pdf
+├── deploy/                       # Saved deployment configs
+│   └── nginx-foreverhyx.conf
+├── frontend/                     # LEGACY Next.js code — kept for reference, NOT deployed
+├── requirements.txt
+└── README.md
 ```
 
 ## Content model
 
-The site is file-driven.
+The site is file-driven. There is **no database** — Markdown files in
+`content/` are the sole data source, and the in-memory cache invalidates
+automatically whenever a file's mtime changes.
 
 ### Homepage content
 
@@ -139,30 +191,21 @@ The site is file-driven.
 
 ## Environment variables
 
-Create a `.env` file in the repository root for the backend:
+Create a `.env` file in the repository root:
 
 ```env
 HOMEPAGE_UPLOAD_USER=admin
 HOMEPAGE_UPLOAD_PASS=change-me
-
-# Optional overrides
-HOMEPAGE_CONTENT_DIR=/absolute/path/to/content
-HOMEPAGE_UPLOAD_DIR=/absolute/path/to/uploads
+HOMEPAGE_UPLOAD_PASS_HASH=<bcrypt hash>  # alternative to plain pass
+HOMEPAGE_CONTENT_DIR=/path/to/content    # optional override
+HOMEPAGE_UPLOAD_DIR=/path/to/uploads     # optional override
+HOMEPAGE_COOKIE_SECURE=true              # production HTTPS
 ```
-
-Frontend builds and local dev can also use:
-
-```env
-API_BASE_URL=http://127.0.0.1:8000
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
-BACKEND_ORIGIN=http://127.0.0.1:8000
-```
-
-`frontend/next.config.ts` rewrites `/api/*`, `/static/*`, `/uploads/*`, `/upload*`, and `/login*` back to the backend origin.
 
 ## Local development
 
-### 1. Backend
+There is **no frontend build step** — static JS is served directly. Edit
+static files and refresh.
 
 ```bash
 python -m venv .venv
@@ -171,65 +214,49 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### 2. Frontend
+Then open `http://127.0.0.1:8000`.
+
+> Tip: append `?v=N` to a static asset URL during development to bust
+> browser cache after editing.
+
+## Production deploy
+
+There is **no build step** — gunicorn runs the FastAPI app directly.
 
 ```bash
-cd frontend
-npm install
-API_BASE_URL=http://127.0.0.1:8000 \
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000 \
-BACKEND_ORIGIN=http://127.0.0.1:8000 \
-npm run dev -- --hostname 127.0.0.1 --port 3000
+# Backend only — no build step
+gunicorn app.main:app -k uvicorn.workers.UvicornWorker \
+  --bind 127.0.0.1:8000 --workers 2 --timeout 60
 ```
 
-Then open:
+Nginx proxies `/*` and `/api/*` to FastAPI on `127.0.0.1:8000` and serves
+`/static/` and `/uploads/` directly (7-day cache). A reference Nginx config
+lives at `deploy/nginx-foreverhyx.conf`.
 
-- `http://127.0.0.1:3000` for the public site
-- `http://127.0.0.1:8000/upload` for the admin dashboard
-
-## Production build and deploy
-
-The current production deployment uses Next.js standalone output plus a separate FastAPI process.
-
-### Build the frontend
-
-```bash
-cd frontend
-npm install
-npm run build
-mkdir -p .next/standalone/.next/static
-cp -R .next/static/. .next/standalone/.next/static/
-```
-
-That static copy step is required. Without it, the standalone server will miss chunk assets.
-
-### Run the frontend
-
-```bash
-node .next/standalone/server.js
-```
-
-### Run the backend
-
-```bash
-uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-### Reverse proxy expectation
-
-Production should send:
-
-- public page routes to Next.js
-- `/api/*`, `/static/*`, `/uploads/*`, `/upload*`, `/login*` to FastAPI
+The systemd service file lives at
+`/etc/systemd/system/foreverhyx-homepage.service` and manages the gunicorn
+process.
 
 ## Notes for contributors
 
-- `static/css/styles.css` is still part of the live frontend experience
-- the homepage liquid-glass effect is implemented in `frontend/components/home-legacy-effects.tsx`
-- article syntax highlighting is route-scoped and no longer loaded globally
-- the homepage data layer uses FastAPI JSON endpoints plus Next.js revalidation
-- admin auth is intentionally simple and currently uses an in-memory session set; if you need persistent or multi-instance auth, replace it with a proper session store
+- **No build step.** Edit static files and refresh the browser — there is no
+  bundler, no transpiler, no `npm run build`.
+- **Cache-bust with `?v=N`.** Because assets are served directly, append a
+  `?v=N` query param when iterating on CSS/JS during development.
+- **`static/css/styles.css` is the single source of truth for styling** —
+  one ~3400-line stylesheet powers the entire site.
+- Sessions are stored in `.sessions.json` and are safe across the multiple
+  uvicorn workers; this is plain `token_urlsafe(32)` plus bcrypt, intentionally
+  simple — replace it with a real session store if you need more.
+- Rate limiting is provided by `slowapi` (200/min global, stricter on
+  `/login` and `/upload`).
+- All filesystem access uses `safe_join()` to prevent path traversal.
+- Windows-compatible SVG filter regions are required for the liquid-glass
+  effect — a black-shadow bug there was recently fixed.
 
 ## License / attribution
 
-This project is the source for Yixun Hong's homepage and remains highly tailored to that deployment. You are free to study and adapt the structure, but expect to customize content parsing, deployment, and styling for your own use case.
+This project is the source for Yixun Hong's homepage and remains highly
+tailored to that deployment. You are free to study and adapt the structure,
+but expect to customize content parsing, deployment, and styling for your
+own use case.

@@ -37,11 +37,9 @@
                 <div class="prose">{{ article.html_body|safe }}</div>
             </main>
             <aside class="sidebar" style="position:sticky;top:100px">
-                <div class="card home-glass toc-wrapper">
-                    <div class="home-glass-body" style="padding:20px">
-                        <h3 class="toc-title" style="font-size:14px;font-weight:700;color:var(--heading);margin:0 0 12px;text-transform:uppercase;letter-spacing:0.05em">Table of Contents</h3>
-                        {{ article.toc_html|safe }}
-                    </div>
+                <div class="toc card toc-wrapper">
+                    <h3 class="toc-title">Table of Contents</h3>
+                    {{ article.toc_html|safe }}
                 </div>
             </aside>
         </div>
@@ -50,5 +48,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/components/content-enhancer.js?v=80" defer></script>
+<script src="/static/js/components/content-enhancer.js?v=82" defer></script>
 {% endblock %}
