@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Articles | Yixun Hong{% endblock %}
+{% block meta %}
+<meta name="description" content="Articles and blog posts by Yixun Hong on Computer Architecture, GPU simulation, High-Performance Computing, and more.">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-shell">
+        <div class="article-grid">
+            <div class="page-stack">
+                {% if filter_tags %}
+                <div class="card home-glass article-card">
+                    <div class="home-glass-body" style="padding: 24px 28px">
+                        <span class="article-filter-label">
+                            Filtered by:
+                            {% for t in filter_tags %}
+                            <a href="{{ tags_url(filter_tags, t) }}" class="chip is-active" style="cursor:pointer;text-decoration:none;margin-right:6px">{{ t }} &times;</a>
+                            {% endfor %}
+                        </span>
+                        <a href="/articles" class="article-card-link" style="margin-top:0">Clear all</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if articles %}
+                    {% for article in articles %}
+                    <div class="card home-glass article-card">
+                        <div class="home-glass-body" style="padding: 28px 32px">
+                            <h2 class="article-card-title">
+                                <a href="/articles/{{ article.slug }}">{{ article.title }}</a>
+                            </h2>
+                            <div class="article-card-meta">
+                                <span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                    {{ article.date }}
+                                </span>
+                                <span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    {{ article.author }}
+                                </span>
+                                <div class="chip-list">
+                                    {% for tag in article.tags %}
+                                    {% if tag in filter_tags %}
+                                    <a href="{{ tags_url(filter_tags, tag) }}" class="chip is-active" style="cursor:pointer;text-decoration:none">{{ tag }} &times;</a>
+                                    {% else %}
+                                    <a href="{{ tags_url(filter_tags, tag) }}" class="chip" style="cursor:pointer;text-decoration:none">{{ tag }}</a>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="article-card-summary">{{ article.summary }}</p>
+                            <a href="/articles/{{ article.slug }}" class="article-card-link">Read more &rarr;</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No articles found.</p>
+                {% endif %}
+            </div>
+            <aside class="sidebar" style="position:sticky;top:100px">
+                <div class="card home-liquid-card home-news-card">
+                    <span class="home-liquid-warp" aria-hidden="true"></span>
+                    <div class="home-liquid-body">
+                        <h3 class="sidebar-card-title">Tags</h3>
+                        <div class="chip-list">
+                            <a href="/articles" class="chip{% if not filter_tags %} is-active{% endif %}">All</a>
+                            {% for tag_name, count in sorted_tags %}
+                            {% if tag_name in filter_tags %}
+                            <a href="{{ tags_url(filter_tags, tag_name) }}" class="chip is-active" style="cursor:pointer">{{ tag_name }} <span>({{ count }})</span> &times;</a>
+                            {% else %}
+                            <a href="{{ tags_url(filter_tags, tag_name) }}" class="chip" style="cursor:pointer">{{ tag_name }} <span>({{ count }})</span></a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,11 +1,13 @@
 from typing import Optional, Any
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 import re
 import markdown
 
 from fastapi import APIRouter, Request, Form, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 
 from app.config import (
     UPLOAD_DIR, ARTICLES_DIR,
@@ -18,6 +20,23 @@ from app.utils import (
 from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles, parse_education_timeline, get_raw_section_body
 
 router = APIRouter()
+
+# Template setup
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
+
+
+def _tags_url(current_tags: list[str], toggle: Optional[str] = None) -> str:
+    """Build a tag toggle URL for the articles filter."""
+    if not toggle:
+        next_tags = current_tags
+    elif toggle in current_tags:
+        next_tags = [t for t in current_tags if t != toggle]
+    else:
+        next_tags = [*current_tags, toggle]
+    if not next_tags:
+        return "/articles"
+    return f"/articles?tags={quote(','.join(next_tags))}"
 
 
 
@@ -293,5 +312,74 @@ def gallery_api(focus: Optional[str] = None) -> Any:
 @router.get("/api/site/articles/{slug}")
 def article_detail_api(slug: str) -> Any:
     return JSONResponse(_build_article_detail_payload(slug), headers={"Cache-Control": "public, max-age=300"})
+
+
+@router.post("/api/revalidate-gallery")
+def revalidate_gallery():
+    """No-op: with direct FastAPI rendering there is no Next.js cache to bust."""
+    return JSONResponse({"revalidated": True, "now": datetime.now().timestamp()})
+
+
+# ============================================
+# HTML Page Routes (Jinja2 templates)
+# ============================================
+
+@router.get("/", response_class=HTMLResponse)
+def home_page(request: Request):
+    payload = _build_home_payload()
+    return templates.TemplateResponse(request, "pages/home.html", {
+        "about": payload["about"],
+        "avatar_url": payload["avatar_url"],
+        "sections": payload["sections"],
+        "news_html": payload["news_html"],
+        "all_news_html": payload["all_news_html"],
+    })
+
+
+@router.get("/articles", response_class=HTMLResponse)
+def articles_page(request: Request, tags: Optional[str] = None):
+    payload = _build_articles_payload(tags)
+    return templates.TemplateResponse(request, "pages/articles.html", {
+        "articles": payload["articles"],
+        "filter_tags": payload["filter_tags"],
+        "sorted_tags": payload["sorted_tags"],
+        "tags_url": _tags_url,
+    })
+
+
+@router.get("/articles/{slug}", response_class=HTMLResponse)
+def article_detail_page(request: Request, slug: str):
+    try:
+        article = _build_article_detail_payload(slug)
+    except HTTPException:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return templates.TemplateResponse(request, "pages/article_detail.html", {
+        "article": article,
+    })
+
+
+@router.get("/gallery", response_class=HTMLResponse)
+def gallery_page(request: Request, focus: Optional[str] = None):
+    payload = _build_gallery_payload(focus)
+    return templates.TemplateResponse(request, "pages/gallery.html", {
+        "albums": payload["albums"],
+        "is_focused": payload["is_focused"],
+        "focus": payload["focus"],
+    })
+
+
+@router.get("/resume", response_class=HTMLResponse)
+def resume_page(request: Request):
+    return templates.TemplateResponse(request, "pages/resume.html", {})
+
+
+@router.get("/login", response_class=HTMLResponse)
+def login_page(request: Request):
+    return templates.TemplateResponse(request, "pages/login.html", {})
+
+
+@router.get("/upload", response_class=HTMLResponse)
+def upload_page(request: Request):
+    return templates.TemplateResponse(request, "pages/upload.html", {})
 
 

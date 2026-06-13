@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Upload{% endblock %}
+
+{% block content %}
+<div class="container upload-grid">
+    <section>
+        <div class="card" style="padding:24px;position:sticky;top:100px" id="uploadSidebar">
+            <h2 style="margin-top:0;font-size:18px;color:var(--heading)">Upload Manager</h2>
+            <div style="margin-bottom:16px">
+                <div style="font-weight:600;margin-bottom:8px;font-size:14px;color:var(--muted)">Current Path:</div>
+                <div style="display:flex;gap:8px;align-items:center;background:var(--surface-highlight);padding:8px;border-radius:var(--radius-xs);font-family:monospace;overflow-x:auto">
+                    <button class="action-btn" data-nav-home>Home</button>
+                    <span id="currentPathLabel">/</span>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+                <input id="folderName" type="text" placeholder="New Folder" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
+                <button class="btn btn-primary" id="createFolderBtn" style="padding:0 12px">+</button>
+            </div>
+            <div id="dropZone" style="border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;background:transparent;transition:all 0.2s;cursor:pointer">
+                <div style="color:var(--primary);margin-bottom:12px">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <p style="margin:0;font-weight:600;color:var(--text);font-size:15px">Click to Add Files</p>
+                <input id="fileInput" type="file" multiple style="display:none">
+            </div>
+            <div id="queueInfo" style="margin-top:16px;font-size:14px;text-align:center;color:var(--muted)"></div>
+            <button class="btn btn-primary" id="startUploadBtn" style="margin-top:16px;width:100%" disabled>Start Upload</button>
+        </div>
+        <div id="anniversaryCalendarMount"></div>
+    </section>
+    <section>
+        <div class="card" style="padding:32px;min-height:400px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+                <h2 style="margin:0;font-size:20px;color:var(--heading)">Files &amp; Folders</h2>
+                <button class="action-btn" id="refreshBtn">Refresh</button>
+            </div>
+            <div id="fileList"></div>
+        </div>
+    </section>
+    <div id="toast" class="toast" style="position:fixed;bottom:80px;left:50%;right:auto;transform:translateX(-50%);z-index:10000"></div>
+</div>
+
+<!-- Metadata edit modal -->
+<div id="metaModal" class="lightbox-overlay" style="display:none">
+    <div class="card home-liquid-card lightbox-content" style="padding:0;max-width:500px;width:90%" onclick="event.stopPropagation()">
+        <span class="home-liquid-warp" aria-hidden="true"></span>
+        <div class="home-liquid-body" style="padding:32px">
+            <h2 style="margin-top:0;font-size:18px;color:var(--heading)">Edit Folder Info</h2>
+            <input type="hidden" id="metaPath">
+            <div style="margin-bottom:12px">
+                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Title</label>
+                <input id="metaTitle" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
+            </div>
+            <div style="margin-bottom:12px">
+                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Shoot Date</label>
+                <input type="date" id="metaDate" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
+            </div>
+            <div style="margin-bottom:12px">
+                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Author</label>
+                <input id="metaAuthor" placeholder="Yixun Hong" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
+            </div>
+            <div style="margin-bottom:20px">
+                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Description</label>
+                <textarea id="metaDesc" rows="3" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);font-family:inherit"></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px">
+                <button class="btn" id="metaCancel" style="background:var(--surface-highlight);color:var(--text)">Cancel</button>
+                <button class="btn btn-primary" id="metaSave">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/components/anniversary-data.js?v=80" defer></script>
+<script src="/static/js/components/anniversary-calendar.js?v=80" defer></script>
+<script src="/static/js/components/upload-manager.js?v=80" defer></script>
+{% endblock %}
