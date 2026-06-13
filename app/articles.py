@@ -34,13 +34,16 @@ def _build_articles_list() -> List[dict]:
         # Parse Frontmatter-like lines (or just top lines)
         lines = text.splitlines()
         content_lines = []
+        title_set = False
         
         for line in lines:
             line_strip = line.strip()
-            # Title
-            if not title or title == f.stem.replace("-", " ").title():
+            # Title — only accept the FIRST "# " line (the H1 title), not
+            # later lines that may start with "# " (e.g. code-tree comments).
+            if not title_set:
                 if line_strip.startswith("# "):
                     title = line_strip[2:].strip()
+                    title_set = True
                     continue
             
             # Metadata
