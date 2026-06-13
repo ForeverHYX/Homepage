@@ -16,9 +16,7 @@
                     <div class="card home-liquid-card">
                         <span class="home-liquid-warp" aria-hidden="true"></span>
                         <div class="home-liquid-body" style="padding:40px">
-                            <div class="card home-liquid-card" style="margin-bottom:24px">
-                                <span class="home-liquid-warp" aria-hidden="true"></span>
-                                <div class="home-liquid-body" style="padding:28px 32px">
+                            <div class="card" style="margin-bottom:24px;padding:28px 32px">
                                     <div style="margin-bottom:20px">
                                         <a href="/gallery" class="action-btn" style="text-decoration:none;padding-left:0;color:var(--text);font-weight:500">&larr; Back to All Galleries</a>
                                     </div>
@@ -28,7 +26,6 @@
                                         <span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> {{ album.author }}</span>
                                     </div>
                                     {% if album.desc %}<p style="color:var(--text);font-size:1rem;margin:0 0 24px 0;line-height:1.6">{{ album.desc }}</p>{% endif %}
-                                </div>
                             </div>
                             <div class="{{ album.wrapper_class }}" style="box-shadow:none;border:none;padding:0;background:transparent">
                                 <div class="carousel-container" id="carousel-{{ album.path_name }}">
@@ -81,5 +78,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/components/gallery-view.js?v=82" defer></script>
+<script src="/static/js/components/gallery-view.js?v=83" defer></script>
 {% endblock %}

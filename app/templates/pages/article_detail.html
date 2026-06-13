@@ -13,9 +13,7 @@
                 <div style="margin-bottom:20px">
                     <a href="/articles" class="action-btn" style="text-decoration:none;padding-left:0;color:var(--text);font-weight:500">&larr; Back to Articles</a>
                 </div>
-                <div class="card home-liquid-card" style="margin-bottom:24px">
-                    <span class="home-liquid-warp" aria-hidden="true"></span>
-                    <div class="home-liquid-body" style="padding: 28px 32px">
+                <div class="card" style="margin-bottom:24px;padding:28px 32px">
                         <h1 style="font-size:2.5rem;font-weight:700;margin:0 0 16px 0;line-height:1.2;color:var(--heading)">{{ article.title }}</h1>
                         <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:14px;margin-bottom:12px">
                             <span>
@@ -32,7 +30,6 @@
                         {% if article.tags %}
                         <div style="display:flex;gap:6px;flex-wrap:wrap">{{ article.tags_html|safe }}</div>
                         {% endif %}
-                    </div>
                 </div>
                 <div class="prose">{{ article.html_body|safe }}</div>
             </main>
@@ -48,5 +45,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/components/content-enhancer.js?v=82" defer></script>
+<script src="/static/js/components/content-enhancer.js?v=83" defer></script>
 {% endblock %}
