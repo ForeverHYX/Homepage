@@ -79,7 +79,7 @@ def _build_home_payload() -> dict[str, Any]:
     }
 
 
-def _build_articles_payload(tag: Optional[str] = None) -> dict[str, Any]:
+def _build_articles_payload(tags: Optional[str] = None) -> dict[str, Any]:
     articles = get_all_articles()
     all_tags: dict[str, int] = {}
     for article in articles:
@@ -87,15 +87,18 @@ def _build_articles_payload(tag: Optional[str] = None) -> dict[str, Any]:
             if article_tag:
                 all_tags[article_tag] = all_tags.get(article_tag, 0) + 1
 
+    # Parse comma-separated tags
+    tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
+
     filtered_articles = articles
-    if tag:
-        filtered_articles = [article for article in articles if tag in article.get("tags", [])]
+    if tag_list:
+        filtered_articles = [article for article in articles if all(t in article.get("tags", []) for t in tag_list)]
 
     sorted_tags = sorted(all_tags.items(), key=lambda item: item[1], reverse=True)
 
     return {
         "articles": filtered_articles,
-        "filter_tag": tag,
+        "filter_tags": tag_list,
         "sorted_tags": sorted_tags,
     }
 
@@ -273,7 +276,10 @@ def search_api():
 
 
 @router.get("/api/site/articles")
-def articles_api(tag: Optional[str] = None) -> Any:
+def articles_api(tag: Optional[str] = None, tags: Optional[str] = None) -> Any:
+    # Support both old single-tag and new multi-tag param
+    effective_tags = tags if tags else tag
+    return JSONResponse(_build_articles_payload(effective_tags), headers={"Cache-Control": "public, max-age=60"})
     return JSONResponse(_build_articles_payload(tag), headers={"Cache-Control": "public, max-age=60"})
 
 

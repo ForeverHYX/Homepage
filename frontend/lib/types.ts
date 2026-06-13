@@ -29,7 +29,7 @@ export type ArticleSummary = {
 
 export type ArticlesPayload = {
   articles: ArticleSummary[];
-  filter_tag: string | null;
+  filter_tags: string[];
   sorted_tags: Array<[string, number]>;
 };
 

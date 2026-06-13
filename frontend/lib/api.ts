@@ -29,8 +29,8 @@ export const getHomePayload = unstable_cache(
 );
 
 export const getArticlesPayload = unstable_cache(
-  async (tag?: string) => {
-    const query = tag ? `?tag=${encodeURIComponent(tag)}` : "";
+  async (tags?: string) => {
+    const query = tags ? `?tags=${encodeURIComponent(tags)}` : "";
     return requestJson<ArticlesPayload>(`/api/site/articles${query}`);
   },
   ["articles"],

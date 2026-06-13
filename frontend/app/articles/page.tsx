@@ -5,7 +5,7 @@ import { getArticlesPayload } from "@/lib/api";
 
 type ArticlesPageProps = {
   searchParams: Promise<{
-    tag?: string;
+    tags?: string;
   }>;
 };
 
@@ -14,9 +14,24 @@ export const metadata: Metadata = {
   description: "Articles and blog posts by Yixun Hong on Computer Architecture, GPU simulation, High-Performance Computing, and more.",
 };
 
+function tagsUrl(currentTags: string[], toggle?: string): string {
+  let next: string[];
+  if (!toggle) {
+    next = currentTags;
+  } else if (currentTags.includes(toggle)) {
+    next = currentTags.filter((t) => t !== toggle);
+  } else {
+    next = [...currentTags, toggle];
+  }
+  if (next.length === 0) return "/articles";
+  return `/articles?tags=${encodeURIComponent(next.join(","))}`;
+}
+
 export default async function ArticlesPage({ searchParams }: ArticlesPageProps) {
-  const { tag } = await searchParams;
-  const data = await getArticlesPayload(tag);
+  const { tags } = await searchParams;
+  const tagParam = tags || undefined;
+  const data = await getArticlesPayload(tagParam);
+  const activeTags = data.filter_tags;
 
   return (
     <div className="container">
@@ -26,15 +41,25 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           <div className="page-stack">
 
 
-            {data.filter_tag ? (
+            {activeTags.length > 0 ? (
 
               <div className="card home-glass article-card">
                 <div className="home-glass-body" style={{ padding: "24px 28px" }}>
                   <span className="article-filter-label">
-                    Filtered by tag: <strong>{data.filter_tag}</strong>
+                    Filtered by:{" "}
+                    {activeTags.map((t) => (
+                      <Link
+                        key={t}
+                        href={tagsUrl(activeTags, t)}
+                        className="chip is-active"
+                        style={{ cursor: "pointer", textDecoration: "none", marginRight: 6 }}
+                      >
+                        {t} &times;
+                      </Link>
+                    ))}
                   </span>
                   <Link href="/articles" className="article-card-link" style={{ marginTop: 0 }}>
-                    Clear filter
+                    Clear all
                   </Link>
                 </div>
               </div>
@@ -55,11 +80,28 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                         <UserIcon /> {article.author}
                       </span>
                       <div className="chip-list">
-                        {article.tags.map((tagItem) => (
-                          <span className="chip" key={`${article.slug}-${tagItem}`}>
-                            {tagItem}
-                          </span>
-                        ))}
+                        {article.tags.map((tagItem) => {
+                          const isActive = activeTags.includes(tagItem);
+                          return isActive ? (
+                            <Link
+                              key={`${article.slug}-${tagItem}`}
+                              href={tagsUrl(activeTags, tagItem)}
+                              className="chip is-active"
+                              style={{ cursor: "pointer", textDecoration: "none" }}
+                            >
+                              {tagItem} &times;
+                            </Link>
+                          ) : (
+                            <Link
+                              key={`${article.slug}-${tagItem}`}
+                              href={tagsUrl(activeTags, tagItem)}
+                              className="chip"
+                              style={{ cursor: "pointer", textDecoration: "none" }}
+                            >
+                              {tagItem}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                     <p className="article-card-summary">{article.summary}</p>
@@ -82,19 +124,23 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                 <div className="chip-list">
                   <Link
                     href="/articles"
-                    className={`chip${!data.filter_tag ? " is-active" : ""}`}
+                    className={`chip${activeTags.length === 0 ? " is-active" : ""}`}
                   >
                     All
                   </Link>
-                  {data.sorted_tags.map(([tagName, count]) => (
-                    <Link
-                      href={`/articles?tag=${encodeURIComponent(tagName)}`}
-                      className={`chip${data.filter_tag === tagName ? " is-active" : ""}`}
-                      key={tagName}
-                    >
-                      {tagName} <span>({count})</span>
-                    </Link>
-                  ))}
+                  {data.sorted_tags.map(([tagName, count]) => {
+                    const isActive = activeTags.includes(tagName);
+                    return (
+                      <Link
+                        href={tagsUrl(activeTags, tagName)}
+                        className={`chip${isActive ? " is-active" : ""}`}
+                        key={tagName}
+                      >
+                        {tagName} <span>({count})</span>
+                        {isActive ? " \u00d7" : ""}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>
