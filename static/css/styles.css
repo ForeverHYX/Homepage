@@ -1179,26 +1179,21 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
         0 8px 18px rgba(73, 92, 138, 0.08);
 }
 
-.home-content {
-    /* More translucent than the default .home-glass / article-card so the
-       lightfield background visibly bleeds through the large content panel —
-       matching the frosted-glass feel of the small article cards, which read
-       as more glassy because their highlights concentrate near the edges. */
-    --home-glass-blur: 42px;
-    --home-glass-face-top: rgba(255, 255, 255, 0.30);
-    --home-glass-face-mid: rgba(255, 255, 255, 0.12);
-    --home-glass-face-bottom: rgba(255, 255, 255, 0.20);
+/* Match the home content frame material to article cards; only layout differs. */
+.home-content.home-glass::before {
+    background:
+        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.1) 12%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 82% 14%, rgba(191, 219, 254, 0.16) 0%, rgba(191, 219, 254, 0.06) 16%, rgba(191, 219, 254, 0) 30%),
+        linear-gradient(130deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 34%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.08) 100%);
+    opacity: 0.6;
 }
 
-/* The .home-glass::before overlay stacks several white radial highlights
-   (mix-blend: screen) which, over the large home panel, build up enough
-   white to mask the background. Tone it down for the home content frame so
-   the translucency reads. */
-.home-content.home-glass::before {
-    opacity: 0.45;
-}
 [data-theme="dark"] .home-content.home-glass::before {
-    opacity: 0.6;
+    background:
+        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 12%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 82% 18%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.04) 16%, rgba(96, 165, 250, 0) 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 36%, rgba(15, 23, 42, 0) 60%, rgba(96, 165, 250, 0.04) 100%);
+    opacity: 0.5;
 }
 
 .home-content .home-glass-body {
@@ -1682,14 +1677,6 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
 
 [data-theme="dark"] .home-content .cv-section + .cv-section::before {
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.04) 38%, rgba(96, 165, 250, 0.18) 100%);
-}
-
-[data-theme="dark"] .home-content {
-    /* Mirror the light-mode translucency boost so the lightfield glows through
-       the large content panel in dark mode too. */
-    --home-glass-face-top: rgba(18, 28, 48, 0.42);
-    --home-glass-face-mid: rgba(11, 18, 32, 0.26);
-    --home-glass-face-bottom: rgba(20, 28, 44, 0.42);
 }
 
 [data-theme="dark"] .home-content .prose {
