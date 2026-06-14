@@ -322,7 +322,8 @@
       if (!warp) {
         return [];
       }
-      const globalAmbient = card.classList.contains("home-profile-card") || card.classList.contains("home-news-card") || card.classList.contains("ambient-liquid-card");
+      const navAmbient = card.classList.contains("nav-island");
+      const globalAmbient = navAmbient || card.classList.contains("home-profile-card") || card.classList.contains("home-news-card") || card.classList.contains("ambient-liquid-card");
       card.classList.contains("home-profile-card") || card.classList.contains("home-news-card");
       return [{
         card,
@@ -338,7 +339,10 @@
         backdropFilter: "",
         active: false,
         focused: false,
+        navAmbient,
         globalAmbient,
+        navIdleGlow: liquidRest.glow,
+        navHoverGlow: liquidRest.glow,
         filterRefs: null,
         bounds: { left: 0, top: 0, width: 0, height: 0 },
         current: { ...liquidRest },
@@ -379,6 +383,8 @@
       const warpVisible = getComputedStyle(state.warp).display !== "none";
       const displacementScale = parseFloat(styles.getPropertyValue("--liquid-displacement-scale")) || (theme === "dark" ? 22 : 25);
       const aberration = parseFloat(styles.getPropertyValue("--liquid-aberration")) || (theme === "dark" ? 1.4 : 1.8);
+      const navIdleGlow = parseFloat(styles.getPropertyValue("--liquid-nav-idle-glow")) || liquidRest.glow;
+      const navHoverGlow = parseFloat(styles.getPropertyValue("--liquid-nav-hover-glow")) || navIdleGlow;
       const backdropFilter = `blur(${styles.getPropertyValue("--liquid-blur").trim() || "22px"}) saturate(${styles.getPropertyValue("--liquid-saturation").trim() || "180%"}) brightness(${styles.getPropertyValue("--liquid-brightness").trim() || "1.08"})`;
       const enabled = desktopLiquidGlass.matches && warpVisible && width >= 20 && height >= 20;
       const runtimeEnabled = enabled && (reduceMotion.matches || state.focused || state.globalAmbient);
@@ -403,6 +409,8 @@
       state.theme = theme;
       state.displacementScale = displacementScale;
       state.aberration = aberration;
+      state.navIdleGlow = navIdleGlow;
+      state.navHoverGlow = navHoverGlow;
       state.backdropFilter = backdropFilter;
       if (state.active && !geometryChanged && !themeChanged && !filterChanged && !backdropChanged) {
         return;
@@ -429,6 +437,7 @@
     let filterSyncRafId = 0;
     let refreshTargetsAfterFilter = false;
     let focusedStateId = "";
+    let hasPagePointer = false;
     const stateDelta = (from, to) => Math.abs(from.lightX - to.lightX) + Math.abs(from.lightY - to.lightY) + Math.abs(from.angle - to.angle) + Math.abs(from.glow - to.glow);
     const applyState = (state, force = false) => {
       if (!force && stateDelta(state.current, state.rendered) < 0.12) {
@@ -479,6 +488,9 @@
       const nextFocusedId = states.filter((state) => {
         const width = Math.max(state.bounds.width, 1);
         const height = Math.max(state.bounds.height, 1);
+        if (state.navAmbient && !hasPagePointer) {
+          return false;
+        }
         return width >= 20 && height >= 20 && isPointerNearState(state);
       }).map((state) => {
         const centerX = state.bounds.left + state.bounds.width * 0.5;
@@ -555,6 +567,17 @@
       states.forEach((state) => {
         const width = Math.max(state.bounds.width, 1);
         const height = Math.max(state.bounds.height, 1);
+        if (state.navAmbient) {
+          const navX = state.focused ? clamp((pagePointer.x - state.bounds.left) / width * 100, 8, 92) : liquidRest.lightX;
+          const navY = state.focused ? clamp((pagePointer.y - state.bounds.top) / height * 100, 8, 92) : liquidRest.lightY;
+          const navDx = (navX - 50) / 50;
+          const navDy = (navY - 50) / 50;
+          state.target.lightX = navX;
+          state.target.lightY = navY;
+          state.target.angle = 135 + navDx * 10 + navDy * 6;
+          state.target.glow = state.focused ? state.navHoverGlow : state.navIdleGlow;
+          return;
+        }
         if (state.globalAmbient) {
           state.target.lightX = ambientX;
           state.target.lightY = ambientY;
@@ -613,11 +636,13 @@
     };
     if (!reduceMotion.matches) {
       const handlePagePointerMove = (event) => {
+        hasPagePointer = true;
         pagePointer.x = event.clientX;
         pagePointer.y = event.clientY;
         scheduleTargetSync();
       };
       const handlePagePointerReset = () => {
+        hasPagePointer = false;
         pagePointer.x = window.innerWidth * 0.5;
         pagePointer.y = window.innerHeight * 0.2;
         scheduleTargetSync();

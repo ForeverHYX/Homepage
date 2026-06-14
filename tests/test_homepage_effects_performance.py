@@ -28,3 +28,23 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         self.assertIn("POINTER_SYNC_INTERVAL", source)
         self.assertIn("targetSyncTimeoutId", source)
+
+    def test_nav_island_uses_dedicated_optical_material(self) -> None:
+        source = LIQUID_GLASS_JS.read_text()
+        styles = STYLES_CSS.read_text()
+
+        nav_block = re.search(r"\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        self.assertIsNotNone(nav_block)
+        nav_body = nav_block.group("body")
+        self.assertIn("--liquid-nav-hover-glow", nav_body)
+        self.assertIn("--liquid-nav-caustic-opacity", nav_body)
+        self.assertIn("--liquid-nav-refraction", nav_body)
+
+        self.assertIn(".nav-island .home-liquid-warp::before", styles)
+        self.assertIn(".nav-island .home-liquid-warp::after", styles)
+        self.assertIn(".nav-island.home-liquid-card:hover", styles)
+        self.assertNotIn(".nav-island:hover {\n    transform:", styles)
+
+        self.assertIn("navAmbient", source)
+        self.assertIn("navHoverGlow", source)
+        self.assertIn("hasPagePointer", source)
