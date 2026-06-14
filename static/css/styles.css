@@ -666,6 +666,9 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
     filter: blur(var(--spot-blur, 54px)) saturate(118%);
     opacity: var(--spot-opacity, 0.3);
     will-change: transform, opacity;
+    transition:
+        transform var(--spot-motion-duration, 6800ms) cubic-bezier(0.22, 1, 0.36, 1),
+        opacity var(--spot-opacity-duration, 4800ms) ease;
     background:
         radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.5) 0%, rgba(59, 130, 246, 0.32) 32%, rgba(59, 130, 246, 0.12) 60%, rgba(59, 130, 246, 0) 82%);
 }
@@ -3544,5 +3547,4 @@ footer {
 [data-theme="dark"] .anniversary-card {
     --anniv-grad: linear-gradient(135deg, #93c5fd, #60a5fa);
 }
-
 

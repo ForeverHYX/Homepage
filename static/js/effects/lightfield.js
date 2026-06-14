@@ -5,6 +5,11 @@
     if (!field) return () => {
     };
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
+    const LIGHTFIELD_UPDATE_INTERVAL = [4600, 9200];
+    const LIGHTFIELD_TRANSITION = [5200, 9800];
+    const POINTER_TRANSITION_MS = 220;
+    const POINTER_IDLE_MS = 240;
     const spotsConfig = [
       {
         size: [420, 620],
@@ -134,18 +139,36 @@
       }
     ];
     const rand = (min, max) => min + Math.random() * (max - min);
-    const lerp = (from, to, t) => from + (to - from) * t;
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
     const isDark = () => document.documentElement.getAttribute("data-theme") === "dark";
-    const chooseTarget = (config) => ({
-      x: rand(config.x[0], config.x[1]),
-      y: rand(config.y[0], config.y[1]),
-      scale: rand(config.scale[0], config.scale[1]),
-      opacity: rand(config.opacity[0], config.opacity[1]),
+    const getOpacityBounds = () => isDark() ? { min: 0.14, max: 0.42 } : { min: 0.18, max: 0.6 };
+    const chooseMotionTarget = (config) => {
+      const opacityBounds = getOpacityBounds();
+      return {
+        x: rand(config.x[0], config.x[1]),
+        y: rand(config.y[0], config.y[1]),
+        scale: rand(config.scale[0], config.scale[1]),
+        opacity: clamp(rand(config.opacity[0], config.opacity[1]), opacityBounds.min, opacityBounds.max),
+        duration: rand(LIGHTFIELD_TRANSITION[0], LIGHTFIELD_TRANSITION[1])
+      };
+    };
+    const chooseGeometry = (config) => ({
       size: rand(config.size[0], config.size[1]),
       blur: rand(config.blur[0], config.blur[1])
     });
     const renderGradient = (colors) => `radial-gradient(circle at 50% 50%, ${colors[0]} 0%, ${colors[1]} 28%, ${colors[2]} 58%, ${colors[3]} 80%)`;
+    const pointer = { x: 0, y: 0 };
+    let renderRafId = 0;
+    let ambientTimerId = 0;
+    let pointerIdleTimerId = 0;
+    const setTransition = (spot, motionMs, opacityMs = motionMs * 0.72) => {
+      spot.element.style.setProperty("--spot-motion-duration", `${Math.round(motionMs)}ms`);
+      spot.element.style.setProperty("--spot-opacity-duration", `${Math.round(opacityMs)}ms`);
+    };
+    const applyGeometry = (spot) => {
+      spot.element.style.setProperty("--spot-size", `${spot.size.toFixed(1)}px`);
+      spot.element.style.setProperty("--spot-blur", `${spot.blur.toFixed(1)}px`);
+    };
     const applyPalette = () => {
       const dark = isDark();
       spots.forEach((spot) => {
@@ -154,130 +177,166 @@
         );
       });
     };
-    const pointer = { currentX: 0, currentY: 0, targetX: 0, targetY: 0 };
-    const resetPointer = () => {
-      pointer.targetX = 0;
-      pointer.targetY = 0;
-    };
-    const spots = spotsConfig.map((config) => {
-      const element = document.createElement("span");
-      element.className = "home-lightspot";
-      field.appendChild(element);
-      const target = chooseTarget(config);
-      return {
-        element,
-        config,
-        x: target.x,
-        y: target.y,
-        scale: target.scale,
-        opacity: target.opacity,
-        size: target.size,
-        blur: target.blur,
-        target,
-        nextChangeAt: performance.now() + rand(1800, 3400)
-      };
-    });
-    applyPalette();
     const applySpot = (spot, viewport) => {
-      const px = spot.x * viewport.width + pointer.currentX * spot.config.parallax;
-      const py = spot.y * viewport.height + pointer.currentY * spot.config.parallax;
-      spot.element.style.setProperty("--spot-size", `${spot.size.toFixed(1)}px`);
-      spot.element.style.setProperty("--spot-blur", `${spot.blur.toFixed(1)}px`);
+      const parallax = coarsePointer.matches ? 0 : spot.config.parallax;
+      const px = spot.x * viewport.width + pointer.x * parallax;
+      const py = spot.y * viewport.height + pointer.y * parallax;
       spot.element.style.setProperty("--spot-opacity", spot.opacity.toFixed(3));
       spot.element.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(${spot.scale.toFixed(3)})`;
     };
-    let rafId = 0;
-    const frame = (now) => {
-      rafId = 0;
-      const viewport = {
-        width: window.innerWidth,
-        height: window.innerHeight
-      };
-      pointer.currentX = lerp(pointer.currentX, pointer.targetX, 0.05);
-      pointer.currentY = lerp(pointer.currentY, pointer.targetY, 0.05);
-      spots.forEach((spot) => {
-        if (now >= spot.nextChangeAt) {
-          spot.target = chooseTarget(spot.config);
-          spot.nextChangeAt = now + rand(4200, 8200);
-        }
-        spot.x = lerp(spot.x, spot.target.x, 65e-4);
-        spot.y = lerp(spot.y, spot.target.y, 65e-4);
-        spot.scale = lerp(spot.scale, spot.target.scale, 6e-3);
-        spot.opacity = lerp(spot.opacity, spot.target.opacity, 0.012);
-        spot.size = lerp(spot.size, spot.target.size, 5e-3);
-        spot.blur = lerp(spot.blur, spot.target.blur, 5e-3);
-        const maxOpacity = isDark() ? 0.42 : 0.6;
-        const minOpacity = isDark() ? 0.14 : 0.18;
-        spot.opacity = clamp(spot.opacity, minOpacity, maxOpacity);
-        applySpot(spot, viewport);
-      });
-      if (!reduceMotion.matches && document.visibilityState === "visible") {
-        rafId = window.requestAnimationFrame(frame);
-      }
-    };
-    const start = () => {
-      if (!rafId && !reduceMotion.matches) {
-        rafId = window.requestAnimationFrame(frame);
-      }
-    };
-    const stop = () => {
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-        rafId = 0;
-      }
-    };
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        start();
-      } else {
-        stop();
-      }
-    };
-    const handlePointerMove = (event) => {
-      const x = clamp(event.clientX / Math.max(window.innerWidth, 1), 0, 1);
-      const y = clamp(event.clientY / Math.max(window.innerHeight, 1), 0, 1);
-      pointer.targetX = (x - 0.5) * 42;
-      pointer.targetY = (y - 0.5) * 34;
-    };
-    const themeObserver = new MutationObserver(() => {
-      applyPalette();
-      start();
-    });
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"]
-    });
-    if (reduceMotion.matches) {
+    const renderSpots = () => {
       const viewport = {
         width: window.innerWidth,
         height: window.innerHeight
       };
       spots.forEach((spot) => applySpot(spot, viewport));
-    } else {
-      document.addEventListener("visibilitychange", handleVisibility);
-      window.addEventListener("resize", start, { passive: true });
-      window.addEventListener("pointermove", handlePointerMove, { passive: true });
-      window.addEventListener("pointerleave", resetPointer);
-      window.addEventListener("blur", resetPointer);
-      start();
-      return () => {
+    };
+    const scheduleRender = () => {
+      if (renderRafId || document.visibilityState !== "visible") {
+        return;
+      }
+      renderRafId = window.requestAnimationFrame(() => {
+        renderRafId = 0;
+        renderSpots();
+      });
+    };
+    const setAmbientTransition = (spot) => {
+      setTransition(spot, spot.duration);
+    };
+    const updateAmbientTargets = () => {
+      spots.forEach((spot) => {
+        Object.assign(spot, chooseMotionTarget(spot.config));
+        setAmbientTransition(spot);
+      });
+      scheduleRender();
+    };
+    const clearAmbientTimer = () => {
+      if (ambientTimerId) {
+        window.clearTimeout(ambientTimerId);
+        ambientTimerId = 0;
+      }
+    };
+    const scheduleAmbientUpdate = () => {
+      clearAmbientTimer();
+      if (reduceMotion.matches || document.visibilityState !== "visible") {
+        return;
+      }
+      ambientTimerId = window.setTimeout(() => {
+        ambientTimerId = 0;
+        updateAmbientTargets();
+        scheduleAmbientUpdate();
+      }, rand(LIGHTFIELD_UPDATE_INTERVAL[0], LIGHTFIELD_UPDATE_INTERVAL[1]));
+    };
+    const resetPointer = () => {
+      pointer.x = 0;
+      pointer.y = 0;
+      spots.forEach((spot) => setTransition(spot, POINTER_TRANSITION_MS, 480));
+      scheduleRender();
+    };
+    const handlePointerMove = (event) => {
+      if (reduceMotion.matches || coarsePointer.matches) {
+        return;
+      }
+      const x = clamp(event.clientX / Math.max(window.innerWidth, 1), 0, 1);
+      const y = clamp(event.clientY / Math.max(window.innerHeight, 1), 0, 1);
+      pointer.x = (x - 0.5) * 42;
+      pointer.y = (y - 0.5) * 34;
+      spots.forEach((spot) => setTransition(spot, POINTER_TRANSITION_MS, 480));
+      scheduleRender();
+      if (pointerIdleTimerId) {
+        window.clearTimeout(pointerIdleTimerId);
+      }
+      pointerIdleTimerId = window.setTimeout(() => {
+        pointerIdleTimerId = 0;
+        spots.forEach(setAmbientTransition);
+      }, POINTER_IDLE_MS);
+    };
+    const stop = () => {
+      clearAmbientTimer();
+      if (renderRafId) {
+        window.cancelAnimationFrame(renderRafId);
+        renderRafId = 0;
+      }
+      if (pointerIdleTimerId) {
+        window.clearTimeout(pointerIdleTimerId);
+        pointerIdleTimerId = 0;
+      }
+    };
+    const start = () => {
+      if (reduceMotion.matches) {
         stop();
-        document.removeEventListener("visibilitychange", handleVisibility);
-        window.removeEventListener("resize", start);
-        window.removeEventListener("pointermove", handlePointerMove);
-        window.removeEventListener("pointerleave", resetPointer);
-        window.removeEventListener("blur", resetPointer);
-        themeObserver.disconnect();
-        spots.forEach((spot) => spot.element.remove());
+        resetPointer();
+        return;
+      }
+      scheduleAmbientUpdate();
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        renderSpots();
+        start();
+      } else {
+        stop();
+      }
+    };
+    const handleMotionChange = () => {
+      renderSpots();
+      start();
+    };
+    const handleResize = () => {
+      scheduleRender();
+    };
+    const spots = spotsConfig.map((config) => {
+      const element = document.createElement("span");
+      element.className = "home-lightspot";
+      field.appendChild(element);
+      const geometry = chooseGeometry(config);
+      const target = chooseMotionTarget(config);
+      const spot = {
+        element,
+        config,
+        ...geometry,
+        ...target
       };
+      setTransition(spot, 0, 0);
+      applyGeometry(spot);
+      return spot;
+    });
+    applyPalette();
+    renderSpots();
+    window.requestAnimationFrame(() => {
+      spots.forEach(setAmbientTransition);
+    });
+    const themeObserver = new MutationObserver(() => {
+      applyPalette();
+      updateAmbientTargets();
+    });
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"]
+    });
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("resize", handleResize, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointerleave", resetPointer);
+    window.addEventListener("blur", resetPointer);
+    if (typeof reduceMotion.addEventListener === "function") {
+      reduceMotion.addEventListener("change", handleMotionChange);
+    } else if (typeof reduceMotion.addListener === "function") {
+      reduceMotion.addListener(handleMotionChange);
     }
+    start();
     return () => {
       stop();
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("resize", start);
+      window.removeEventListener("resize", handleResize);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerleave", resetPointer);
       window.removeEventListener("blur", resetPointer);
+      if (typeof reduceMotion.removeEventListener === "function") {
+        reduceMotion.removeEventListener("change", handleMotionChange);
+      } else if (typeof reduceMotion.removeListener === "function") {
+        reduceMotion.removeListener(handleMotionChange);
+      }
       themeObserver.disconnect();
       spots.forEach((spot) => spot.element.remove());
     };
