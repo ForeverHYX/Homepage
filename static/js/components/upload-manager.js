@@ -479,7 +479,9 @@
         formData.append("title", metaTitle.value);
         formData.append("date", metaDate.value);
         formData.append("author", metaAuthor.value);
-        formData.append("desc", metaDesc.value);
+        // API Form field is named "description" (upload.py), not "desc".
+        // The list payload maps it to "desc" for display only.
+        formData.append("description", metaDesc.value);
 
         fetch("/api/folder/meta", {
             method: "POST",
