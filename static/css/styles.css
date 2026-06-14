@@ -1164,9 +1164,14 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
 }
 
 .home-content {
+    /* More translucent than the default .home-glass / article-card so the
+       lightfield background visibly bleeds through the large content panel —
+       matching the frosted-glass feel of the small article cards, which read
+       as more glassy because their highlights concentrate near the edges. */
     --home-glass-blur: 42px;
-    /* Match the article-card translucency (inherit base .home-glass face values)
-       rather than the earlier over-opaque 0.8/0.46 override. */
+    --home-glass-face-top: rgba(255, 255, 255, 0.42);
+    --home-glass-face-mid: rgba(255, 255, 255, 0.16);
+    --home-glass-face-bottom: rgba(255, 255, 255, 0.26);
 }
 
 .home-content .home-glass-body {
@@ -1650,6 +1655,14 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
 
 [data-theme="dark"] .home-content .cv-section + .cv-section::before {
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.04) 38%, rgba(96, 165, 250, 0.18) 100%);
+}
+
+[data-theme="dark"] .home-content {
+    /* Mirror the light-mode translucency boost so the lightfield glows through
+       the large content panel in dark mode too. */
+    --home-glass-face-top: rgba(18, 28, 48, 0.42);
+    --home-glass-face-mid: rgba(11, 18, 32, 0.26);
+    --home-glass-face-bottom: rgba(20, 28, 44, 0.42);
 }
 
 [data-theme="dark"] .home-content .prose {
