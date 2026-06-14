@@ -142,15 +142,18 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                         style={{ boxShadow: "none", border: "none", padding: 0, background: "transparent" }}
                       >
                         <div className="carousel-container" id={`carousel-${album.path_name}`}>
-                          {album.images.map((imageUrl) => (
-                            <div
-                              className="carousel-slide"
-                              onClick={() => setLightboxUrl(imageUrl)}
-                              key={imageUrl}
-                            >
-                              <img src={imageUrl} loading="lazy" alt="Photo" />
-                            </div>
-                          ))}
+                          {album.images.map((imageUrl, index) => {
+                            const fullImageUrl = album.full_images[index] ?? imageUrl;
+                            return (
+                              <div
+                                className="carousel-slide"
+                                onClick={() => setLightboxUrl(fullImageUrl)}
+                                key={fullImageUrl}
+                              >
+                                <img src={imageUrl} loading="lazy" alt="Photo" />
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -207,15 +210,18 @@ export function GalleryView({ albums, isFocused }: GalleryViewProps) {
                         style={{ boxShadow: "none", border: "none", padding: 0, background: "transparent" }}
                       >
                         <div className="carousel-container" id={`carousel-${album.path_name}`}>
-                          {album.images.map((imageUrl) => (
-                            <div
-                              className="carousel-slide"
-                              onClick={() => setLightboxUrl(imageUrl)}
-                              key={imageUrl}
-                            >
-                              <img src={imageUrl} loading="lazy" alt="Photo" />
-                            </div>
-                          ))}
+                          {album.images.map((imageUrl, index) => {
+                            const fullImageUrl = album.full_images[index] ?? imageUrl;
+                            return (
+                              <div
+                                className="carousel-slide"
+                                onClick={() => setLightboxUrl(fullImageUrl)}
+                                key={fullImageUrl}
+                              >
+                                <img src={imageUrl} loading="lazy" alt="Photo" />
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

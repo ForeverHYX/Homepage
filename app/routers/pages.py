@@ -18,6 +18,7 @@ from app.utils import (
     safe_join, get_folder_meta, PdfExtension
 )
 from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles, parse_education_timeline, get_raw_section_body
+from app.gallery_thumbnail_utils import ensure_gallery_thumbnail
 
 router = APIRouter()
 
@@ -156,11 +157,24 @@ def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
             continue
 
         images = []
+        full_images = []
         try:
             for file in sorted(list(path.iterdir()), key=lambda item: item.name):
                 if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
                     rel_file_path = file.relative_to(UPLOAD_DIR)
-                    images.append(f"/uploads/{rel_file_path}")
+                    original_url = f"/uploads/{rel_file_path}"
+                    full_images.append(original_url)
+
+                    if is_focused:
+                        images.append(original_url)
+                        continue
+
+                    thumbnail_path = ensure_gallery_thumbnail(UPLOAD_DIR, file)
+                    if thumbnail_path:
+                        thumb_rel_path = thumbnail_path.relative_to(UPLOAD_DIR)
+                        images.append(f"/uploads/{thumb_rel_path}")
+                    else:
+                        images.append(original_url)
         except Exception:
             continue
 
@@ -205,6 +219,7 @@ def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
             "date_str": date_str,
             "author": meta.get("author", "Yixun Hong"),
             "images": images,
+            "full_images": full_images,
             "sort_ts": sort_ts,
             "title_style": title_style,
             "meta_style": meta_style,
@@ -401,5 +416,4 @@ def login_page(request: Request):
 @router.get("/upload", response_class=HTMLResponse)
 def upload_page(request: Request):
     return templates.TemplateResponse(request, "pages/upload.html", {})
-
 

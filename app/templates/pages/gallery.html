@@ -30,7 +30,7 @@
                             <div class="{{ album.wrapper_class }}" style="box-shadow:none;border:none;padding:0;background:transparent">
                                 <div class="carousel-container" id="carousel-{{ album.path_name }}">
                                     {% for image_url in album.images %}
-                                    <div class="carousel-slide" data-src="{{ image_url }}">
+                                    <div class="carousel-slide" data-src="{{ album.full_images[loop.index0] if album.full_images is defined and album.full_images|length > loop.index0 else image_url }}">
                                         <img src="{{ image_url }}" loading="lazy" alt="Photo">
                                     </div>
                                     {% endfor %}
@@ -54,7 +54,7 @@
                             <div class="{{ album.wrapper_class }}" style="box-shadow:none;border:none;padding:0;background:transparent">
                                 <div class="carousel-container" id="carousel-{{ album.path_name }}">
                                     {% for image_url in album.images %}
-                                    <div class="carousel-slide" data-src="{{ image_url }}">
+                                    <div class="carousel-slide" data-src="{{ album.full_images[loop.index0] if album.full_images is defined and album.full_images|length > loop.index0 else image_url }}">
                                         <img src="{{ image_url }}" loading="lazy" alt="Photo">
                                     </div>
                                     {% endfor %}

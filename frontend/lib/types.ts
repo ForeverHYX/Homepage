@@ -41,6 +41,7 @@ export type GalleryAlbum = {
   date_str: string;
   author: string;
   images: string[];
+  full_images: string[];
   sort_ts: number;
   title_style: string;
   meta_style: string;
