@@ -1169,9 +1169,20 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
        matching the frosted-glass feel of the small article cards, which read
        as more glassy because their highlights concentrate near the edges. */
     --home-glass-blur: 42px;
-    --home-glass-face-top: rgba(255, 255, 255, 0.42);
-    --home-glass-face-mid: rgba(255, 255, 255, 0.16);
-    --home-glass-face-bottom: rgba(255, 255, 255, 0.26);
+    --home-glass-face-top: rgba(255, 255, 255, 0.30);
+    --home-glass-face-mid: rgba(255, 255, 255, 0.12);
+    --home-glass-face-bottom: rgba(255, 255, 255, 0.20);
+}
+
+/* The .home-glass::before overlay stacks several white radial highlights
+   (mix-blend: screen) which, over the large home panel, build up enough
+   white to mask the background. Tone it down for the home content frame so
+   the translucency reads. */
+.home-content.home-glass::before {
+    opacity: 0.45;
+}
+[data-theme="dark"] .home-content.home-glass::before {
+    opacity: 0.6;
 }
 
 .home-content .home-glass-body {
