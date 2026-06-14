@@ -460,11 +460,17 @@
         metaDate.value = item.date || "";
         metaAuthor.value = item.author || "";
         metaDesc.value = item.desc || "";
-        metaModal.style.display = "flex";
+        // Use the .active class so the .lightbox-overlay opacity transition
+        // (opacity:0 -> 1) applies. Setting display alone leaves it invisible.
+        metaModal.classList.add("active");
+        metaModal.style.display = "";
     }
 
     function closeMetaModal() {
-        if (metaModal) metaModal.style.display = "none";
+        if (metaModal) {
+            metaModal.classList.remove("active");
+            metaModal.style.display = "none";
+        }
     }
 
     function saveMeta() {

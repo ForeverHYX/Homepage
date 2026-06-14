@@ -44,26 +44,25 @@
 
 <!-- Metadata edit modal -->
 <div id="metaModal" class="lightbox-overlay" style="display:none">
-    <div class="card home-liquid-card lightbox-content" style="padding:0;max-width:500px;width:90%" onclick="event.stopPropagation()">
-        <span class="home-liquid-warp" aria-hidden="true"></span>
-        <div class="home-liquid-body" style="padding:32px">
+    <div class="card lightbox-content" style="padding:0;max-width:500px;width:90%" onclick="event.stopPropagation()">
+        <div style="padding:32px">
             <h2 style="margin-top:0;font-size:18px;color:var(--heading)">Edit Folder Info</h2>
             <input type="hidden" id="metaPath">
             <div style="margin-bottom:12px">
                 <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Title</label>
-                <input id="metaTitle" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
+                <input id="metaTitle" class="form-input">
             </div>
             <div style="margin-bottom:12px">
                 <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Shoot Date</label>
-                <input type="date" id="metaDate" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
+                <input type="date" id="metaDate" class="form-input">
             </div>
             <div style="margin-bottom:12px">
                 <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Author</label>
-                <input id="metaAuthor" placeholder="Yixun Hong" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
+                <input id="metaAuthor" placeholder="Yixun Hong" class="form-input">
             </div>
             <div style="margin-bottom:20px">
                 <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Description</label>
-                <textarea id="metaDesc" rows="3" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text);font-family:inherit"></textarea>
+                <textarea id="metaDesc" rows="3" class="form-input" style="resize:vertical"></textarea>
             </div>
             <div style="display:flex;justify-content:flex-end;gap:8px">
                 <button class="btn" id="metaCancel" style="background:var(--surface-highlight);color:var(--text)">Cancel</button>
@@ -75,7 +74,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/components/anniversary-data.js?v=88" defer></script>
-<script src="/static/js/components/anniversary-calendar.js?v=88" defer></script>
-<script src="/static/js/components/upload-manager.js?v=88" defer></script>
+<script src="/static/js/components/anniversary-data.js?v=89" defer></script>
+<script src="/static/js/components/anniversary-calendar.js?v=89" defer></script>
+<script src="/static/js/components/upload-manager.js?v=89" defer></script>
 {% endblock %}
