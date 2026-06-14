@@ -45,19 +45,37 @@ def _build_home_payload() -> dict[str, Any]:
     avatar_url = "/uploads/avatar.png"
     raw_sections = parse_markdown_sections("content.md")
 
-    section_colors = ["#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6"]
+    # Semantic per-section accent colors (blue/teal family + complementary
+    # warm accents). Mapped by lowercased title; a slug class is emitted too so
+    # CSS can apply dark-mode brightness adjustments per section.
+    section_accents = {
+        "introduction": "#0ea5e9",   # sky — welcoming, open
+        "education":     "#6366f1",  # indigo — academic, institutional
+        "publications":  "#f59e0b",  # amber — achievement, gold
+        "awards":        "#e11d48",  # rose — distinction
+        "teaching":      "#10b981",  # emerald — growth, mentoring
+        "projects":      "#8b5cf6",  # violet — creative
+        "research":      "#0ea5e9",  # sky
+        "experience":    "#14b8a6",  # teal
+        "skills":        "#6366f1",  # indigo
+        "contact":       "#3b82f6",  # blue
+    }
+    default_accent = "#3b82f6"
     sections = []
     for index, (title, body_html) in enumerate(raw_sections):
+        key = title.lower().strip()
         # Use special timeline renderer for Education section
-        if title.lower() == "education":
+        if key == "education":
             raw_edu_md = get_raw_section_body("content.md", "Education")
             timeline_html = parse_education_timeline(raw_edu_md)
             if timeline_html:
                 body_html = timeline_html
+        slug = re.sub(r'[^a-z0-9]+', '-', key).strip('-') or f"section-{index}"
         sections.append({
             "title": title,
             "body_html": body_html,
-            "accent_color": section_colors[index % len(section_colors)],
+            "accent_color": section_accents.get(key, default_accent),
+            "accent_class": f"section-{slug}",
         })
 
     if not sections:
@@ -65,7 +83,8 @@ def _build_home_payload() -> dict[str, Any]:
         sections.append({
             "title": "",
             "body_html": raw_html,
-            "accent_color": section_colors[0],
+            "accent_color": default_accent,
+            "accent_class": "section-default",
         })
 
     sections_html = ""

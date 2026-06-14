@@ -1691,6 +1691,44 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
     letter-spacing: -0.01em;
 }
 
+/* --- Section accent design language -------------------------------------
+   Each fixed home section carries an --accent color via its .section-* class.
+   The title gains a 4px accent bar + a very subtle tinted wash so sections
+   read as distinct without becoming a rainbow. Dark mode lifts each accent a
+   notch for visibility against dark glass. */
+.cv-section.section-introduction { --accent: #0ea5e9; }
+.cv-section.section-education     { --accent: #6366f1; }
+.cv-section.section-publications  { --accent: #f59e0b; }
+.cv-section.section-awards        { --accent: #e11d48; }
+.cv-section.section-teaching      { --accent: #10b981; }
+.cv-section.section-projects      { --accent: #8b5cf6; }
+.cv-section.section-research      { --accent: #0ea5e9; }
+.cv-section.section-experience    { --accent: #14b8a6; }
+.cv-section.section-skills        { --accent: #6366f1; }
+.cv-section.section-contact       { --accent: #3b82f6; }
+.cv-section.section-default       { --accent: #3b82f6; }
+
+.home-content .cv-section .section-title {
+    border-left-color: var(--accent, var(--primary));
+    background-image: linear-gradient(90deg, color-mix(in srgb, var(--accent, var(--primary)) 10%, transparent) 0%, transparent 38%);
+}
+
+/* Dark mode: lift each accent for visibility against dark glass. */
+[data-theme="dark"] .cv-section.section-introduction { --accent: #38bdf8; }
+[data-theme="dark"] .cv-section.section-education     { --accent: #818cf8; }
+[data-theme="dark"] .cv-section.section-publications  { --accent: #fbbf24; }
+[data-theme="dark"] .cv-section.section-awards        { --accent: #fb7185; }
+[data-theme="dark"] .cv-section.section-teaching      { --accent: #34d399; }
+[data-theme="dark"] .cv-section.section-projects      { --accent: #a78bfa; }
+[data-theme="dark"] .cv-section.section-research      { --accent: #38bdf8; }
+[data-theme="dark"] .cv-section.section-experience    { --accent: #2dd4bf; }
+[data-theme="dark"] .cv-section.section-skills        { --accent: #818cf8; }
+[data-theme="dark"] .cv-section.section-contact       { --accent: #60a5fa; }
+[data-theme="dark"] .cv-section.section-default       { --accent: #60a5fa; }
+[data-theme="dark"] .home-content .cv-section .section-title {
+    background-image: linear-gradient(90deg, color-mix(in srgb, var(--accent, var(--primary)) 16%, transparent) 0%, transparent 42%);
+}
+
 .page-shell {
     display: flex;
     flex-direction: column;

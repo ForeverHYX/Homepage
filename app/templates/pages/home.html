@@ -45,9 +45,9 @@
     <main class="card home-content home-glass">
         <div class="home-glass-body">
             {% for section in sections %}
-            <section class="cv-section">
+            <section class="cv-section {{ section.accent_class }}">
                 {% if section.title %}
-                <h2 class="section-title" style="border-left-color: {{ section.accent_color }}">{{ section.title }}</h2>
+                <h2 class="section-title">{{ section.title }}</h2>
                 {% endif %}
                 <div class="prose">{{ section.body_html|safe }}</div>
             </section>
