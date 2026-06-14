@@ -1158,13 +1158,41 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
         0 8px 18px rgba(73, 92, 138, 0.08);
 }
 
-/* Match the home content frame material to article cards; only layout differs. */
+/* Large-panel compensation: keep the article-card glass language but lower the
+   white face/highlight strength so this much taller home frame does not read
+   as a flat white slab. */
+.home-content {
+    --home-glass-face-top: rgba(255, 255, 255, 0.50);
+    --home-glass-face-mid: rgba(255, 255, 255, 0.16);
+    --home-glass-face-bottom: rgba(255, 255, 255, 0.26);
+    --home-glass-shadow: rgba(73, 92, 138, 0.18);
+    --home-glass-shadow-soft: rgba(73, 92, 138, 0.09);
+    --home-glass-bottom-glow: rgba(96, 165, 250, 0.12);
+    --home-glass-inner-top: rgba(255, 255, 255, 0.62);
+    --home-glass-inner-bottom: rgba(191, 219, 254, 0.13);
+    background:
+        linear-gradient(180deg, var(--home-glass-face-top) 0%, rgba(255, 255, 255, 0.22) 16%, var(--home-glass-face-mid) 42%, var(--home-glass-face-bottom) 100%);
+    backdrop-filter: blur(var(--home-glass-blur)) saturate(180%) contrast(1.08) brightness(1.01);
+    -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(180%) contrast(1.08) brightness(1.01);
+    box-shadow:
+        0 30px 76px var(--home-glass-shadow),
+        0 12px 28px var(--home-glass-shadow-soft),
+        0 2px 0 rgba(255, 255, 255, 0.22),
+        inset 0 1px 0 var(--home-glass-inner-top),
+        inset 0 -18px 28px var(--home-glass-inner-bottom);
+}
+
 .home-content.home-glass::before {
     background:
-        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.1) 12%, rgba(255, 255, 255, 0) 26%),
-        radial-gradient(circle at 82% 14%, rgba(191, 219, 254, 0.16) 0%, rgba(191, 219, 254, 0.06) 16%, rgba(191, 219, 254, 0) 30%),
-        linear-gradient(130deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 34%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.08) 100%);
-    opacity: 0.6;
+        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 12%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 82% 14%, rgba(191, 219, 254, 0.14) 0%, rgba(191, 219, 254, 0.05) 16%, rgba(191, 219, 254, 0) 30%),
+        linear-gradient(130deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.025) 34%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.055) 100%);
+    opacity: 0.52;
+}
+
+.home-content.home-glass::after {
+    opacity: 0.24;
+    filter: saturate(112%) brightness(102%);
 }
 
 [data-theme="dark"] .home-content.home-glass::before {
