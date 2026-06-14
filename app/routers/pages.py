@@ -1,7 +1,7 @@
 from typing import Optional, Any
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 import re
 import markdown
 
@@ -18,6 +18,11 @@ from app.utils import (
     safe_join, get_folder_meta, PdfExtension
 )
 from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles, parse_education_timeline, get_raw_section_body
+from app.daily import (
+    build_daily_payload,
+    daily_payload_search_entries,
+    load_daily_payload,
+)
 from app.gallery_thumbnail_utils import ensure_gallery_thumbnail
 
 router = APIRouter()
@@ -38,6 +43,33 @@ def _tags_url(current_tags: list[str], toggle: Optional[str] = None) -> str:
     if not next_tags:
         return "/articles"
     return f"/articles?tags={quote(','.join(next_tags))}"
+
+
+def _daily_url(keywords: Optional[list[str]] = None, item_type: Optional[str] = None) -> str:
+    params: dict[str, str] = {}
+    if keywords:
+        params["keywords"] = ",".join(keywords)
+    if item_type in {"paper", "repository"}:
+        params["item_type"] = item_type
+    if not params:
+        return "/daily"
+    return f"/daily?{urlencode(params)}"
+
+
+def _keywords_url(current_keywords: list[str], toggle: Optional[str] = None, item_type: Optional[str] = None) -> str:
+    """Build a Daily keyword toggle URL."""
+    if not toggle:
+        next_keywords = current_keywords
+    elif toggle in current_keywords:
+        next_keywords = [keyword for keyword in current_keywords if keyword != toggle]
+    else:
+        next_keywords = [*current_keywords, toggle]
+    return _daily_url(next_keywords, item_type)
+
+
+def _daily_type_url(item_type: Optional[str] = None) -> str:
+    """Build a Daily type filter URL. Switching type resets keyword filters."""
+    return _daily_url([], item_type)
 
 
 
@@ -141,6 +173,10 @@ def _build_articles_payload(tags: Optional[str] = None) -> dict[str, Any]:
         "filter_tags": tag_list,
         "sorted_tags": sorted_tags,
     }
+
+
+def _build_daily_payload(keywords: Optional[str] = None, item_type: Optional[str] = None) -> dict[str, Any]:
+    return load_daily_payload(keywords=keywords, item_type=item_type)
 
 
 def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
@@ -316,6 +352,7 @@ def search_api():
             "tags": a.get('tags', []), "date": a['date'],
             "url": f"/articles/{a['slug']}"
         })
+    data.extend(daily_payload_search_entries(load_daily_payload()))
     for rel_path in get_gallery_folders():
         path = safe_join(UPLOAD_DIR, rel_path)
         if not path.exists(): continue
@@ -335,6 +372,12 @@ def articles_api(tag: Optional[str] = None, tags: Optional[str] = None) -> Any:
     effective_tags = tags if tags else tag
     return JSONResponse(_build_articles_payload(effective_tags), headers={"Cache-Control": "public, max-age=60"})
     return JSONResponse(_build_articles_payload(tag), headers={"Cache-Control": "public, max-age=60"})
+
+
+@router.get("/api/site/daily")
+def daily_api(keyword: Optional[str] = None, keywords: Optional[str] = None, item_type: Optional[str] = None) -> Any:
+    effective_keywords = keywords if keywords else keyword
+    return JSONResponse(_build_daily_payload(effective_keywords, item_type), headers={"Cache-Control": "public, max-age=60"})
 
 
 
@@ -382,6 +425,22 @@ def articles_page(request: Request, tags: Optional[str] = None):
     })
 
 
+@router.get("/daily", response_class=HTMLResponse)
+def daily_page(request: Request, keywords: Optional[str] = None, item_type: Optional[str] = None, paper_id: Optional[str] = None):
+    payload = _build_daily_payload(keywords, item_type)
+    return templates.TemplateResponse(request, "pages/daily.html", {
+        "items": payload["items"],
+        "run_date": payload["run_date"],
+        "filter_keywords": payload["filter_keywords"],
+        "active_item_type": payload["active_item_type"],
+        "sorted_keywords": payload["sorted_keywords"],
+        "feedback_config": payload["feedback_config"],
+        "keywords_url": _keywords_url,
+        "type_url": _daily_type_url,
+        "target_paper_id": paper_id or "",
+    })
+
+
 @router.get("/articles/{slug}", response_class=HTMLResponse)
 def article_detail_page(request: Request, slug: str):
     try:
@@ -416,4 +475,3 @@ def login_page(request: Request):
 @router.get("/upload", response_class=HTMLResponse)
 def upload_page(request: Request):
     return templates.TemplateResponse(request, "pages/upload.html", {})
-

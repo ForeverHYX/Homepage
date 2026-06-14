@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import type {
   ArticleDetailPayload,
   ArticlesPayload,
+  DailyPayload,
   GalleryPayload,
   HomePayload,
 } from "@/lib/types";
@@ -35,6 +36,18 @@ export const getArticlesPayload = unstable_cache(
   },
   ["articles"],
   { revalidate: REVALIDATE_SECONDS, tags: ["articles"] }
+);
+
+export const getDailyPayload = unstable_cache(
+  async (keywords?: string, itemType?: string) => {
+    const params = new URLSearchParams();
+    if (keywords) params.set("keywords", keywords);
+    if (itemType) params.set("item_type", itemType);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return requestJson<DailyPayload>(`/api/site/daily${query}`);
+  },
+  ["daily"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["daily"] }
 );
 
 // Gallery: NO caching — always fetch fresh data from backend.

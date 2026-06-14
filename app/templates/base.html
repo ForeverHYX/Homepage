@@ -8,9 +8,13 @@
     <link rel="icon" href="/uploads/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Marcellus&family=Noto+Serif+SC:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Zhi+Mang+Xing&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
-    <link rel="stylesheet" href="/static/css/styles.css?v=108">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Marcellus&family=Noto+Serif+SC:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Zhi+Mang+Xing&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Marcellus&family=Noto+Serif+SC:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Zhi+Mang+Xing&display=swap">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
+    </noscript>
+    <link rel="stylesheet" href="/static/css/styles.css?v=116">
     <script>
       (function () {
         try {
@@ -44,6 +48,7 @@
                             <nav id="navLinks" class="nav-links nav-links-desktop" aria-label="Primary">
                                 <a href="/" class="nav-link" data-route="/">Home</a>
                                 <a href="/articles" class="nav-link" data-route="/articles">Articles</a>
+                                <a href="/daily" class="nav-link" data-route="/daily">Daily</a>
                                 <a href="/gallery" class="nav-link" data-route="/gallery">Gallery</a>
                                 <a href="/resume" class="nav-link" data-route="/resume">Resume</a>
                                 <a href="/upload" class="nav-link" data-route="/upload">Upload</a>
@@ -75,6 +80,7 @@
                         <nav class="nav-mobile-links" aria-label="Mobile primary">
                             <a href="/" class="nav-mobile-link" data-route="/">Home</a>
                             <a href="/articles" class="nav-mobile-link" data-route="/articles">Articles</a>
+                            <a href="/daily" class="nav-mobile-link" data-route="/daily">Daily</a>
                             <a href="/gallery" class="nav-mobile-link" data-route="/gallery">Gallery</a>
                             <a href="/resume" class="nav-mobile-link" data-route="/resume">Resume</a>
                             <a href="/upload" class="nav-mobile-link" data-route="/upload">Upload</a>

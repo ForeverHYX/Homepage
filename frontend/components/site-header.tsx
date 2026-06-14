@@ -100,6 +100,12 @@ const searchInputRef = useRef<HTMLInputElement | null>(null);
       external: false,
     },
     {
+      href: "/daily",
+      label: "Daily",
+      active: pathname === "/daily",
+      external: false,
+    },
+    {
       href: "/gallery",
       label: "Gallery",
       active: pathname === "/gallery",

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Daily | Yixun Hong{% endblock %}
+{% block meta %}
+<meta name="description" content="Daily AI-curated papers and repositories for agentic computer architecture, co-design, simulators, and HPC systems.">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-shell">
+        <div id="dailyFeedbackConfig"
+             hidden
+             data-run-date="{{ run_date or 'unknown' }}"
+             data-supabase-url="{{ feedback_config.supabase_url or '' }}"
+             data-supabase-anon-key="{{ feedback_config.supabase_anon_key or '' }}"></div>
+        <div class="article-grid daily-grid">
+            <div class="page-stack">
+                {% if filter_keywords %}
+                <div class="card home-glass article-card">
+                    <div class="home-glass-body" style="padding: 24px 28px">
+                        <span class="article-filter-label">
+                            Filtered by:
+                            {% for keyword in filter_keywords %}
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip is-active" style="cursor:pointer;text-decoration:none;margin-right:6px">{{ keyword }} &times;</a>
+                            {% endfor %}
+                        </span>
+                        <a href="{{ type_url(active_item_type) }}" class="article-card-link" style="margin-top:0">Clear all</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if items %}
+                    {% for item in items %}
+                    <article class="card home-glass article-card daily-card{% if target_paper_id == item.id %} is-target{% endif %}"
+                             id="paper-{{ item.id|replace('/', '-')|replace(':', '-') }}"
+                             data-feedback-payload='{{ item.feedback_payload|tojson }}'>
+                        <div class="home-glass-body" style="padding: 28px 32px">
+                            <h2 class="article-card-title">
+                                <a href="{{ item.paper_url or item.repository_url or '#' }}" target="_blank" rel="noreferrer">{{ item.title }}</a>
+                            </h2>
+                            <div class="article-card-meta daily-card-meta daily-card-main-meta">
+                                {% if item.display_authors %}
+                                <span class="daily-meta-authors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    {{ item.display_authors|join(', ') }}
+                                </span>
+                                {% endif %}
+                                {% if run_date %}
+                                <span class="daily-meta-date">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                    {{ run_date }}
+                                </span>
+                                {% endif %}
+                                <div class="chip-list daily-keyword-list">
+                                    {% for keyword in item.keywords[:8] %}
+                                    <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip{% if keyword in filter_keywords %} is-active{% endif %}" style="cursor:pointer;text-decoration:none">{{ keyword }}{% if keyword in filter_keywords %} &times;{% endif %}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if item.item_type == 'repository' and item.repository_url %}
+                            <a class="github-repo-card daily-github-repo-card" href="{{ item.repository_url }}" target="_blank" rel="noopener noreferrer" data-repository-homepage="{{ item.repository_homepage }}">
+                                <div class="github-repo-top">
+                                    <strong>{{ item.repository_full_name or item.title }}</strong>
+                                    {% if item.repository_language %}
+                                    <span class="daily-github-language"><span class="daily-github-language-dot"></span>{{ item.repository_language }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if item.repository_description %}
+                                <div class="github-repo-desc">{{ item.repository_description }}</div>
+                                {% endif %}
+                                <div class="github-repo-stats">
+                                    {% if item.repository_stars %}
+                                    <span class="github-repo-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> {{ item.display_repository_stars }}</span>
+                                    {% endif %}
+                                    {% if item.repository_forks %}
+                                    <span class="github-repo-stat"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg> {{ item.display_repository_forks }}</span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                            {% endif %}
+                            <p class="article-card-summary daily-tldr">
+                                {{ item.tldr }}
+                            </p>
+                            <div class="daily-actions">
+                                {% if item.item_type == 'paper' and item.pdf_url %}
+                                <a class="daily-action-button action-glass daily-action-pdf" href="{{ item.pdf_url }}" target="_blank" rel="noreferrer"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 18h3"/></svg></span><span class="daily-action-label">PDF</span></a>
+                                {% elif item.item_type == 'repository' %}
+                                    {% if item.code_urls %}
+                                    <a class="daily-action-button action-glass daily-action-code" href="{{ item.code_urls[0] }}" target="_blank" rel="noreferrer"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span><span class="daily-action-label">Code</span></a>
+                                    {% elif item.repository_url %}
+                                    <a class="daily-action-button action-glass daily-action-code" href="{{ item.repository_url }}" target="_blank" rel="noreferrer"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span><span class="daily-action-label">Code</span></a>
+                                    {% endif %}
+                                {% endif %}
+                                <button class="daily-action-button action-glass feedback daily-action-like daily-feedback-button" type="button" data-feedback-rating="like"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3l3.92-6.26A2 2 0 0 1 14.65 5"/></svg></span><span class="daily-action-label">Like</span></button>
+                                <button class="daily-action-button action-glass feedback daily-action-dislike daily-feedback-button" type="button" data-feedback-rating="dislike"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V3"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3l-3.92 6.26A2 2 0 0 1 9.35 19"/></svg></span><span class="daily-action-label">Dislike</span></button>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                {% else %}
+                    <p>No daily recommendations found.</p>
+                {% endif %}
+            </div>
+
+            <aside class="sidebar" style="position:sticky;top:100px">
+                <div class="card home-liquid-card home-news-card">
+                    <span class="home-liquid-warp" aria-hidden="true"></span>
+                    <div class="home-liquid-body">
+                        <div class="daily-sidebar-heading">
+                            <h3 class="sidebar-card-title">AI Keywords</h3>
+                            <div class="daily-type-toggle" aria-label="Filter daily recommendation type">
+                                <a href="{{ type_url('') }}" class="daily-type-button daily-type-all{% if not active_item_type %} is-active{% endif %}" title="All">All</a>
+                                <a href="{{ type_url('repository') }}" class="daily-type-button{% if active_item_type == 'repository' %} is-active{% endif %}" title="Repositories" aria-label="Repositories">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                </a>
+                                <a href="{{ type_url('paper') }}" class="daily-type-button{% if active_item_type == 'paper' %} is-active{% endif %}" title="Papers" aria-label="Papers">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="chip-list daily-filter-chips">
+                            {% for keyword, count in sorted_keywords[:36] %}
+                            {% if keyword in filter_keywords %}
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip is-active" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span> &times;</a>
+                            {% else %}
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span></a>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/components/daily-feedback.js?v=3" defer></script>
+{% endblock %}

@@ -56,7 +56,7 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         self.assertIn("Dancing+Script", base)
         self.assertNotIn("Allura", base)
-        self.assertIn("styles.css?v=108", base)
+        self.assertRegex(base, r"/static/css/styles\.css\?v=\d+")
         self.assertIn("Zhi+Mang+Xing", base)
         self.assertIn("--font-hand-en", styles)
         self.assertIn("--font-hand-cn", styles)
@@ -75,3 +75,13 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("Allura", styles)
         self.assertIn("Zhi Mang Xing", styles)
         self.assertIn("STXingkai", styles)
+
+    def test_google_fonts_load_without_blocking_first_render(self) -> None:
+        base = BASE_HTML.read_text()
+
+        self.assertIn('rel="preload"', base)
+        self.assertIn('as="style"', base)
+        self.assertIn("this.rel='stylesheet'", base)
+        self.assertIn("<noscript>", base)
+        blocking_head = re.sub(r"<noscript>.*?</noscript>", "", base, flags=re.S)
+        self.assertNotIn('rel="stylesheet" href="https://fonts.googleapis.com', blocking_head)

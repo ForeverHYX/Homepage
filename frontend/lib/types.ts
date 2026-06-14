@@ -33,6 +33,56 @@ export type ArticlesPayload = {
   sorted_tags: Array<[string, number]>;
 };
 
+export type DailyItem = {
+  id: string;
+  rank: number;
+  item_type: "paper" | "repository";
+  type_label: string;
+  title: string;
+  abstract: string;
+  authors: string[];
+  display_authors: string[];
+  categories: string[];
+  section: string;
+  section_label: string;
+  keywords: string[];
+  tldr: string;
+  paper_url: string;
+  pdf_url: string;
+  code_urls: string[];
+  code_search_url: string;
+  repository_full_name: string;
+  repository_description: string;
+  repository_url: string;
+  repository_homepage: string;
+  repository_topics: string[];
+  repository_stars: number;
+  display_repository_stars: string;
+  repository_forks: number;
+  display_repository_forks: string;
+  repository_stars_today: number;
+  repository_language: string;
+  paper_links: Array<{
+    label: string;
+    url: string;
+  }>;
+  score: number;
+  ai_score?: number;
+};
+
+export type DailyPayload = {
+  run_date: string;
+  source_url: string;
+  items: DailyItem[];
+  filter_keywords: string[];
+  active_item_type: "" | "paper" | "repository";
+  sorted_keywords: Array<[string, number]>;
+  feedback_config: {
+    supabase_url?: string;
+    supabase_anon_key?: string;
+  };
+};
+
 export type GalleryAlbum = {
   path_name: string;
   rel_path: string;
