@@ -11,6 +11,8 @@
     --font-code: 'JetBrains Mono', 'SF Mono', 'Fira Code', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --font-display: 'Marcellus', 'Cormorant Garamond', Georgia, serif;
     --font-name-cn: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', SimSun, serif;
+    --font-hand-en: 'Allura', 'Great Vibes', 'Snell Roundhand', 'Segoe Script', cursive;
+    --font-hand-cn: 'Zhi Mang Xing', 'STXingkai', 'Xingkai SC', 'Kaiti SC', 'KaiTi', 'FZKai-Z03', 'Noto Serif SC', serif;
 
     --bg: #e8f1fb;
     --bg-gradient: none;
@@ -518,31 +520,32 @@ a { color: inherit; text-decoration: none; }
 
 .profile-name {
     margin: 0;
-font-size: 22px;
-font-weight: 700;
-    letter-spacing: -0.01em;
-    font-family: var(--font-display);
-background: linear-gradient(135deg,
-rgba(59, 130, 246, 0.95) 0%,
-rgba(37, 99, 235, 0.95) 45%,
-rgba(29, 78, 216, 0.92) 75%,
-rgba(30, 64, 175, 0.9) 100%);
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-background-clip: text;
-text-shadow: none;
-position: relative;
-filter:
-drop-shadow(0 1px 1px rgba(37, 99, 235, 0.32))
-drop-shadow(0 3px 8px rgba(37, 99, 235, 0.18))
-drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
+    font-size: clamp(30px, 3vw, 36px);
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0;
+    font-family: var(--font-hand-en);
+    background: linear-gradient(135deg,
+        rgba(59, 130, 246, 0.95) 0%,
+        rgba(37, 99, 235, 0.95) 45%,
+        rgba(29, 78, 216, 0.92) 75%,
+        rgba(30, 64, 175, 0.9) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    position: relative;
+    filter:
+        drop-shadow(0 1px 1px rgba(37, 99, 235, 0.22))
+        drop-shadow(0 3px 8px rgba(37, 99, 235, 0.12));
 }
 .profile-name-cn {
-    margin: 2px 0 0;
-    font-size: 18px;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    font-family: var(--font-name-cn);
+    margin: 0;
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.16;
+    letter-spacing: 0.08em;
+    font-family: var(--font-hand-cn);
     background: linear-gradient(135deg,
         rgba(30, 64, 175, 0.95) 0%,
         rgba(29, 78, 216, 0.92) 30%,

@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LIGHTFIELD_JS = ROOT / "static" / "js" / "effects" / "lightfield.js"
 LIQUID_GLASS_JS = ROOT / "static" / "js" / "effects" / "liquid-glass.js"
 STYLES_CSS = ROOT / "static" / "css" / "styles.css"
+BASE_HTML = ROOT / "app" / "templates" / "base.html"
 
 
 class HomepageEffectsPerformanceTests(TestCase):
@@ -48,3 +49,21 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("navAmbient", source)
         self.assertIn("navHoverGlow", source)
         self.assertIn("hasPagePointer", source)
+
+    def test_profile_name_uses_handwritten_font_stack(self) -> None:
+        styles = STYLES_CSS.read_text()
+        base = BASE_HTML.read_text()
+
+        self.assertIn("Allura", base)
+        self.assertIn("Zhi+Mang+Xing", base)
+        self.assertIn("--font-hand-en", styles)
+        self.assertIn("--font-hand-cn", styles)
+
+        en_block = re.search(r"\.profile-name\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        cn_block = re.search(r"\.profile-name-cn\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        self.assertIsNotNone(en_block)
+        self.assertIsNotNone(cn_block)
+        self.assertIn("var(--font-hand-en)", en_block.group("body"))
+        self.assertIn("var(--font-hand-cn)", cn_block.group("body"))
+        self.assertIn("Zhi Mang Xing", styles)
+        self.assertIn("STXingkai", styles)
