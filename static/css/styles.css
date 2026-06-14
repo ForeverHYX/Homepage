@@ -879,6 +879,7 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
     --home-plateau-inset: 18px;
     --home-plateau-radius: 24px;
     --home-glass-face-top: rgba(255, 255, 255, 0.72);
+    --home-glass-face-sheen: rgba(255, 255, 255, 0.38);
     --home-glass-face-mid: rgba(255, 255, 255, 0.24);
     --home-glass-face-bottom: rgba(255, 255, 255, 0.44);
     --home-glass-edge-a: rgba(255, 255, 255, 1);
@@ -896,7 +897,7 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
     border-radius: 32px;
     border: none;
     background:
-        linear-gradient(180deg, var(--home-glass-face-top) 0%, rgba(255, 255, 255, 0.38) 16%, var(--home-glass-face-mid) 42%, var(--home-glass-face-bottom) 100%);
+        linear-gradient(180deg, var(--home-glass-face-top) 0%, var(--home-glass-face-sheen) 16%, var(--home-glass-face-mid) 42%, var(--home-glass-face-bottom) 100%);
     backdrop-filter: blur(var(--home-glass-blur)) saturate(190%) contrast(1.12) brightness(1.06);
     -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(190%) contrast(1.12) brightness(1.06);
     box-shadow:
@@ -1354,6 +1355,7 @@ drop-shadow(0 6px 18px rgba(30, 64, 175, 0.1));
 
 [data-theme="dark"] .home-glass {
     --home-glass-face-top: rgba(18, 28, 48, 0.82);
+    --home-glass-face-sheen: rgba(30, 41, 59, 0.46);
     --home-glass-face-mid: rgba(11, 18, 32, 0.56);
     --home-glass-face-bottom: rgba(20, 28, 44, 0.82);
     --home-glass-edge-a: rgba(255, 255, 255, 0.36);
