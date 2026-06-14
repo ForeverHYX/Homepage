@@ -45,20 +45,21 @@ def _build_home_payload() -> dict[str, Any]:
     avatar_url = "/uploads/avatar.png"
     raw_sections = parse_markdown_sections("content.md")
 
-    # Semantic per-section accent colors (blue/teal family + complementary
-    # warm accents). Mapped by lowercased title; a slug class is emitted too so
-    # CSS can apply dark-mode brightness adjustments per section.
+    # Semantic per-section accent colors — a coordinated BLUE gradient
+    # (sky -> blue -> indigo, with cyan for variety), not a rainbow.
+    # Mapped by lowercased title; a slug class is emitted too so CSS can
+    # apply dark-mode brightness adjustments per section.
     section_accents = {
-        "introduction": "#0ea5e9",   # sky — welcoming, open
-        "education":     "#6366f1",  # indigo — academic, institutional
-        "publications":  "#f59e0b",  # amber — achievement, gold
-        "awards":        "#e11d48",  # rose — distinction
-        "teaching":      "#10b981",  # emerald — growth, mentoring
-        "projects":      "#8b5cf6",  # violet — creative
-        "research":      "#0ea5e9",  # sky
-        "experience":    "#14b8a6",  # teal
-        "skills":        "#6366f1",  # indigo
-        "contact":       "#3b82f6",  # blue
+        "introduction": "#38bdf8",   # sky-400 — light/bright, welcoming
+        "education":     "#3b82f6",  # blue-500 — core academic blue
+        "publications":  "#6366f1",  # indigo-500 — deeper, scholarly
+        "awards":        "#2563eb",  # blue-600 — distinction (royal blue)
+        "teaching":      "#0ea5e9",  # sky-500 — cyan-blue, growth
+        "projects":      "#6366f1",  # indigo
+        "research":      "#38bdf8",  # sky
+        "experience":    "#0ea5e9",  # sky
+        "skills":        "#3b82f6",  # blue
+        "contact":       "#60a5fa",  # blue-400
     }
     default_accent = "#3b82f6"
     sections = []
