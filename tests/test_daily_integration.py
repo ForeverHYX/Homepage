@@ -3,8 +3,13 @@ import json
 import tempfile
 import time
 from pathlib import Path
+from unittest.mock import patch
 
+from fastapi.testclient import TestClient
+
+from app.main import app
 from app.daily import build_daily_payload, daily_payload_search_entries, daily_search_entries, load_daily_payload
+from app.routers import pages
 
 
 SAMPLE_RECOMMENDER_PAYLOAD = {
@@ -36,7 +41,83 @@ SAMPLE_RECOMMENDER_PAYLOAD = {
 }
 
 
+def sample_daily_page_payload():
+    return build_daily_payload(
+        {
+            "run_date": "2026-06-14",
+            "recommendations": [
+                SAMPLE_RECOMMENDER_PAYLOAD["recommendations"][0],
+                {
+                    "rank": 2,
+                    "item_type": "repository",
+                    "repository_full_name": "example/runtime-cache",
+                    "title": "example/runtime-cache",
+                    "abstract": "Runtime cache for LLM serving.",
+                    "authors": ["Repo Owner"],
+                    "repository_url": "https://github.com/example/runtime-cache",
+                    "repository_topics": ["runtime", "llm", "inference"],
+                    "categories": ["github", "Python", "runtime", "llm", "inference"],
+                    "repository_language": "Python",
+                    "sections": [],
+                },
+            ],
+        },
+        feedback_config={
+            "supabase_url": "https://example.supabase.co",
+            "supabase_anon_key": "anon-key",
+        },
+    )
+
+
 class DailyIntegrationTests(unittest.TestCase):
+    def test_daily_page_hides_feedback_controls_when_upload_session_is_absent(self):
+        with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
+            response = TestClient(app).get("/daily")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.text
+        self.assertIn("PDF", html)
+        self.assertIn("Code", html)
+        self.assertNotIn('id="dailyFeedbackConfig"', html)
+        self.assertNotIn("data-feedback-payload", html)
+        self.assertNotIn("daily-feedback-button", html)
+        self.assertNotIn('data-feedback-rating="like"', html)
+        self.assertNotIn('data-feedback-rating="dislike"', html)
+        self.assertNotIn(">Like<", html)
+        self.assertNotIn(">Dislike<", html)
+
+    def test_daily_page_shows_feedback_controls_when_upload_session_is_active(self):
+        with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
+            with patch("app.routers.pages.get_current_user", return_value=True, create=True):
+                response = TestClient(app).get("/daily")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.text
+        self.assertIn('id="dailyFeedbackConfig"', html)
+        self.assertIn("data-feedback-payload", html)
+        self.assertIn("daily-feedback-button", html)
+        self.assertIn('data-feedback-rating="like"', html)
+        self.assertIn('data-feedback-rating="dislike"', html)
+        self.assertIn(">Like<", html)
+        self.assertIn(">Dislike<", html)
+
+    def test_daily_api_hides_feedback_config_without_upload_session(self):
+        with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
+            response = TestClient(app).get("/api/site/daily")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["feedback_config"], {})
+        self.assertEqual(response.headers["cache-control"], "private, max-age=60")
+
+    def test_daily_api_exposes_feedback_config_with_upload_session(self):
+        with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
+            with patch("app.routers.pages.get_current_user", return_value=True, create=True):
+                response = TestClient(app).get("/api/site/daily")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["feedback_config"]["supabase_url"], "https://example.supabase.co")
+        self.assertEqual(response.headers["cache-control"], "private, max-age=60")
+
     def test_daily_payload_exposes_author_and_ai_keywords_without_affiliations(self):
         payload = build_daily_payload(SAMPLE_RECOMMENDER_PAYLOAD)
 
@@ -477,11 +558,14 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("daily-action-code", daily)
         self.assertIn("daily-action-like", daily)
         self.assertIn("daily-action-dislike", daily)
+        self.assertIn("{% if is_upload_authenticated %}", daily)
         self.assertIn('id="dailyFeedbackConfig"', daily)
         self.assertIn('id="dailyFeedbackConfig"\n             hidden', daily)
+        self.assertIn('data-feedback-enabled="true"', daily)
         self.assertIn('data-run-date="{{ run_date or', daily)
         self.assertIn('data-feedback-rating="like"', daily)
         self.assertIn('data-feedback-rating="dislike"', daily)
+        self.assertIn('daily-feedback.js?v=4', daily)
         self.assertIn("item.display_authors", daily)
         self.assertNotIn("item.authors|join", daily)
         self.assertNotIn("daily-sidebar-meta", daily)
@@ -516,6 +600,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         feedback_js = (root / "static/js/components/daily-feedback.js").read_text(encoding="utf-8")
         self.assertIn("homepage_daily_feedback_ui_state", feedback_js)
+        self.assertIn('data-feedback-enabled") !== "true"', feedback_js)
         self.assertIn("feedback_events", feedback_js)
         self.assertIn('source = "page"', feedback_js)
         self.assertIn("item_type", feedback_js)

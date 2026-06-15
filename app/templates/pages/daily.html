@@ -8,11 +8,14 @@
 {% block content %}
 <div class="container">
     <div class="page-shell">
+        {% if is_upload_authenticated %}
         <div id="dailyFeedbackConfig"
              hidden
+             data-feedback-enabled="true"
              data-run-date="{{ run_date or 'unknown' }}"
              data-supabase-url="{{ feedback_config.supabase_url or '' }}"
              data-supabase-anon-key="{{ feedback_config.supabase_anon_key or '' }}"></div>
+        {% endif %}
         <div class="article-grid daily-grid">
             <div class="page-stack">
                 {% if filter_keywords %}
@@ -32,8 +35,8 @@
                 {% if items %}
                     {% for item in items %}
                     <article class="card home-glass article-card daily-card{% if target_paper_id == item.id %} is-target{% endif %}"
-                             id="paper-{{ item.id|replace('/', '-')|replace(':', '-') }}"
-                             data-feedback-payload='{{ item.feedback_payload|tojson }}'>
+                             id="paper-{{ item.id|replace('/', '-')|replace(':', '-') }}"{% if is_upload_authenticated %}
+                             data-feedback-payload='{{ item.feedback_payload|tojson }}'{% endif %}>
                         <div class="home-glass-body" style="padding: 28px 32px">
                             <h2 class="article-card-title">
                                 <a href="{{ item.paper_url or item.repository_url or '#' }}" target="_blank" rel="noreferrer">{{ item.title }}</a>
@@ -91,8 +94,10 @@
                                     <a class="daily-action-button action-glass daily-action-code" href="{{ item.repository_url }}" target="_blank" rel="noreferrer"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span><span class="daily-action-label">Code</span></a>
                                     {% endif %}
                                 {% endif %}
+                                {% if is_upload_authenticated %}
                                 <button class="daily-action-button action-glass feedback daily-action-like daily-feedback-button" type="button" data-feedback-rating="like"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h3l3.92-6.26A2 2 0 0 1 14.65 5"/></svg></span><span class="daily-action-label">Like</span></button>
                                 <button class="daily-action-button action-glass feedback daily-action-dislike daily-feedback-button" type="button" data-feedback-rating="dislike"><span class="daily-action-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V3"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-3l-3.92 6.26A2 2 0 0 1 9.35 19"/></svg></span><span class="daily-action-label">Dislike</span></button>
+                                {% endif %}
                             </div>
                         </div>
                     </article>
@@ -136,5 +141,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/components/daily-feedback.js?v=3" defer></script>
+{% if is_upload_authenticated %}
+<script src="/static/js/components/daily-feedback.js?v=4" defer></script>
+{% endif %}
 {% endblock %}

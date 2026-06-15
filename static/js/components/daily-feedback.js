@@ -8,6 +8,7 @@
     var configEl = document.getElementById("dailyFeedbackConfig");
     var cards = document.querySelectorAll(".daily-card[data-feedback-payload]");
     if (!configEl || !cards.length) return;
+    if (configEl.getAttribute("data-feedback-enabled") !== "true") return;
 
     var config = {
       runDate: configEl.getAttribute("data-run-date") || "unknown",

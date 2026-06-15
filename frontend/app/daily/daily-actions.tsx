@@ -21,8 +21,10 @@ const feedbackUiStateKey = "homepage_daily_feedback_ui_state";
 export function DailyActions({ item, feedbackConfig, runDate }: DailyActionsProps) {
   const [feedbackState, setFeedbackState] = useState<FeedbackRating | "">("");
   const [busy, setBusy] = useState<FeedbackRating | "">("");
+  const canSubmitFeedback = Boolean(feedbackConfig?.supabase_url && feedbackConfig?.supabase_anon_key);
 
   useEffect(() => {
+    if (!canSubmitFeedback) return;
     const state = readFeedbackUiState();
     const id = item.id;
     if ((state.hidden[runDate] || []).includes(id)) {
@@ -32,9 +34,10 @@ export function DailyActions({ item, feedbackConfig, runDate }: DailyActionsProp
     if ((state.likes[runDate] || []).includes(id)) {
       setFeedbackState("like");
     }
-  }, [item.id, runDate]);
+  }, [canSubmitFeedback, item.id, runDate]);
 
   const submitFeedback = async (rating: FeedbackRating) => {
+    if (!canSubmitFeedback) return;
     if (rating === "like" && feedbackState === "like") return;
     setBusy(rating);
     const event = {
@@ -80,24 +83,28 @@ export function DailyActions({ item, feedbackConfig, runDate }: DailyActionsProp
           <span className="daily-action-label">Code</span>
         </a>
       ) : null}
-      <button
-        type="button"
-        className={`daily-action-button action-glass feedback daily-action-like${feedbackState === "like" ? " is-active" : ""}`}
-        onClick={() => submitFeedback("like")}
-        disabled={Boolean(busy)}
-      >
-        <span className="daily-action-icon"><LikeIcon /></span>
-        <span className="daily-action-label">{busy === "like" ? "Saving..." : feedbackState === "like" ? "Liked" : "Like"}</span>
-      </button>
-      <button
-        type="button"
-        className="daily-action-button action-glass feedback daily-action-dislike"
-        onClick={() => submitFeedback("dislike")}
-        disabled={Boolean(busy)}
-      >
-        <span className="daily-action-icon"><DislikeIcon /></span>
-        <span className="daily-action-label">{busy === "dislike" ? "Saving..." : "Dislike"}</span>
-      </button>
+      {canSubmitFeedback ? (
+        <>
+          <button
+            type="button"
+            className={`daily-action-button action-glass feedback daily-action-like${feedbackState === "like" ? " is-active" : ""}`}
+            onClick={() => submitFeedback("like")}
+            disabled={Boolean(busy)}
+          >
+            <span className="daily-action-icon"><LikeIcon /></span>
+            <span className="daily-action-label">{busy === "like" ? "Saving..." : feedbackState === "like" ? "Liked" : "Like"}</span>
+          </button>
+          <button
+            type="button"
+            className="daily-action-button action-glass feedback daily-action-dislike"
+            onClick={() => submitFeedback("dislike")}
+            disabled={Boolean(busy)}
+          >
+            <span className="daily-action-icon"><DislikeIcon /></span>
+            <span className="daily-action-label">{busy === "dislike" ? "Saving..." : "Dislike"}</span>
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -23,6 +23,7 @@ from app.daily import (
     daily_payload_search_entries,
     load_daily_payload,
 )
+from app.auth import get_current_user
 from app.gallery_thumbnail_utils import ensure_gallery_thumbnail
 
 router = APIRouter()
@@ -376,9 +377,12 @@ def articles_api(tag: Optional[str] = None, tags: Optional[str] = None) -> Any:
 
 
 @router.get("/api/site/daily")
-def daily_api(keyword: Optional[str] = None, keywords: Optional[str] = None, item_type: Optional[str] = None) -> Any:
+def daily_api(request: Request, keyword: Optional[str] = None, keywords: Optional[str] = None, item_type: Optional[str] = None) -> Any:
     effective_keywords = keywords if keywords else keyword
-    return JSONResponse(_build_daily_payload(effective_keywords, item_type), headers={"Cache-Control": "public, max-age=60"})
+    payload = _build_daily_payload(effective_keywords, item_type)
+    if not get_current_user(request):
+        payload = {**payload, "feedback_config": {}}
+    return JSONResponse(payload, headers={"Cache-Control": "private, max-age=60"})
 
 
 
@@ -429,13 +433,15 @@ def articles_page(request: Request, tags: Optional[str] = None):
 @router.get("/daily", response_class=HTMLResponse)
 def daily_page(request: Request, keywords: Optional[str] = None, item_type: Optional[str] = None, paper_id: Optional[str] = None):
     payload = _build_daily_payload(keywords, item_type)
+    is_upload_authenticated = get_current_user(request)
     return templates.TemplateResponse(request, "pages/daily.html", {
         "items": payload["items"],
         "run_date": payload["run_date"],
         "filter_keywords": payload["filter_keywords"],
         "active_item_type": payload["active_item_type"],
         "sorted_keywords": payload["sorted_keywords"],
-        "feedback_config": payload["feedback_config"],
+        "feedback_config": payload["feedback_config"] if is_upload_authenticated else {},
+        "is_upload_authenticated": is_upload_authenticated,
         "keywords_url": _keywords_url,
         "type_url": _daily_type_url,
         "target_paper_id": paper_id or "",
