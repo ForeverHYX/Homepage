@@ -20,6 +20,7 @@
     --heading: #0f172a;
     --primary: #3b82f6;
     --primary-hover: #2563eb;
+    --daily-action-blue-gradient: linear-gradient(135deg, #93c5fd, #2563eb);
     --muted: #64748b;
 
     /* Liquid Glass - High Transparency (sidebar cards) */
@@ -2042,18 +2043,22 @@ a { color: inherit; text-decoration: none; }
     box-shadow: inset 0 1px 8px var(--glass-hi-inner);
 }
 
-.daily-action-button.action-glass:hover {
-    transform: translateY(-1px);
-    color: var(--heading);
-    border-color: rgba(59, 130, 246, 0.35);
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.daily-action-button.daily-action-like:hover {
+.daily-action-button.action-glass:not(.daily-action-dislike):hover,
+.daily-action-button.action-glass:not(.daily-action-dislike):active {
     transform: translateY(-1px);
     color: #fff;
     border-color: transparent;
-    background: linear-gradient(135deg, #10b981, #2563eb);
+    background: var(--daily-action-blue-gradient);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2), inset 0 1px 8px rgba(255, 255, 255, 0.28);
+}
+
+.daily-action-button.daily-action-like:hover,
+.daily-action-button.feedback.is-active {
+    transform: translateY(-1px);
+    color: #fff;
+    border-color: transparent;
+    background: var(--daily-action-blue-gradient);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2), inset 0 1px 8px rgba(255, 255, 255, 0.28);
 }
 
 .daily-action-button:disabled {
@@ -2065,13 +2070,6 @@ a { color: inherit; text-decoration: none; }
 .daily-action-button.feedback {
     background: var(--glass-hi-bg);
     border-color: var(--glass-hi-border);
-}
-
-.daily-action-button.feedback.is-active {
-    transform: translateY(-1px);
-    color: #fff;
-    border-color: transparent;
-    background: linear-gradient(135deg, #10b981, #2563eb);
 }
 
 .daily-action-button.daily-action-dislike {
