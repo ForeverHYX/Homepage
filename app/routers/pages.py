@@ -180,6 +180,7 @@ def _build_daily_payload(keywords: Optional[str] = None, item_type: Optional[str
 
 
 def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
+    upload_dir = Path(UPLOAD_DIR).resolve()
     gallery_dirs = get_gallery_folders()
     is_focused = False
     if focus and focus in gallery_dirs:
@@ -188,7 +189,7 @@ def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
 
     albums = []
     for rel_path in gallery_dirs:
-        path = safe_join(UPLOAD_DIR, rel_path)
+        path = safe_join(upload_dir, rel_path)
         if not path.exists() or not path.is_dir():
             continue
 
@@ -197,7 +198,7 @@ def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
         try:
             for file in sorted(list(path.iterdir()), key=lambda item: item.name):
                 if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
-                    rel_file_path = file.relative_to(UPLOAD_DIR)
+                    rel_file_path = file.relative_to(upload_dir)
                     original_url = f"/uploads/{rel_file_path}"
                     full_images.append(original_url)
 
@@ -205,9 +206,9 @@ def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
                         images.append(original_url)
                         continue
 
-                    thumbnail_path = ensure_gallery_thumbnail(UPLOAD_DIR, file)
+                    thumbnail_path = ensure_gallery_thumbnail(upload_dir, file)
                     if thumbnail_path:
-                        thumb_rel_path = thumbnail_path.relative_to(UPLOAD_DIR)
+                        thumb_rel_path = thumbnail_path.relative_to(upload_dir)
                         images.append(f"/uploads/{thumb_rel_path}")
                     else:
                         images.append(original_url)
