@@ -103,4 +103,4 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=118"', base)
+        self.assertIn('href="/static/css/styles.css?v=119"', base)
