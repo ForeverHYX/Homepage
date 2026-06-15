@@ -103,4 +103,15 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=119"', base)
+        self.assertIn('href="/static/css/styles.css?v=120"', base)
+
+    def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        inline_code = re.search(r"\.prose code\s*\{(?P<body>[^}]*)\}", styles, re.S)
+
+        self.assertIsNotNone(inline_code)
+        inline_code_body = inline_code.group("body")
+        self.assertNotIn("backdrop-filter", inline_code_body)
+        self.assertIn("box-decoration-break: clone", inline_code_body)
+        self.assertIn("-webkit-box-decoration-break: clone", inline_code_body)

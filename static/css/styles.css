@@ -2515,7 +2515,18 @@ a { color: inherit; text-decoration: none; }
 
 .prose pre { display: block; width: 100%; min-height: 20px; margin: 0; padding: 0; background: transparent; border: none; }
 .prose pre code { display: block; padding: 1rem; overflow-x: auto; font-family: var(--font-code); font-feature-settings: 'calt' 1; font-size: 0.9em; line-height: 1.5; background: transparent; color: inherit; border-radius: 0; }
-.prose code { font-family: var(--font-code); font-feature-settings: 'calt' 1; background: var(--glass-hi-bg); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; color: var(--primary); border: 1px solid var(--glass-hi-border); }
+.prose code {
+    font-family: var(--font-code);
+    font-feature-settings: 'calt' 1;
+    background: var(--glass-hi-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--primary);
+    border: 1px solid var(--glass-hi-border);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
 .prose pre code.hljs { background: transparent; padding: 1rem; }
 
 /* --- Table (matches code-block style) --- */
