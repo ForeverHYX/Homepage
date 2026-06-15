@@ -15,6 +15,7 @@ from urllib.request import Request, urlopen
 DEFAULT_DAILY_BASE_URL = "https://foreverhyx.github.io/agentic-arch-paper-recommender"
 REQUEST_TIMEOUT = 12
 REMOTE_CACHE_TTL_SECONDS = int(os.getenv("HOMEPAGE_DAILY_REMOTE_CACHE_SECONDS", "900"))
+DAILY_RUN_READY_HOUR_UTC = int(os.getenv("HOMEPAGE_DAILY_RUN_READY_HOUR_UTC", "4"))
 DISPLAY_AUTHOR_LIMIT = 4
 DISPLAY_KEYWORD_LIMIT = 10
 FILTER_KEYWORD_ROW_WIDTH = 252
@@ -140,7 +141,9 @@ def load_daily_payload(
     config_cache_path: Path = DEFAULT_FEEDBACK_CONFIG_CACHE_PATH,
     remote_cache_ttl_seconds: int = REMOTE_CACHE_TTL_SECONDS,
     refresh_stale_cache_in_background: bool = True,
+    expected_run_date: Optional[str] = None,
 ) -> dict[str, Any]:
+    required_run_date = expected_run_date if expected_run_date is not None else _expected_daily_run_date()
     recommender_payload = _load_cache_first(
         fetcher=payload_fetcher,
         cache_path=cache_path,
@@ -148,6 +151,7 @@ def load_daily_payload(
         remote_cache_ttl_seconds=remote_cache_ttl_seconds,
         refresh_stale_cache_in_background=refresh_stale_cache_in_background,
         write_empty=True,
+        required_run_date=required_run_date,
     )
     feedback_config = _load_cache_first(
         fetcher=config_fetcher,
@@ -156,6 +160,7 @@ def load_daily_payload(
         remote_cache_ttl_seconds=remote_cache_ttl_seconds,
         refresh_stale_cache_in_background=refresh_stale_cache_in_background,
         write_empty=False,
+        required_run_date=None,
     )
     return build_daily_payload(recommender_payload, keywords=keywords, item_type=item_type, feedback_config=feedback_config)
 
@@ -167,11 +172,13 @@ def _load_cache_first(
     remote_cache_ttl_seconds: int,
     refresh_stale_cache_in_background: bool,
     write_empty: bool,
+    required_run_date: Optional[str],
 ) -> dict[str, Any]:
     cached_value = _read_cache(cache_path)
-    if cached_value and _cache_age_seconds(cache_path) <= remote_cache_ttl_seconds:
+    cached_has_required_run = _matches_required_run_date(cached_value, required_run_date)
+    if cached_value and cached_has_required_run and _cache_age_seconds(cache_path) <= remote_cache_ttl_seconds:
         return cached_value
-    if cached_value and refresh_stale_cache_in_background:
+    if cached_value and cached_has_required_run and refresh_stale_cache_in_background:
         _refresh_cache_in_background(fetcher, cache_path, write_empty=write_empty)
         return cached_value
     try:
@@ -209,6 +216,22 @@ def _cache_age_seconds(cache_path: Path) -> float:
         return max(0.0, time.time() - cache_path.stat().st_mtime)
     except OSError:
         return float("inf")
+
+
+def _expected_daily_run_date(now: Optional[float] = None) -> str:
+    timestamp = time.time() if now is None else now
+    utc_now = time.gmtime(timestamp)
+    if utc_now.tm_hour < DAILY_RUN_READY_HOUR_UTC:
+        timestamp -= 86400
+    return time.strftime("%Y-%m-%d", time.gmtime(timestamp))
+
+
+def _matches_required_run_date(cached_value: Optional[dict[str, Any]], required_run_date: Optional[str]) -> bool:
+    if not required_run_date:
+        return True
+    if not cached_value:
+        return False
+    return str(cached_value.get("run_date") or "") >= required_run_date
 
 
 def build_daily_payload(

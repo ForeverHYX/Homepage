@@ -351,11 +351,53 @@ class DailyIntegrationTests(unittest.TestCase):
                 config_cache_path=config_cache_path,
                 remote_cache_ttl_seconds=300,
                 refresh_stale_cache_in_background=False,
+                expected_run_date="2026-06-14",
             )
 
         self.assertEqual(calls, {"payload": 0, "config": 0})
         self.assertEqual(payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration")
         self.assertEqual(payload["feedback_config"]["supabase_url"], "https://cached.supabase.co")
+
+    def test_daily_loader_refreshes_fresh_cache_when_cached_run_date_is_stale(self):
+        remote_payload = {
+            "run_date": "2026-06-15",
+            "recommendations": [
+                {
+                    "paper_id": "2606.99999",
+                    "title": "Fresh Daily Recommendations",
+                    "abstract": "The remote payload should replace yesterday's cached daily recommendations.",
+                    "authors": ["Remote Author"],
+                    "url": "https://arxiv.org/abs/2606.99999",
+                }
+            ],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache_path = Path(tmpdir) / "recommendations.json"
+            config_cache_path = Path(tmpdir) / "feedback-config.json"
+            cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
+            config_cache_path.write_text("{}", encoding="utf-8")
+            calls = {"payload": 0}
+
+            def payload_fetcher():
+                calls["payload"] += 1
+                return remote_payload
+
+            payload = load_daily_payload(
+                payload_fetcher=payload_fetcher,
+                config_fetcher=lambda: {},
+                cache_path=cache_path,
+                config_cache_path=config_cache_path,
+                remote_cache_ttl_seconds=300,
+                expected_run_date="2026-06-15",
+            )
+
+            cached_payload = json.loads(cache_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(calls["payload"], 1)
+        self.assertEqual(payload["run_date"], "2026-06-15")
+        self.assertEqual(payload["items"][0]["title"], "Fresh Daily Recommendations")
+        self.assertEqual(cached_payload["run_date"], "2026-06-15")
 
     def test_daily_loader_reuses_cached_feedback_config_when_config_fetch_fails(self):
         with tempfile.TemporaryDirectory() as tmpdir:
