@@ -85,3 +85,22 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("<noscript>", base)
         blocking_head = re.sub(r"<noscript>.*?</noscript>", "", base, flags=re.S)
         self.assertNotIn('rel="stylesheet" href="https://fonts.googleapis.com', blocking_head)
+
+    def test_education_logo_overrides_generic_prose_image_style(self) -> None:
+        styles = STYLES_CSS.read_text()
+        base = BASE_HTML.read_text()
+
+        prose_img = re.search(r"\.prose img\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        edu_logo = re.search(r"\.prose \.edu-logo\s*\{(?P<body>.*?)\n\}", styles, re.S)
+
+        self.assertIsNotNone(prose_img)
+        self.assertIsNotNone(edu_logo)
+        self.assertLess(prose_img.start(), edu_logo.start())
+
+        edu_logo_body = edu_logo.group("body")
+        self.assertIn("height: 52px", edu_logo_body)
+        self.assertIn("width: auto", edu_logo_body)
+        self.assertIn("max-width: none", edu_logo_body)
+        self.assertIn("margin: 0", edu_logo_body)
+        self.assertIn("border-radius: 0", edu_logo_body)
+        self.assertIn('href="/static/css/styles.css?v=118"', base)
