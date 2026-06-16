@@ -815,7 +815,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertIn('href="/daily"', base)
         self.assertIn("Daily", base)
-        self.assertIn('href="/static/css/styles.css?v=122"', base)
+        self.assertIn('href="/static/css/styles.css?v=123"', base)
         self.assertIn("Paper", daily)
         self.assertIn("PDF", daily)
         self.assertIn("Code", daily)
@@ -881,6 +881,7 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn(".daily-action-button.daily-action-dislike", styles)
         self.assertIn(".daily-action-button.daily-action-like:hover", styles)
         self.assertIn("--daily-action-blue-gradient: linear-gradient(135deg, #93c5fd, #2563eb);", styles)
+        self.assertIn(".daily-action-button.action-glass:not(.daily-action-dislike),\n.daily-action-button.feedback.daily-action-like", styles)
         self.assertIn(".daily-action-button.action-glass:not(.daily-action-dislike):hover,\n.daily-action-button.action-glass:not(.daily-action-dislike):active", styles)
         self.assertIn(".daily-action-button.daily-action-like:hover,\n.daily-action-button.feedback.is-active", styles)
         self.assertIn("background: var(--daily-action-blue-gradient);", styles)
