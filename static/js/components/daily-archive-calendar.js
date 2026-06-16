@@ -8,11 +8,12 @@
   var MONTH_ABBR = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "June.", "July", "Aug.", "Sept.", "Oct.", "Nov.", "Dec."];
   var WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
   var runDate = mount.getAttribute("data-run-date") || "";
+  var currentRunDate = mount.getAttribute("data-current-run-date") || runDate;
   var selectedDate = mount.getAttribute("data-selected-date") || runDate || todayString();
   var archiveDates = readArchiveDates(mount.getAttribute("data-archive-dates") || "[]");
   var archiveCounts = readArchiveCounts(mount.getAttribute("data-archive-counts") || "{}");
   var likedDates = likedDatesFromLocalState();
-  var availableDates = uniqueDates([runDate].concat(archiveDates, likedDates));
+  var availableDates = uniqueDates([currentRunDate, runDate].concat(archiveDates, likedDates));
   var initial = parseDate(selectedDate) || parseDate(availableDates[0]) || new Date();
   var viewYear = initial.getFullYear();
   var viewMonth = initial.getMonth();
@@ -119,7 +120,7 @@
 
   function refreshFeedbackState() {
     likedDates = likedDatesFromLocalState();
-    availableDates = uniqueDates([runDate].concat(archiveDates, likedDates));
+    availableDates = uniqueDates([currentRunDate, runDate].concat(archiveDates, likedDates));
     render();
   }
 

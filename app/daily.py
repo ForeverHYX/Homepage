@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import threading
@@ -23,6 +24,16 @@ DISPLAY_AUTHOR_LIMIT = 4
 DISPLAY_KEYWORD_LIMIT = 10
 FILTER_KEYWORD_ROW_WIDTH = 252
 FILTER_KEYWORD_GAP = 8
+PROFILE_RADAR_CENTER = 100
+PROFILE_RADAR_RADIUS = 66
+PROFILE_RADAR_AXES = [
+    ("Hardware", {"Hardware", "GPU", "CPU", "CUDA", "Accelerator", "Tensor", "NPU", "Memory"}),
+    ("Architecture", {"Architecture", "Microarchitecture", "Cache", "Interconnect", "Network", "Communication", "Simulation", "Gem5"}),
+    ("Systems", {"HPC", "Distributed", "Workload", "Serving", "Scheduling", "Exascale", "OpenMP", "Mpi", "Bandwidth"}),
+    ("AI", {"AI", "LLM", "Agents", "Agentic", "Agent", "Inference", "Neural", "Transformer", "Training", "Model", "Language", "Learning", "Attention"}),
+    ("Runtime", {"Runtime", "Compiler", "Codesign", "PyTorch", "ROCm", "VLLM", "OpenMP"}),
+    ("Tooling", {"Python", "Docker", "Chrome", "Firefox", "Module", "Tools", "Developer", "Node", "Search", "Data", "Security", "Automation"}),
+]
 SECTION_KEYWORDS = {
     "agentic_architecture": ["Agentic", "Architecture"],
     "full_stack_codesign": ["Codesign", "Compiler", "Runtime"],
@@ -235,6 +246,8 @@ def load_daily_payload(
         selected_date=selected_date,
         archive_dates=favorite_dates,
         archive_counts=archive_counts,
+        current_run_date=current_run_date,
+        profile_radar=_profile_radar_from_favorite_records(favorite_records),
     )
 
 
@@ -383,6 +396,7 @@ def _favorites_payload_for_date(records: list[dict[str, Any]], selected_date: st
 
 def _favorite_record_to_recommendation(record: dict[str, Any]) -> dict[str, Any]:
     item = dict(record)
+    item["_favorite_archive_record"] = True
     if item.get("section") and not item.get("sections"):
         item["sections"] = [str(item.get("section"))]
     if item.get("arxiv_url") and not item.get("url"):
@@ -442,6 +456,8 @@ def build_daily_payload(
     selected_date: Optional[str] = None,
     archive_dates: Optional[list[str]] = None,
     archive_counts: Optional[dict[str, dict[str, int]]] = None,
+    current_run_date: Optional[str] = None,
+    profile_radar: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     run_date = str(recommender_payload.get("run_date") or "")
     all_items = [
@@ -472,8 +488,10 @@ def build_daily_payload(
         "sorted_keywords": _pack_keyword_counts(keyword_counts),
         "feedback_config": feedback_config or {},
         "selected_date": selected_date or run_date,
+        "current_run_date": _parse_archive_date(current_run_date) or run_date,
         "archive_dates": archive_dates or ([run_date] if run_date else []),
         "archive_counts": counts,
+        "profile_radar": profile_radar or _profile_radar(items),
     }
 
 
@@ -710,6 +728,8 @@ def _paper_tldr(item: dict[str, Any], keywords: list[str]) -> str:
     if not abstract:
         topic_text = _human_list(keywords[:4]) or "the daily research profile"
         return f"This paper is archived because it matches {topic_text}. Open the source to inspect the method, evaluation, and assumptions."
+    if item.get("_favorite_archive_record"):
+        return _archive_paper_tldr(abstract, keywords)
     return _concise_summary_from_text(abstract, limit=240)
 
 
@@ -732,17 +752,92 @@ def _repository_tldr(item: dict[str, Any], keywords: list[str]) -> str:
     return f"This repository is archived because its metadata matches {topic_text}."
 
 
-def _concise_summary_from_text(value: str, limit: int) -> str:
+def _archive_paper_tldr(abstract: str, keywords: list[str]) -> str:
+    summary = _concise_summary_from_text(abstract, limit=300, max_sentences=2)
+    if summary.count(".") + summary.count("!") + summary.count("?") >= 2:
+        return summary
+    topic_text = _human_list(keywords[:3]) or "the long-term research profile"
+    extra = f"It stands out in the archive because it connects to {topic_text}."
+    return _clip_text(f"{summary} {extra}", 340)
+
+
+def _concise_summary_from_text(value: str, limit: int, max_sentences: int = 1) -> str:
     text = _strip_trailing_ellipsis(" ".join(str(value or "").split()))
     if not text:
         return ""
     sentences = _sentences(text)
-    summary = sentences[0] if sentences else text
+    summary_parts = sentences[:max(1, max_sentences)] if sentences else [text]
+    summary = " ".join(summary_parts)
     if len(summary) > limit:
         summary = _clip_text(summary, limit)
         if summary and not re.search(r"[.!?]$", summary):
             summary = f"{summary}."
     return _strip_trailing_ellipsis(summary)
+
+
+def _profile_radar(items: list[dict[str, Any]]) -> dict[str, Any]:
+    axis_counts = []
+    for _label, keywords in PROFILE_RADAR_AXES:
+        count = 0
+        for item in items:
+            item_keywords = set(item.get("keywords", []))
+            count += len(item_keywords.intersection(keywords))
+        axis_counts.append(count)
+    max_count = max(axis_counts) if axis_counts else 0
+    axes = []
+    polygon_points = []
+    total_axes = len(PROFILE_RADAR_AXES)
+    for index, (label, _keywords) in enumerate(PROFILE_RADAR_AXES):
+        angle = -math.pi / 2 + (2 * math.pi * index / total_axes)
+        outer_x, outer_y = _radar_point(angle, PROFILE_RADAR_RADIUS)
+        label_x, label_y = _radar_point(angle, PROFILE_RADAR_RADIUS + 20)
+        value = axis_counts[index]
+        ratio = value / max_count if max_count else 0
+        point_x, point_y = _radar_point(angle, PROFILE_RADAR_RADIUS * ratio)
+        polygon_points.append(_svg_point(point_x, point_y))
+        axes.append({
+            "label": label,
+            "value": value,
+            "line_points": f"{PROFILE_RADAR_CENTER},{PROFILE_RADAR_CENTER} {_svg_point(outer_x, outer_y)}",
+            "point_x": round(point_x, 1),
+            "point_y": round(point_y, 1),
+            "label_x": round(label_x, 1),
+            "label_y": round(label_y, 1),
+            "label_anchor": "middle" if abs(label_x - PROFILE_RADAR_CENTER) < 3 else ("start" if label_x > PROFILE_RADAR_CENTER else "end"),
+        })
+    rings = []
+    for ratio in (1 / 3, 2 / 3, 1):
+        ring_points = [
+            _svg_point(*_radar_point(-math.pi / 2 + (2 * math.pi * index / total_axes), PROFILE_RADAR_RADIUS * ratio))
+            for index in range(total_axes)
+        ]
+        rings.append(" ".join(ring_points))
+    return {
+        "axes": axes,
+        "rings": rings,
+        "polygon_points": " ".join(polygon_points),
+        "max_count": max_count,
+    }
+
+
+def _profile_radar_from_favorite_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+    items = []
+    for record in records:
+        run_date = _parse_archive_date(str(record.get("created_at") or "")[:10])
+        recommendation = _favorite_record_to_recommendation(record)
+        items.append(_normalize_item(recommendation, {}, DEFAULT_DAILY_BASE_URL, run_date))
+    return _profile_radar(items)
+
+
+def _radar_point(angle: float, radius: float) -> tuple[float, float]:
+    return (
+        PROFILE_RADAR_CENTER + math.cos(angle) * radius,
+        PROFILE_RADAR_CENTER + math.sin(angle) * radius,
+    )
+
+
+def _svg_point(x: float, y: float) -> str:
+    return f"{round(x, 1)},{round(y, 1)}"
 
 
 def _human_list(values: list[str]) -> str:

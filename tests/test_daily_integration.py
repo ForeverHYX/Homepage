@@ -118,6 +118,7 @@ class DailyIntegrationTests(unittest.TestCase):
         payload = sample_daily_page_payload()
         payload["run_date"] = "2026-06-13"
         payload["selected_date"] = "2026-06-13"
+        payload["current_run_date"] = "2026-06-14"
         payload["archive_dates"] = ["2026-06-13"]
 
         with patch.object(pages, "_build_daily_payload", return_value=payload):
@@ -128,6 +129,21 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn('href="/daily?date=2026-06-13&amp;keywords=Agent"', html)
         self.assertIn('href="/daily?date=2026-06-13&amp;item_type=repository"', html)
         self.assertIn('href="/daily?date=2026-06-13&amp;item_type=paper"', html)
+
+    def test_daily_archive_page_passes_current_run_date_to_calendar(self):
+        payload = sample_daily_page_payload()
+        payload["run_date"] = "2026-06-15"
+        payload["selected_date"] = "2026-06-15"
+        payload["current_run_date"] = "2026-06-16"
+        payload["archive_dates"] = ["2026-06-15"]
+
+        with patch.object(pages, "_build_daily_payload", return_value=payload):
+            response = TestClient(app).get("/daily?date=2026-06-15")
+
+        self.assertEqual(response.status_code, 200)
+        html = response.text
+        self.assertIn('data-run-date="2026-06-15"', html)
+        self.assertIn('data-current-run-date="2026-06-16"', html)
 
     def test_daily_api_hides_feedback_config_without_upload_session(self):
         with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
@@ -580,6 +596,9 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertEqual([item["title"] for item in payload["items"]], ["Cache Archive"])
         self.assertEqual(payload["filter_keywords"], ["GPU"])
         self.assertIn("GPU", payload["items"][0]["keywords"])
+        self.assertIn("This liked paper studies GPU cache simulation.", payload["items"][0]["tldr"])
+        self.assertIn("GPU", payload["items"][0]["tldr"])
+        self.assertGreater(payload["items"][0]["tldr"].count("."), 1)
 
     def test_daily_loader_can_show_liked_archive_for_selected_date(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -621,8 +640,11 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertEqual([item["title"] for item in payload["items"]], ["Archived Liked Paper"])
         self.assertIn("Microarchitecture", payload["items"][0]["keywords"])
         self.assertIn("Simulation", payload["items"][0]["keywords"])
-        self.assertLess(len(payload["items"][0]["tldr"]), 260)
-        self.assertEqual(payload["items"][0]["tldr"], "An older recommendation snapshot about GPU cache simulation.")
+        self.assertLess(len(payload["items"][0]["tldr"]), 360)
+        self.assertEqual(
+            payload["items"][0]["tldr"],
+            "An older recommendation snapshot about GPU cache simulation. It includes a second sentence that should not become a full abstract dump.",
+        )
         self.assertNotIn("It is most relevant here", payload["items"][0]["tldr"])
         self.assertIn("2026-06-13", payload["archive_dates"])
 
@@ -656,6 +678,67 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertEqual([item["title"] for item in payload["items"]], ["Agentic AI-Driven Microarchitecture Exploration"])
         self.assertEqual(payload["archive_dates"], ["2026-06-13"])
         self.assertEqual(payload["archive_counts"]["2026-06-14"], {"papers": 1, "code": 0})
+
+    def test_daily_loader_builds_interest_profile_from_all_liked_archive_records(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            payload = load_daily_payload(
+                date="2026-06-13",
+                keywords="GPU",
+                payload_fetcher=lambda: {
+                    "run_date": "2026-06-16",
+                    "recommendations": [
+                        {
+                            "paper_id": "2606.current",
+                            "title": "Current Runtime LLM Paper",
+                            "abstract": "Runtime LLM inference that is not part of the long term liked profile.",
+                            "authors": ["Current Author"],
+                            "positive_matches": ["hpc_cross_over:runtime llm inference"],
+                            "sections": [],
+                        },
+                    ],
+                },
+                config_fetcher=lambda: {},
+                favorites_fetcher=lambda: {
+                    "records": [
+                        {
+                            "paper_id": "2606.13000",
+                            "rating": "like",
+                            "title": "Cache Archive",
+                            "abstract": "This liked paper studies GPU cache simulation.",
+                            "created_at": "2026-06-13T12:00:00Z",
+                        },
+                        {
+                            "paper_id": "2606.14000",
+                            "rating": "like",
+                            "title": "Distributed Scheduling Archive",
+                            "abstract": "This liked paper studies distributed exascale workload scheduling.",
+                            "created_at": "2026-06-14T12:00:00Z",
+                        },
+                    ]
+                },
+                cache_path=tmp_path / "recommendations.json",
+                config_cache_path=tmp_path / "feedback-config.json",
+                favorites_cache_path=tmp_path / "favorites.json",
+            )
+
+        radar = payload["profile_radar"]
+        self.assertEqual([axis["label"] for axis in radar["axes"]], [
+            "Hardware",
+            "Architecture",
+            "Systems",
+            "AI",
+            "Runtime",
+            "Tooling",
+        ])
+        self.assertIn("polygon_points", radar)
+        self.assertTrue(radar["polygon_points"])
+        self.assertEqual([item["title"] for item in payload["items"]], ["Cache Archive"])
+        self.assertGreater(radar["axes"][0]["value"], 0)
+        self.assertGreater(radar["axes"][1]["value"], 0)
+        self.assertGreater(radar["axes"][2]["value"], 0)
+        self.assertEqual(radar["axes"][4]["value"], 0)
 
     def test_daily_favorites_archive_fetch_preserves_sidecar_path_slashes(self):
         requested_urls = []
@@ -869,7 +952,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertIn('href="/daily"', base)
         self.assertIn("Daily", base)
-        self.assertIn('href="/static/css/styles.css?v=124"', base)
+        self.assertIn('href="/static/css/styles.css?v=125"', base)
         self.assertIn("Paper", daily)
         self.assertIn("PDF", daily)
         self.assertIn("Code", daily)
@@ -879,11 +962,15 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("active_item_type", daily)
         self.assertIn("archive_dates", daily)
         self.assertIn("archive_counts", daily)
+        self.assertIn("profile_radar", daily)
         self.assertIn("selected_date", daily)
         self.assertIn('id="dailyArchiveCalendar"', daily)
         self.assertIn('data-archive-counts', daily)
         self.assertIn("daily-archive-card", daily)
-        self.assertIn("daily-archive-calendar.js?v=2", daily)
+        self.assertIn("dailyProfileRadar", daily)
+        self.assertIn("daily-profile-card", daily)
+        self.assertIn("daily-profile-polygon", daily)
+        self.assertIn("daily-archive-calendar.js?v=3", daily)
         self.assertIn("daily-card-main-meta", daily)
         self.assertIn("daily-meta-authors", daily)
         self.assertIn("daily-meta-date", daily)
@@ -944,7 +1031,10 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("border-color: rgba(37, 99, 235, 0.42);", styles)
         self.assertIn(".daily-archive-card", styles)
         self.assertIn(".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);", styles)
-        self.assertIn("margin-top: 24px;", styles)
+        self.assertIn(".daily-grid .sidebar {\n    gap: 24px;", styles)
+        self.assertIn(".daily-profile-card", styles)
+        self.assertIn(".daily-profile-polygon", styles)
+        self.assertNotIn(".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);\n    margin-top: 24px;", styles)
         self.assertNotIn(".daily-archive-day.is-liked::after", styles)
         self.assertNotIn("linear-gradient(135deg, #10b981, #2563eb)", styles)
         self.assertIn("#f97316", styles)

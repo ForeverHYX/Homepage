@@ -141,8 +141,35 @@
                      class="card home-liquid-card home-news-card daily-archive-card"
                      data-selected-date="{{ selected_date or run_date or '' }}"
                      data-run-date="{{ run_date or '' }}"
+                     data-current-run-date="{{ current_run_date or run_date or '' }}"
                      data-archive-dates='{{ archive_dates|tojson }}'
                      data-archive-counts='{{ archive_counts|tojson }}'></div>
+                {% if profile_radar %}
+                <div id="dailyProfileRadar" class="card home-liquid-card home-news-card daily-profile-card">
+                    <span class="home-liquid-warp" aria-hidden="true"></span>
+                    <div class="home-liquid-body daily-profile-body">
+                        <h3 class="sidebar-card-title daily-profile-title">Profile</h3>
+                        <svg class="daily-profile-radar" viewBox="0 0 200 200" role="img" aria-label="Daily research profile radar chart">
+                            {% for ring in profile_radar.rings %}
+                            <polygon class="daily-profile-ring" points="{{ ring }}"></polygon>
+                            {% endfor %}
+                            {% for axis in profile_radar.axes %}
+                            <polyline class="daily-profile-axis" points="{{ axis.line_points }}"></polyline>
+                            {% endfor %}
+                            <polygon class="daily-profile-polygon" points="{{ profile_radar.polygon_points }}"></polygon>
+                            {% for axis in profile_radar.axes %}
+                            <circle class="daily-profile-node" cx="{{ axis.point_x }}" cy="{{ axis.point_y }}" r="2.2"></circle>
+                            <text class="daily-profile-label" x="{{ axis.label_x }}" y="{{ axis.label_y }}" text-anchor="{{ axis.label_anchor }}">{{ axis.label }}</text>
+                            {% endfor %}
+                        </svg>
+                        <div class="daily-profile-values" aria-label="Profile axis values">
+                            {% for axis in profile_radar.axes %}
+                            <span>{{ axis.label }} <strong>{{ axis.value }}</strong></span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </aside>
         </div>
     </div>
@@ -153,5 +180,5 @@
 {% if is_upload_authenticated %}
 <script src="/static/js/components/daily-feedback.js?v=5" defer></script>
 {% endif %}
-<script src="/static/js/components/daily-archive-calendar.js?v=2" defer></script>
+<script src="/static/js/components/daily-archive-calendar.js?v=3" defer></script>
 {% endblock %}
