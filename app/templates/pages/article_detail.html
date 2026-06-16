@@ -11,7 +11,7 @@
         <div class="article-grid" style="margin-top:0;margin-bottom:0">
             <main class="card content-area" style="padding:40px;min-width:0">
                 <div style="margin-bottom:20px">
-                    <a href="/articles" class="action-btn" style="text-decoration:none;padding-left:0;color:var(--text);font-weight:500">&larr; Back to Articles</a>
+                    <a href="{{ article.back_url or '/articles' }}" class="action-btn" style="text-decoration:none;padding-left:0;color:var(--text);font-weight:500">&larr; {{ article.back_label or 'Back to Articles' }}</a>
                 </div>
                 <div class="card" style="margin-bottom:24px;padding:28px 32px">
                         <h1 style="font-size:2.5rem;font-weight:700;margin:0 0 16px 0;line-height:1.2;color:var(--heading)">{{ article.title }}</h1>

@@ -9,7 +9,10 @@ from collections import Counter
 from itertools import combinations
 from pathlib import Path
 from typing import Any, Iterable, Optional
+from urllib.parse import quote
 from urllib.request import Request, urlopen
+
+from app.daily_articles import daily_article_slug
 
 
 DEFAULT_DAILY_BASE_URL = "https://foreverhyx.github.io/agentic-arch-paper-recommender"
@@ -107,6 +110,22 @@ DEFAULT_FEEDBACK_CONFIG_CACHE_PATH = Path(os.getenv(
     "HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_FILE",
     DEFAULT_DAILY_CACHE_PATH.with_name("feedback-config.json"),
 ))
+DEFAULT_DAILY_ARCHIVE_DIR = Path(os.getenv(
+    "HOMEPAGE_DAILY_ARCHIVE_DIR",
+    DEFAULT_DAILY_CACHE_PATH.parent / "archive",
+))
+DEFAULT_FAVORITES_REPO_TREE_URL = os.getenv(
+    "HOMEPAGE_DAILY_FAVORITES_TREE_URL",
+    "https://api.github.com/repos/ForeverHYX/daily-recommender-paper-favorites/git/trees/main?recursive=1",
+)
+DEFAULT_FAVORITES_RAW_BASE_URL = os.getenv(
+    "HOMEPAGE_DAILY_FAVORITES_RAW_BASE_URL",
+    "https://raw.githubusercontent.com/ForeverHYX/daily-recommender-paper-favorites/main",
+)
+DEFAULT_DAILY_FAVORITES_CACHE_PATH = Path(os.getenv(
+    "HOMEPAGE_DAILY_FAVORITES_CACHE_FILE",
+    DEFAULT_DAILY_CACHE_PATH.parent / "favorites-archive.json",
+))
 _REFRESHING_CACHE_PATHS: set[Path] = set()
 _REFRESH_LOCK = threading.Lock()
 
@@ -132,27 +151,67 @@ def fetch_daily_feedback_config(base_url: str = DEFAULT_DAILY_BASE_URL) -> dict[
     }
 
 
+def fetch_daily_favorites_archive(
+    tree_url: str = DEFAULT_FAVORITES_REPO_TREE_URL,
+    raw_base_url: str = DEFAULT_FAVORITES_RAW_BASE_URL,
+) -> dict[str, Any]:
+    request = Request(tree_url, headers={"Accept": "application/json", "User-Agent": "foreverhyx-homepage/1.0"})
+    with urlopen(request, timeout=REQUEST_TIMEOUT) as response:
+        tree_payload = json.loads(response.read().decode("utf-8"))
+    records: list[dict[str, Any]] = []
+    for entry in tree_payload.get("tree", []):
+        path = str(entry.get("path") or "")
+        if entry.get("type") != "blob" or not re.fullmatch(r"\d{4}-\d{2}/.+/.+\.json", path):
+            continue
+        raw_url = f"{raw_base_url.rstrip('/')}/{quote(path, safe='/')}"
+        item_request = Request(raw_url, headers={"Accept": "application/json", "User-Agent": "foreverhyx-homepage/1.0"})
+        with urlopen(item_request, timeout=REQUEST_TIMEOUT) as item_response:
+            item = json.loads(item_response.read().decode("utf-8"))
+        if isinstance(item, dict):
+            records.append(item)
+    return {"records": records}
+
+
 def load_daily_payload(
     keywords: Optional[str] = None,
     item_type: Optional[str] = None,
+    date: Optional[str] = None,
     payload_fetcher: Any = fetch_daily_recommender_payload,
     config_fetcher: Any = fetch_daily_feedback_config,
+    favorites_fetcher: Any = fetch_daily_favorites_archive,
     cache_path: Path = DEFAULT_DAILY_CACHE_PATH,
     config_cache_path: Path = DEFAULT_FEEDBACK_CONFIG_CACHE_PATH,
+    favorites_cache_path: Path = DEFAULT_DAILY_FAVORITES_CACHE_PATH,
+    archive_dir: Path = DEFAULT_DAILY_ARCHIVE_DIR,
     remote_cache_ttl_seconds: int = REMOTE_CACHE_TTL_SECONDS,
     refresh_stale_cache_in_background: bool = True,
     expected_run_date: Optional[str] = None,
 ) -> dict[str, Any]:
     required_run_date = expected_run_date if expected_run_date is not None else _expected_daily_run_date()
-    recommender_payload = _load_cache_first(
-        fetcher=payload_fetcher,
-        cache_path=cache_path,
-        fallback={"recommendations": [], "run_date": ""},
+    selected_date = _parse_archive_date(date)
+    favorites_payload = _load_cache_first(
+        fetcher=favorites_fetcher,
+        cache_path=favorites_cache_path,
+        fallback={"records": []},
         remote_cache_ttl_seconds=remote_cache_ttl_seconds,
         refresh_stale_cache_in_background=refresh_stale_cache_in_background,
-        write_empty=True,
-        required_run_date=required_run_date,
+        write_empty=False,
+        required_run_date=None,
     )
+    favorite_records = _favorite_records(favorites_payload)
+    favorite_dates = _favorite_dates(favorite_records)
+    recommender_payload = _favorites_payload_for_date(favorite_records, selected_date) if selected_date else None
+    if recommender_payload is None:
+        recommender_payload = _load_cache_first(
+            fetcher=payload_fetcher,
+            cache_path=cache_path,
+            fallback={"recommendations": [], "run_date": ""},
+            remote_cache_ttl_seconds=remote_cache_ttl_seconds,
+            refresh_stale_cache_in_background=refresh_stale_cache_in_background,
+            write_empty=True,
+            required_run_date=required_run_date,
+        )
+        selected_date = str(recommender_payload.get("run_date") or "")
     feedback_config = _load_cache_first(
         fetcher=config_fetcher,
         cache_path=config_cache_path,
@@ -162,7 +221,14 @@ def load_daily_payload(
         write_empty=False,
         required_run_date=None,
     )
-    return build_daily_payload(recommender_payload, keywords=keywords, item_type=item_type, feedback_config=feedback_config)
+    return build_daily_payload(
+        recommender_payload,
+        keywords=keywords,
+        item_type=item_type,
+        feedback_config=feedback_config,
+        selected_date=selected_date,
+        archive_dates=favorite_dates,
+    )
 
 
 def _load_cache_first(
@@ -234,14 +300,114 @@ def _matches_required_run_date(cached_value: Optional[dict[str, Any]], required_
     return str(cached_value.get("run_date") or "") >= required_run_date
 
 
+def _parse_archive_date(value: Optional[str]) -> str:
+    text = str(value or "").strip()
+    return text if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text) else ""
+
+
+def _favorite_records(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    records = payload.get("records") if isinstance(payload, dict) else []
+    if not isinstance(records, list):
+        return []
+    result = []
+    for record in records:
+        if isinstance(record, dict) and str(record.get("rating") or "like").lower() == "like":
+            result.append(record)
+    return result
+
+
+def _favorite_dates(records: list[dict[str, Any]]) -> list[str]:
+    dates = {
+        date
+        for date in (_parse_archive_date(str(record.get("created_at") or "")[:10]) for record in records)
+        if date
+    }
+    return sorted(dates, reverse=True)
+
+
+def _favorites_payload_for_date(records: list[dict[str, Any]], selected_date: str) -> dict[str, Any] | None:
+    if not selected_date:
+        return None
+    items = [
+        _favorite_record_to_recommendation(record)
+        for record in records
+        if str(record.get("created_at") or "").startswith(selected_date)
+    ]
+    if not items:
+        return {"run_date": selected_date, "recommendations": []}
+    return {
+        "run_date": selected_date,
+        "section_labels": {},
+        "recommendations": items,
+    }
+
+
+def _favorite_record_to_recommendation(record: dict[str, Any]) -> dict[str, Any]:
+    item = dict(record)
+    if item.get("section") and not item.get("sections"):
+        item["sections"] = [str(item.get("section"))]
+    if item.get("arxiv_url") and not item.get("url"):
+        item["url"] = item.get("arxiv_url")
+    if item.get("pdf_url") and not str(item.get("pdf_url")).endswith(".pdf"):
+        item["pdf_url"] = str(item.get("pdf_url")).rstrip("/") + ".pdf"
+    if item.get("repository_url"):
+        item["item_type"] = "repository"
+        if not item.get("repository_full_name"):
+            item["repository_full_name"] = _repository_name_from_url(str(item.get("repository_url"))) or str(item.get("title") or "")
+    return item
+
+
+def _repository_name_from_url(url: str) -> str:
+    match = re.search(r"github\.com[:/]([^/\s]+/[^/\s]+?)(?:\.git)?/?$", url)
+    return match.group(1) if match else ""
+
+
+def _archive_snapshot_path(archive_dir: Path, run_date: str) -> Path:
+    return archive_dir / f"{run_date}.json"
+
+
+def _read_archive_snapshot(archive_dir: Path, run_date: str) -> dict[str, Any] | None:
+    if not run_date:
+        return None
+    return _read_cache(_archive_snapshot_path(archive_dir, run_date))
+
+
+def _write_archive_snapshot(archive_dir: Path, payload: dict[str, Any]) -> None:
+    run_date = _parse_archive_date(str(payload.get("run_date") or ""))
+    if not run_date or not payload.get("recommendations"):
+        return
+    _write_cache(_archive_snapshot_path(archive_dir, run_date), payload)
+
+
+def _archive_dates(archive_dir: Path, current_payload: Optional[dict[str, Any]] = None) -> list[str]:
+    dates = set()
+    try:
+        for path in archive_dir.glob("*.json"):
+            if _parse_archive_date(path.stem):
+                dates.add(path.stem)
+    except OSError:
+        pass
+    if current_payload:
+        run_date = _parse_archive_date(str(current_payload.get("run_date") or ""))
+        if run_date:
+            dates.add(run_date)
+    return sorted(dates, reverse=True)
+
+
 def build_daily_payload(
     recommender_payload: dict[str, Any],
     keywords: Optional[str] = None,
     item_type: Optional[str] = None,
     feedback_config: Optional[dict[str, str]] = None,
     source_base_url: str = DEFAULT_DAILY_BASE_URL,
+    selected_date: Optional[str] = None,
+    archive_dates: Optional[list[str]] = None,
 ) -> dict[str, Any]:
-    all_items = [_normalize_item(item, recommender_payload.get("section_labels") or {}, source_base_url) for item in recommender_payload.get("recommendations", [])]
+    run_date = str(recommender_payload.get("run_date") or "")
+    all_items = [
+        _normalize_item(item, recommender_payload.get("section_labels") or {}, source_base_url, run_date)
+        for item in recommender_payload.get("recommendations", [])
+    ]
     active_item_type = _parse_item_type(item_type)
     base_items = [item for item in all_items if not active_item_type or item["item_type"] == active_item_type]
     items = base_items
@@ -261,6 +427,8 @@ def build_daily_payload(
         "active_item_type": active_item_type,
         "sorted_keywords": _pack_keyword_counts(keyword_counts),
         "feedback_config": feedback_config or {},
+        "selected_date": selected_date or run_date,
+        "archive_dates": archive_dates or ([run_date] if run_date else []),
     }
 
 
@@ -278,15 +446,15 @@ def daily_payload_search_entries(payload: dict[str, Any]) -> list[dict[str, Any]
             "desc": item["tldr"] or item["abstract"],
             "tags": item["keywords"],
             "date": payload["run_date"],
-            "url": f"/daily?paper_id={item['id']}",
+            "url": item.get("detail_url") or f"/daily?paper_id={item['id']}",
         })
     return entries
 
 
-def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source_base_url: str) -> dict[str, Any]:
+def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source_base_url: str, run_date: str) -> dict[str, Any]:
     item_id = str(item.get("paper_id") or item.get("repository_full_name") or item.get("title") or "")
     is_repository = str(item.get("item_type", "")).lower() == "repository"
-    paper_url = item.get("repository_url") or item.get("url") if is_repository else item.get("url")
+    paper_url = (item.get("repository_url") or item.get("url")) if is_repository else (item.get("url") or item.get("arxiv_url"))
     if not paper_url and item_id and not is_repository:
         paper_url = f"https://arxiv.org/abs/{item_id}"
     pdf_url = "" if is_repository else (item.get("pdf_url") or (f"https://arxiv.org/pdf/{item_id}" if item_id else ""))
@@ -295,6 +463,8 @@ def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source
         code_urls = [str(item.get("repository_url")), *code_urls]
 
     sections = _string_list(item.get("sections"))
+    if not sections and item.get("section"):
+        sections = [str(item.get("section"))]
     section = sections[0] if sections else ""
     keywords = _keywords_for_item(item, section_labels)
     authors = _string_list(item.get("authors"))
@@ -333,6 +503,8 @@ def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source
         "score": item.get("score") or 0,
         "ai_score": (item.get("ai_judgement") or {}).get("score", item.get("ai_score")),
     }
+    normalized["article_slug"] = daily_article_slug(normalized, run_date)
+    normalized["detail_url"] = f"/daily/articles/{normalized['article_slug']}"
     normalized["feedback_payload"] = {
         "paper_id": normalized["id"],
         "source": "page",
@@ -351,13 +523,15 @@ def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source
 
 def _keywords_for_item(item: dict[str, Any], section_labels: dict[str, str]) -> list[str]:
     values: list[str] = []
+    values.extend(_string_list(item.get("keywords")))
     for match in _string_list(item.get("positive_matches")):
         values.extend(_keyword_labels(match.split(":", 1)[1].strip() if ":" in match else match))
     for topic in _string_list(item.get("repository_topics")):
         values.extend(_keyword_labels(topic))
     for category in _string_list(item.get("categories")):
         values.extend(_keyword_labels(category))
-    for section in _string_list(item.get("sections")):
+    sections = _string_list(item.get("sections")) or ([str(item.get("section"))] if item.get("section") else [])
+    for section in sections:
         values.extend(SECTION_KEYWORDS.get(section, []))
     values.extend(_keyword_labels(_title_keyword_text(str(item.get("title") or "")), allowed=TITLE_KEYWORD_ALLOWLIST))
     return _unique(value for value in values if _is_display_keyword(value))[:DISPLAY_KEYWORD_LIMIT]
@@ -460,26 +634,48 @@ def _english_tldr(item: dict[str, Any], is_repository: bool = False, keywords: l
     if tldr and not _contains_cjk(tldr):
         return tldr
     if abstract:
-        return abstract
+        return _paper_tldr(item, keywords or [])
     return "No English TLDR is available yet; open the linked paper or repository for details."
 
 
+def _paper_tldr(item: dict[str, Any], keywords: list[str]) -> str:
+    abstract = _strip_trailing_ellipsis(str(item.get("abstract") or "").strip())
+    if not abstract:
+        topic_text = _human_list(keywords[:4]) or "the daily research profile"
+        return f"This paper is archived because it matches {topic_text}. Open the source to inspect the method, evaluation, and assumptions."
+    return _concise_summary_from_text(abstract, limit=240)
+
+
 def _repository_tldr(item: dict[str, Any], keywords: list[str]) -> str:
-    title = str(item.get("title") or item.get("repository_full_name") or "This repository").strip()
-    language = str(item.get("repository_language") or "").strip()
+    for candidate in (
+        str(item.get("repository_description") or "").strip(),
+        _repository_description(item),
+        str(item.get("abstract") or "").strip(),
+    ):
+        summary = _concise_summary_from_text(candidate, limit=220)
+        if summary and not _looks_like_readme_excerpt(summary):
+            return summary
+
     topics = _unique([
         *keywords,
         *_keyword_labels(" ".join(_string_list(item.get("repository_topics")))),
         *_keyword_labels(" ".join(_string_list(item.get("categories")))),
     ])
     topic_text = _human_list(topics[:4]) or "systems research tooling"
-    language_text = f"{language} " if language else ""
-    return (
-        f"Problem: Researchers need reusable code for {topic_text}. "
-        f"Method: {title} packages {language_text}implementation artifacts around {topic_text}, so it should be assessed through its code, examples, and linked papers. "
-        f"Finding: The available metadata points to {topic_text} as the main relevance signal. "
-        f"Why it matters: It gives the recommendation profile concrete repository feedback for future papers, tools, and architecture experiments."
-    )
+    return f"This repository is archived because its metadata matches {topic_text}."
+
+
+def _concise_summary_from_text(value: str, limit: int) -> str:
+    text = _strip_trailing_ellipsis(" ".join(str(value or "").split()))
+    if not text:
+        return ""
+    sentences = _sentences(text)
+    summary = sentences[0] if sentences else text
+    if len(summary) > limit:
+        summary = _clip_text(summary, limit)
+        if summary and not re.search(r"[.!?]$", summary):
+            summary = f"{summary}."
+    return _strip_trailing_ellipsis(summary)
 
 
 def _human_list(values: list[str]) -> str:
@@ -491,6 +687,13 @@ def _human_list(values: list[str]) -> str:
     if len(clean) == 2:
         return f"{clean[0]} and {clean[1]}"
     return f"{', '.join(clean[:-1])}, and {clean[-1]}"
+
+
+def _sentences(value: str) -> list[str]:
+    text = " ".join(str(value or "").split())
+    if not text:
+        return []
+    return [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
 
 
 def _safe_int(value: Any) -> int:

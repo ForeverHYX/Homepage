@@ -23,6 +23,7 @@ from app.daily import (
     daily_payload_search_entries,
     load_daily_payload,
 )
+from app.daily_articles import DAILY_ARTICLES_DIR, ensure_daily_article_markdown
 from app.auth import get_current_user
 from app.gallery_thumbnail_utils import ensure_gallery_thumbnail
 
@@ -176,8 +177,8 @@ def _build_articles_payload(tags: Optional[str] = None) -> dict[str, Any]:
     }
 
 
-def _build_daily_payload(keywords: Optional[str] = None, item_type: Optional[str] = None) -> dict[str, Any]:
-    return load_daily_payload(keywords=keywords, item_type=item_type)
+def _build_daily_payload(keywords: Optional[str] = None, item_type: Optional[str] = None, date: Optional[str] = None) -> dict[str, Any]:
+    return load_daily_payload(keywords=keywords, item_type=item_type, date=date)
 
 
 def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
@@ -277,7 +278,15 @@ def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
 
 
 def _build_article_detail_payload(slug: str) -> dict[str, Any]:
-    path = ARTICLES_DIR / f"{slug}.md"
+    return _build_markdown_article_payload(
+        ARTICLES_DIR / f"{slug}.md",
+        slug,
+        back_url="/articles",
+        back_label="Back to Articles",
+    )
+
+
+def _build_markdown_article_payload(path: Path, slug: str, back_url: str, back_label: str) -> dict[str, Any]:
     if not path.exists():
         raise HTTPException(status_code=404, detail="Article not found")
 
@@ -335,7 +344,40 @@ def _build_article_detail_payload(slug: str) -> dict[str, Any]:
         "tags_html": tags_html,
         "tags": tags,
         "icon_clock": icon_clock,
+        "back_url": back_url,
+        "back_label": back_label,
     }
+
+
+def _build_daily_article_detail_payload(slug: str) -> dict[str, Any]:
+    item, run_date = _daily_item_for_article_slug(slug)
+    if not item:
+        raise HTTPException(status_code=404, detail="Daily article not found")
+    path = ensure_daily_article_markdown(item, run_date, output_dir=DAILY_ARTICLES_DIR)
+    return _build_markdown_article_payload(
+        path,
+        slug,
+        back_url=f"/daily?date={run_date}" if run_date else "/daily",
+        back_label="Back to Daily",
+    )
+
+
+def _daily_item_for_article_slug(slug: str) -> tuple[dict[str, Any] | None, str]:
+    date_match = re.match(r"^(\d{4}-\d{2}-\d{2})-", slug)
+    payloads = []
+    if date_match:
+        payloads.append(_build_daily_payload(date=date_match.group(1)))
+    payloads.append(_build_daily_payload())
+    seen_dates = set()
+    for payload in payloads:
+        run_date = str(payload.get("run_date") or payload.get("selected_date") or "")
+        if run_date in seen_dates:
+            continue
+        seen_dates.add(run_date)
+        for item in payload.get("items", []):
+            if item.get("article_slug") == slug:
+                return item, run_date
+    return None, ""
 
 
 
@@ -377,9 +419,9 @@ def articles_api(tag: Optional[str] = None, tags: Optional[str] = None) -> Any:
 
 
 @router.get("/api/site/daily")
-def daily_api(request: Request, keyword: Optional[str] = None, keywords: Optional[str] = None, item_type: Optional[str] = None) -> Any:
+def daily_api(request: Request, keyword: Optional[str] = None, keywords: Optional[str] = None, item_type: Optional[str] = None, date: Optional[str] = None) -> Any:
     effective_keywords = keywords if keywords else keyword
-    payload = _build_daily_payload(effective_keywords, item_type)
+    payload = _build_daily_payload(effective_keywords, item_type, date)
     if not get_current_user(request):
         payload = {**payload, "feedback_config": {}}
     return JSONResponse(payload, headers={"Cache-Control": "private, max-age=60"})
@@ -431,12 +473,14 @@ def articles_page(request: Request, tags: Optional[str] = None):
 
 
 @router.get("/daily", response_class=HTMLResponse)
-def daily_page(request: Request, keywords: Optional[str] = None, item_type: Optional[str] = None, paper_id: Optional[str] = None):
-    payload = _build_daily_payload(keywords, item_type)
+def daily_page(request: Request, keywords: Optional[str] = None, item_type: Optional[str] = None, paper_id: Optional[str] = None, date: Optional[str] = None):
+    payload = _build_daily_payload(keywords, item_type, date)
     is_upload_authenticated = get_current_user(request)
     return templates.TemplateResponse(request, "pages/daily.html", {
         "items": payload["items"],
         "run_date": payload["run_date"],
+        "selected_date": payload["selected_date"],
+        "archive_dates": payload["archive_dates"],
         "filter_keywords": payload["filter_keywords"],
         "active_item_type": payload["active_item_type"],
         "sorted_keywords": payload["sorted_keywords"],
@@ -445,6 +489,17 @@ def daily_page(request: Request, keywords: Optional[str] = None, item_type: Opti
         "keywords_url": _keywords_url,
         "type_url": _daily_type_url,
         "target_paper_id": paper_id or "",
+    })
+
+
+@router.get("/daily/articles/{slug}", response_class=HTMLResponse)
+def daily_article_detail_page(request: Request, slug: str):
+    try:
+        article = _build_daily_article_detail_payload(slug)
+    except HTTPException:
+        raise HTTPException(status_code=404, detail="Daily article not found")
+    return templates.TemplateResponse(request, "pages/article_detail.html", {
+        "article": article,
     })
 
 

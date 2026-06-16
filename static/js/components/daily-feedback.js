@@ -140,6 +140,9 @@
       hideCard(card);
     }
     localStorage.setItem(feedbackUiStateKey, JSON.stringify(state));
+    window.dispatchEvent(new CustomEvent("daily-feedback-state-change", {
+      detail: { paperId: paperId, rating: rating, runDate: runDate }
+    }));
   }
 
   function markCardLiked(card) {

@@ -36,10 +36,10 @@
                     {% for item in items %}
                     <article class="card home-glass article-card daily-card{% if target_paper_id == item.id %} is-target{% endif %}"
                              id="paper-{{ item.id|replace('/', '-')|replace(':', '-') }}"{% if is_upload_authenticated %}
-                             data-feedback-payload='{{ item.feedback_payload|tojson }}'{% endif %}>
+                            data-feedback-payload='{{ item.feedback_payload|tojson }}'{% endif %}>
                         <div class="home-glass-body" style="padding: 28px 32px">
                             <h2 class="article-card-title">
-                                <a href="{{ item.paper_url or item.repository_url or '#' }}" target="_blank" rel="noreferrer">{{ item.title }}</a>
+                                <a href="{{ item.detail_url }}">{{ item.title }}</a>
                             </h2>
                             <div class="article-card-meta daily-card-meta daily-card-main-meta">
                                 {% if item.display_authors %}
@@ -103,7 +103,10 @@
                     </article>
                     {% endfor %}
                 {% else %}
-                    <p>No daily recommendations found.</p>
+                    <div class="glass-empty-state" role="status" aria-live="polite">
+                        <div class="glass-empty-state-title">No daily recommendations.</div>
+                        <div class="glass-empty-state-subtitle">Fresh papers and repositories will appear here when available.</div>
+                    </div>
                 {% endif %}
             </div>
 
@@ -134,6 +137,11 @@
                         </div>
                     </div>
                 </div>
+                <div id="dailyArchiveCalendar"
+                     class="card home-liquid-card home-news-card daily-archive-card"
+                     data-selected-date="{{ selected_date or run_date or '' }}"
+                     data-run-date="{{ run_date or '' }}"
+                     data-archive-dates='{{ archive_dates|tojson }}'></div>
             </aside>
         </div>
     </div>
@@ -142,6 +150,7 @@
 
 {% block scripts %}
 {% if is_upload_authenticated %}
-<script src="/static/js/components/daily-feedback.js?v=4" defer></script>
+<script src="/static/js/components/daily-feedback.js?v=5" defer></script>
 {% endif %}
+<script src="/static/js/components/daily-archive-calendar.js?v=1" defer></script>
 {% endblock %}
