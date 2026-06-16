@@ -7,13 +7,16 @@
   var feedbackUiStateKey = "homepage_daily_feedback_ui_state";
   var MONTH_ABBR = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "June.", "July", "Aug.", "Sept.", "Oct.", "Nov.", "Dec."];
   var WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
-  var selectedDate = mount.getAttribute("data-selected-date") || mount.getAttribute("data-run-date") || todayString();
+  var runDate = mount.getAttribute("data-run-date") || "";
+  var selectedDate = mount.getAttribute("data-selected-date") || runDate || todayString();
   var archiveDates = readArchiveDates(mount.getAttribute("data-archive-dates") || "[]");
+  var archiveCounts = readArchiveCounts(mount.getAttribute("data-archive-counts") || "{}");
   var likedDates = likedDatesFromLocalState();
-  var availableDates = uniqueDates(archiveDates.concat(likedDates));
+  var availableDates = uniqueDates([runDate].concat(archiveDates, likedDates));
   var initial = parseDate(selectedDate) || parseDate(availableDates[0]) || new Date();
   var viewYear = initial.getFullYear();
   var viewMonth = initial.getMonth();
+  var tooltipEl = null;
 
   function buildSkeleton() {
     mount.innerHTML =
@@ -74,8 +77,12 @@
     cell.textContent = String(day);
     if (hasArchive) {
       cell.href = "/daily?date=" + encodeURIComponent(date);
-      cell.title = isLiked ? "Liked archive for " + date : "Daily archive for " + date;
+      cell.title = archiveLabel(date, isLiked);
       cell.setAttribute("aria-label", cell.title);
+      cell.addEventListener("mouseenter", function (event) { showTooltip(event, date); });
+      cell.addEventListener("mouseleave", hideTooltip);
+      cell.addEventListener("focus", function (event) { showTooltip(event, date); });
+      cell.addEventListener("blur", hideTooltip);
     }
     return cell;
   }
@@ -112,7 +119,7 @@
 
   function refreshFeedbackState() {
     likedDates = likedDatesFromLocalState();
-    availableDates = uniqueDates(archiveDates.concat(likedDates));
+    availableDates = uniqueDates([runDate].concat(archiveDates, likedDates));
     render();
   }
 
@@ -135,6 +142,80 @@
     } catch (error) {
       return [];
     }
+  }
+
+  function readArchiveCounts(raw) {
+    try {
+      var parsed = JSON.parse(raw);
+      var counts = {};
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return counts;
+      Object.keys(parsed).forEach(function (date) {
+        if (!isDateString(date)) return;
+        var value = parsed[date] || {};
+        counts[date] = {
+          papers: safeCount(value.papers),
+          code: safeCount(value.code)
+        };
+      });
+      return counts;
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function archiveLabel(date, isLiked) {
+    var prefix = isLiked ? "Liked archive" : "Daily archive";
+    return prefix + " for " + date + ": " + archiveCountText(date);
+  }
+
+  function archiveCountText(date) {
+    var counts = archiveCounts[date] || localLikeCounts(date);
+    return "Papers " + safeCount(counts.papers) + " · Code " + safeCount(counts.code);
+  }
+
+  function localLikeCounts(date) {
+    try {
+      var state = JSON.parse(localStorage.getItem(feedbackUiStateKey) || "{}");
+      var likes = state && typeof state.likes === "object" && !Array.isArray(state.likes) ? state.likes : {};
+      var likedItems = Array.isArray(likes[date]) ? likes[date] : [];
+      return { papers: likedItems.length, code: 0 };
+    } catch (error) {
+      return { papers: 0, code: 0 };
+    }
+  }
+
+  function showTooltip(event, date) {
+    var target = event.currentTarget;
+    var rect = target.getBoundingClientRect();
+    var tooltipHeight = 72;
+    var spaceAbove = rect.top;
+    var spaceBelow = window.innerHeight - rect.bottom;
+    var preferAbove = spaceAbove >= tooltipHeight || spaceAbove >= spaceBelow;
+
+    if (!tooltipEl) {
+      tooltipEl = document.createElement("div");
+      tooltipEl.className = "anniversary-tooltip";
+      tooltipEl.setAttribute("role", "tooltip");
+      tooltipEl.innerHTML =
+        '<div class="anniversary-tooltip-title"></div>' +
+        '<div class="anniversary-tooltip-desc"></div>';
+      document.body.appendChild(tooltipEl);
+    }
+    tooltipEl.setAttribute("data-placement", preferAbove ? "above" : "below");
+    tooltipEl.style.left = (rect.left + rect.width / 2) + "px";
+    tooltipEl.style.top = (preferAbove ? rect.top : rect.bottom) + "px";
+    tooltipEl.querySelector(".anniversary-tooltip-title").textContent = date;
+    tooltipEl.querySelector(".anniversary-tooltip-desc").textContent = archiveCountText(date);
+  }
+
+  function hideTooltip() {
+    if (tooltipEl) tooltipEl.remove();
+    tooltipEl = null;
+  }
+
+  function safeCount(value) {
+    var count = Number(value || 0);
+    return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
   }
 
   function uniqueDates(values) {

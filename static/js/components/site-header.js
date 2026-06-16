@@ -455,9 +455,9 @@
    * Home page "all news" modal
    *
    * Only attached if #newsExpandBtn exists (home page). Creates a full-screen
-   * overlay using the existing .lightbox-overlay.active CSS, fetches
-   * /api/site/home and renders its all_news_html field. Closes on Escape /
-   * overlay click / close button click; locks body scroll while open.
+   * overlay with a dedicated news card, fetches /api/site/home and renders its
+   * all_news_html field. Closes on Escape / overlay click / close button click;
+   * locks body scroll while open.
    * ------------------------------------------------------------------------- */
   function initNewsModal() {
     var btn = document.getElementById("newsExpandBtn");
@@ -472,30 +472,41 @@
       if (overlay) return; // already open
 
       overlay = document.createElement("div");
-      overlay.className = "lightbox-overlay";
+      overlay.className = "news-modal-overlay";
 
       var card = document.createElement("div");
-      card.className = "card home-liquid-card lightbox-content";
+      card.className = "news-modal-card";
       // Keep clicks on the card from bubbling to the overlay (which closes).
       card.addEventListener("click", function (e) {
         e.stopPropagation();
       });
 
-      // Loading placeholder while we fetch.
-      var loading = document.createElement("div");
-      loading.style.padding = "32px";
-      loading.style.color = "var(--muted)";
-      loading.textContent = "Loading…";
-      card.appendChild(loading);
+      var header = document.createElement("div");
+      header.className = "news-modal-header";
+      var title = document.createElement("h2");
+      title.className = "news-modal-title";
+      title.textContent = "News";
+      header.appendChild(title);
 
       closeBtn = document.createElement("button");
       closeBtn.type = "button";
-      closeBtn.className = "lightbox-close";
+      closeBtn.className = "news-modal-close";
       closeBtn.setAttribute("aria-label", "Close");
       closeBtn.innerHTML = "&times;";
+      header.appendChild(closeBtn);
+      card.appendChild(header);
+
+      var body = document.createElement("div");
+      body.className = "news-modal-body";
+      card.appendChild(body);
+
+      // Loading placeholder while we fetch.
+      var loading = document.createElement("div");
+      loading.className = "news-modal-status";
+      loading.textContent = "Loading…";
+      body.appendChild(loading);
 
       overlay.appendChild(card);
-      overlay.appendChild(closeBtn);
       document.body.appendChild(overlay);
 
       // Lock body scroll (and compensate for the scrollbar width to avoid
@@ -511,7 +522,7 @@
 
       // Force a frame so the CSS opacity transition kicks in.
       window.requestAnimationFrame(function () {
-        if (overlay) overlay.classList.add("active");
+        if (overlay) overlay.classList.add("is-active");
       });
 
       // Wire up close interactions.
@@ -528,20 +539,19 @@
         .then(function (data) {
           if (!overlay) return;
           // Replace the loading placeholder with the real news HTML.
-          while (card.firstChild) card.removeChild(card.firstChild);
+          while (body.firstChild) body.removeChild(body.firstChild);
           var wrap = document.createElement("div");
-          wrap.className = "home-news-all";
+          wrap.className = "home-news-modal-content";
           wrap.innerHTML = data && data.all_news_html ? data.all_news_html : "";
-          card.appendChild(wrap);
+          body.appendChild(wrap);
         })
         .catch(function () {
           if (!overlay) return;
-          while (card.firstChild) card.removeChild(card.firstChild);
+          while (body.firstChild) body.removeChild(body.firstChild);
           var err = document.createElement("div");
-          err.style.padding = "32px";
-          err.style.color = "var(--muted)";
+          err.className = "news-modal-status";
           err.textContent = "Failed to load news.";
-          card.appendChild(err);
+          body.appendChild(err);
         });
     }
 
@@ -554,7 +564,7 @@
       closeBtn = null;
 
       // Fade out, then remove.
-      current.classList.remove("active");
+      current.classList.remove("is-active");
       window.setTimeout(function () {
         if (current.parentNode) current.parentNode.removeChild(current);
       }, 400);

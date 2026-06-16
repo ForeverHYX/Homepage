@@ -47,8 +47,10 @@ def _tags_url(current_tags: list[str], toggle: Optional[str] = None) -> str:
     return f"/articles?tags={quote(','.join(next_tags))}"
 
 
-def _daily_url(keywords: Optional[list[str]] = None, item_type: Optional[str] = None) -> str:
+def _daily_url(keywords: Optional[list[str]] = None, item_type: Optional[str] = None, date: Optional[str] = None) -> str:
     params: dict[str, str] = {}
+    if date and re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        params["date"] = date
     if keywords:
         params["keywords"] = ",".join(keywords)
     if item_type in {"paper", "repository"}:
@@ -58,7 +60,12 @@ def _daily_url(keywords: Optional[list[str]] = None, item_type: Optional[str] = 
     return f"/daily?{urlencode(params)}"
 
 
-def _keywords_url(current_keywords: list[str], toggle: Optional[str] = None, item_type: Optional[str] = None) -> str:
+def _keywords_url(
+    current_keywords: list[str],
+    toggle: Optional[str] = None,
+    item_type: Optional[str] = None,
+    date: Optional[str] = None,
+) -> str:
     """Build a Daily keyword toggle URL."""
     if not toggle:
         next_keywords = current_keywords
@@ -66,12 +73,12 @@ def _keywords_url(current_keywords: list[str], toggle: Optional[str] = None, ite
         next_keywords = [keyword for keyword in current_keywords if keyword != toggle]
     else:
         next_keywords = [*current_keywords, toggle]
-    return _daily_url(next_keywords, item_type)
+    return _daily_url(next_keywords, item_type, date)
 
 
-def _daily_type_url(item_type: Optional[str] = None) -> str:
+def _daily_type_url(item_type: Optional[str] = None, date: Optional[str] = None) -> str:
     """Build a Daily type filter URL. Switching type resets keyword filters."""
-    return _daily_url([], item_type)
+    return _daily_url([], item_type, date)
 
 
 
@@ -476,18 +483,25 @@ def articles_page(request: Request, tags: Optional[str] = None):
 def daily_page(request: Request, keywords: Optional[str] = None, item_type: Optional[str] = None, paper_id: Optional[str] = None, date: Optional[str] = None):
     payload = _build_daily_payload(keywords, item_type, date)
     is_upload_authenticated = get_current_user(request)
+    filter_date = payload["selected_date"] if date else None
     return templates.TemplateResponse(request, "pages/daily.html", {
         "items": payload["items"],
         "run_date": payload["run_date"],
         "selected_date": payload["selected_date"],
         "archive_dates": payload["archive_dates"],
+        "archive_counts": payload["archive_counts"],
         "filter_keywords": payload["filter_keywords"],
         "active_item_type": payload["active_item_type"],
         "sorted_keywords": payload["sorted_keywords"],
         "feedback_config": payload["feedback_config"] if is_upload_authenticated else {},
         "is_upload_authenticated": is_upload_authenticated,
-        "keywords_url": _keywords_url,
-        "type_url": _daily_type_url,
+        "keywords_url": lambda current_keywords, toggle=None, active_type=None: _keywords_url(
+            current_keywords,
+            toggle,
+            active_type,
+            filter_date,
+        ),
+        "type_url": lambda active_type=None: _daily_type_url(active_type, filter_date),
         "target_paper_id": paper_id or "",
     })
 

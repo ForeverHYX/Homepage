@@ -6,6 +6,7 @@ from unittest import TestCase
 ROOT = Path(__file__).resolve().parents[1]
 LIGHTFIELD_JS = ROOT / "static" / "js" / "effects" / "lightfield.js"
 LIQUID_GLASS_JS = ROOT / "static" / "js" / "effects" / "liquid-glass.js"
+SITE_HEADER_JS = ROOT / "static" / "js" / "components" / "site-header.js"
 STYLES_CSS = ROOT / "static" / "css" / "styles.css"
 BASE_HTML = ROOT / "app" / "templates" / "base.html"
 
@@ -103,7 +104,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=123"', base)
+        self.assertIn('href="/static/css/styles.css?v=124"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -115,3 +116,20 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("backdrop-filter", inline_code_body)
         self.assertIn("box-decoration-break: clone", inline_code_body)
         self.assertIn("-webkit-box-decoration-break: clone", inline_code_body)
+
+    def test_news_modal_uses_dedicated_layout_instead_of_generic_lightbox_card(self) -> None:
+        source = SITE_HEADER_JS.read_text()
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn('overlay.className = "news-modal-overlay"', source)
+        self.assertIn('card.className = "news-modal-card"', source)
+        self.assertIn('wrap.className = "home-news-modal-content"', source)
+        self.assertNotIn('card.className = "card home-liquid-card lightbox-content"', source)
+
+        self.assertIn(".news-modal-overlay", styles)
+        self.assertIn(".news-modal-card", styles)
+        self.assertIn(".home-news-modal-content", styles)
+        modal_card = re.search(r"\.news-modal-card\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        self.assertIsNotNone(modal_card)
+        self.assertIn("overflow: auto", modal_card.group("body"))
+        self.assertIn("max-height: min(82vh, 760px)", modal_card.group("body"))

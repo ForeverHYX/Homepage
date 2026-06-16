@@ -200,6 +200,7 @@ def load_daily_payload(
     )
     favorite_records = _favorite_records(favorites_payload)
     favorite_dates = _favorite_dates(favorite_records)
+    archive_counts = _favorite_date_counts(favorite_records)
     current_payload = _load_cache_first(
         fetcher=payload_fetcher,
         cache_path=cache_path,
@@ -210,6 +211,8 @@ def load_daily_payload(
         required_run_date=required_run_date,
     )
     current_run_date = _parse_archive_date(str(current_payload.get("run_date") or ""))
+    if current_run_date:
+        archive_counts[current_run_date] = _recommendation_counts(current_payload.get("recommendations", []))
     if selected_date and selected_date != current_run_date:
         recommender_payload = _favorites_payload_for_date(favorite_records, selected_date)
     else:
@@ -231,6 +234,7 @@ def load_daily_payload(
         feedback_config=feedback_config,
         selected_date=selected_date,
         archive_dates=favorite_dates,
+        archive_counts=archive_counts,
     )
 
 
@@ -328,6 +332,38 @@ def _favorite_dates(records: list[dict[str, Any]]) -> list[str]:
     return sorted(dates, reverse=True)
 
 
+def _favorite_date_counts(records: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    counts: dict[str, dict[str, int]] = {}
+    for record in records:
+        date = _parse_archive_date(str(record.get("created_at") or "")[:10])
+        if not date:
+            continue
+        date_counts = counts.setdefault(date, {"papers": 0, "code": 0})
+        if _is_repository_record(record):
+            date_counts["code"] += 1
+        else:
+            date_counts["papers"] += 1
+    return counts
+
+
+def _recommendation_counts(items: Any) -> dict[str, int]:
+    counts = {"papers": 0, "code": 0}
+    if not isinstance(items, list):
+        return counts
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if _is_repository_record(item):
+            counts["code"] += 1
+        else:
+            counts["papers"] += 1
+    return counts
+
+
+def _is_repository_record(item: dict[str, Any]) -> bool:
+    return str(item.get("item_type") or "").lower() == "repository" or bool(item.get("repository_url"))
+
+
 def _favorites_payload_for_date(records: list[dict[str, Any]], selected_date: str) -> dict[str, Any] | None:
     if not selected_date:
         return None
@@ -405,6 +441,7 @@ def build_daily_payload(
     source_base_url: str = DEFAULT_DAILY_BASE_URL,
     selected_date: Optional[str] = None,
     archive_dates: Optional[list[str]] = None,
+    archive_counts: Optional[dict[str, dict[str, int]]] = None,
 ) -> dict[str, Any]:
     run_date = str(recommender_payload.get("run_date") or "")
     all_items = [
@@ -422,6 +459,10 @@ def build_daily_payload(
     for item in base_items:
         keyword_counts.update(item["keywords"])
 
+    counts = _normalize_archive_counts(archive_counts)
+    if run_date:
+        counts.setdefault(run_date, _recommendation_counts(all_items))
+
     return {
         "run_date": recommender_payload.get("run_date", ""),
         "source_url": source_base_url.rstrip("/"),
@@ -432,7 +473,23 @@ def build_daily_payload(
         "feedback_config": feedback_config or {},
         "selected_date": selected_date or run_date,
         "archive_dates": archive_dates or ([run_date] if run_date else []),
+        "archive_counts": counts,
     }
+
+
+def _normalize_archive_counts(value: Optional[dict[str, dict[str, int]]]) -> dict[str, dict[str, int]]:
+    counts: dict[str, dict[str, int]] = {}
+    if not isinstance(value, dict):
+        return counts
+    for date, raw_counts in value.items():
+        parsed_date = _parse_archive_date(str(date))
+        if not parsed_date or not isinstance(raw_counts, dict):
+            continue
+        counts[parsed_date] = {
+            "papers": _safe_int(raw_counts.get("papers")),
+            "code": _safe_int(raw_counts.get("code")),
+        }
+    return counts
 
 
 def daily_search_entries(recommender_payload: dict[str, Any], source_base_url: str = DEFAULT_DAILY_BASE_URL) -> list[dict[str, Any]]:
@@ -526,6 +583,11 @@ def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source
 
 def _keywords_for_item(item: dict[str, Any], section_labels: dict[str, str]) -> list[str]:
     values: list[str] = []
+    has_curated_keyword_source = bool(
+        _string_list(item.get("keywords"))
+        or _string_list(item.get("positive_matches"))
+        or _string_list(item.get("repository_topics"))
+    )
     values.extend(_string_list(item.get("keywords")))
     for match in _string_list(item.get("positive_matches")):
         values.extend(_keyword_labels(match.split(":", 1)[1].strip() if ":" in match else match))
@@ -537,6 +599,8 @@ def _keywords_for_item(item: dict[str, Any], section_labels: dict[str, str]) -> 
     for section in sections:
         values.extend(SECTION_KEYWORDS.get(section, []))
     values.extend(_keyword_labels(_title_keyword_text(str(item.get("title") or "")), allowed=TITLE_KEYWORD_ALLOWLIST))
+    if not has_curated_keyword_source:
+        values.extend(_keyword_labels(str(item.get("abstract") or ""), allowed=TITLE_KEYWORD_ALLOWLIST))
     return _unique(value for value in values if _is_display_keyword(value))[:DISPLAY_KEYWORD_LIMIT]
 
 
@@ -756,14 +820,8 @@ def _paper_links(item: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def _matches_keywords(item: dict[str, Any], selected_keywords: Iterable[str]) -> bool:
-    haystack = " ".join([
-        item.get("title", ""),
-        item.get("abstract", ""),
-        item.get("tldr", ""),
-        " ".join(item.get("authors", [])),
-        " ".join(item.get("keywords", [])),
-    ]).lower()
-    return all(keyword.lower() in haystack for keyword in selected_keywords)
+    keywords = {keyword.lower() for keyword in item.get("keywords", [])}
+    return all(keyword.lower() in keywords for keyword in selected_keywords)
 
 
 def _parse_keywords(value: Optional[str]) -> list[str]:

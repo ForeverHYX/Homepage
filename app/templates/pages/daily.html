@@ -141,7 +141,8 @@
                      class="card home-liquid-card home-news-card daily-archive-card"
                      data-selected-date="{{ selected_date or run_date or '' }}"
                      data-run-date="{{ run_date or '' }}"
-                     data-archive-dates='{{ archive_dates|tojson }}'></div>
+                     data-archive-dates='{{ archive_dates|tojson }}'
+                     data-archive-counts='{{ archive_counts|tojson }}'></div>
             </aside>
         </div>
     </div>
@@ -152,5 +153,5 @@
 {% if is_upload_authenticated %}
 <script src="/static/js/components/daily-feedback.js?v=5" defer></script>
 {% endif %}
-<script src="/static/js/components/daily-archive-calendar.js?v=1" defer></script>
+<script src="/static/js/components/daily-archive-calendar.js?v=2" defer></script>
 {% endblock %}
