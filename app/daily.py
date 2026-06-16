@@ -200,17 +200,20 @@ def load_daily_payload(
     )
     favorite_records = _favorite_records(favorites_payload)
     favorite_dates = _favorite_dates(favorite_records)
-    recommender_payload = _favorites_payload_for_date(favorite_records, selected_date) if selected_date else None
-    if recommender_payload is None:
-        recommender_payload = _load_cache_first(
-            fetcher=payload_fetcher,
-            cache_path=cache_path,
-            fallback={"recommendations": [], "run_date": ""},
-            remote_cache_ttl_seconds=remote_cache_ttl_seconds,
-            refresh_stale_cache_in_background=refresh_stale_cache_in_background,
-            write_empty=True,
-            required_run_date=required_run_date,
-        )
+    current_payload = _load_cache_first(
+        fetcher=payload_fetcher,
+        cache_path=cache_path,
+        fallback={"recommendations": [], "run_date": ""},
+        remote_cache_ttl_seconds=remote_cache_ttl_seconds,
+        refresh_stale_cache_in_background=refresh_stale_cache_in_background,
+        write_empty=True,
+        required_run_date=required_run_date,
+    )
+    current_run_date = _parse_archive_date(str(current_payload.get("run_date") or ""))
+    if selected_date and selected_date != current_run_date:
+        recommender_payload = _favorites_payload_for_date(favorite_records, selected_date)
+    else:
+        recommender_payload = current_payload
         selected_date = str(recommender_payload.get("run_date") or "")
     feedback_config = _load_cache_first(
         fetcher=config_fetcher,

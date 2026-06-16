@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.daily import build_daily_payload, daily_payload_search_entries, daily_search_entries, fetch_daily_favorites_archive, load_daily_payload
-from app.daily_articles import daily_article_slug, generate_daily_article_markdown
+from app.daily_articles import daily_article_slug, ensure_daily_article_markdown, generate_daily_article_markdown
 from app.routers import pages
 
 
@@ -180,15 +180,39 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("Date: 2026-06-14", markdown)
         self.assertIn("Author: Yixun Hong", markdown)
         self.assertIn("Tags: Daily, Paper", markdown)
+        self.assertIn("Daily-Article-Version: 2", markdown)
         self.assertIn("Abstract:", markdown)
         self.assertIn("## Core Idea", markdown)
         self.assertIn("## What Is New", markdown)
         self.assertIn("## Methodology", markdown)
+        self.assertIn("Read this as a loop:", markdown)
+        self.assertNotIn("The daily payload describes the method as:", markdown)
         self.assertIn("## Figure To Read First", markdown)
         self.assertIn("![Paper PDF with figures](https://arxiv.org/pdf/2606.00001.pdf)", markdown)
         self.assertIn("## Minimal Mental Model", markdown)
         self.assertIn("```text", markdown)
         self.assertIn("## Why It Matters", markdown)
+
+    def test_daily_article_cache_regenerates_old_generator_output(self):
+        item = build_daily_payload(SAMPLE_RECOMMENDER_PAYLOAD)["items"][0]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            article_dir = Path(tmpdir)
+            slug = daily_article_slug(item, "2026-06-14")
+            path = article_dir / f"{slug}.md"
+            article_dir.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Old Daily Article\n\n## Core Idea\n\nold cached output\n",
+                encoding="utf-8",
+            )
+
+            generated_path = ensure_daily_article_markdown(item, "2026-06-14", output_dir=article_dir)
+            markdown = generated_path.read_text(encoding="utf-8")
+
+        self.assertEqual(generated_path, path)
+        self.assertIn("# Agentic AI-Driven Microarchitecture Exploration", markdown)
+        self.assertIn("Daily-Article-Version: 2", markdown)
+        self.assertNotIn("old cached output", markdown)
 
     def test_daily_article_route_renders_generated_markdown_with_article_template(self):
         payload = sample_daily_page_payload()
@@ -549,6 +573,36 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertNotIn("It is most relevant here", payload["items"][0]["tldr"])
         self.assertIn("2026-06-13", payload["archive_dates"])
 
+    def test_daily_loader_keeps_current_run_when_current_date_is_selected(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            payload = load_daily_payload(
+                date="2026-06-14",
+                payload_fetcher=lambda: SAMPLE_RECOMMENDER_PAYLOAD,
+                config_fetcher=lambda: {},
+                favorites_fetcher=lambda: {
+                    "records": [
+                        {
+                            "paper_id": "2606.13000",
+                            "rating": "like",
+                            "title": "Yesterday Liked Paper",
+                            "abstract": "This belongs to yesterday.",
+                            "created_at": "2026-06-13T12:00:00Z",
+                        }
+                    ]
+                },
+                cache_path=tmp_path / "recommendations.json",
+                config_cache_path=tmp_path / "feedback-config.json",
+                favorites_cache_path=tmp_path / "favorites.json",
+                expected_run_date="2026-06-14",
+            )
+
+        self.assertEqual(payload["selected_date"], "2026-06-14")
+        self.assertEqual(payload["run_date"], "2026-06-14")
+        self.assertEqual([item["title"] for item in payload["items"]], ["Agentic AI-Driven Microarchitecture Exploration"])
+        self.assertEqual(payload["archive_dates"], ["2026-06-13"])
+
     def test_daily_favorites_archive_fetch_preserves_sidecar_path_slashes(self):
         requested_urls = []
 
@@ -831,6 +885,7 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn(".daily-action-button.daily-action-like:hover,\n.daily-action-button.feedback.is-active", styles)
         self.assertIn("background: var(--daily-action-blue-gradient);", styles)
         self.assertIn(".daily-archive-card", styles)
+        self.assertIn(".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);", styles)
         self.assertNotIn(".daily-archive-day.is-liked::after", styles)
         self.assertNotIn("linear-gradient(135deg, #10b981, #2563eb)", styles)
         self.assertIn("#f97316", styles)

@@ -11,6 +11,16 @@ from urllib.request import Request, urlopen
 DAILY_ARTICLES_DIR = Path(__file__).resolve().parent.parent / "content" / "daily" / "articles"
 DEFAULT_OPENAI_BASE_URL = "https://opencode.ai/zen/go/v1"
 DEFAULT_OPENAI_MODEL = "deepseek-v4-flash"
+ARTICLE_GENERATOR_VERSION = "2"
+ARTICLE_GENERATOR_MARKER = f"Daily-Article-Version: {ARTICLE_GENERATOR_VERSION}"
+REQUIRED_SECTIONS = (
+    "## Core Idea",
+    "## What Is New",
+    "## Methodology",
+    "## Figure To Read First",
+    "## Minimal Mental Model",
+    "## Why It Matters",
+)
 
 
 def daily_article_slug(item: dict[str, Any], run_date: str) -> str:
@@ -29,10 +39,11 @@ def ensure_daily_article_markdown(
     output_dir.mkdir(parents=True, exist_ok=True)
     slug = daily_article_slug(item, run_date)
     path = output_dir / f"{slug}.md"
-    if path.exists() and path.stat().st_size > 0:
+    if _is_current_daily_article(path):
         return path
 
     markdown_text = _llm_daily_article_markdown(item, run_date) or generate_daily_article_markdown(item, run_date)
+    markdown_text = _ensure_generator_marker(markdown_text)
     path.write_text(markdown_text, encoding="utf-8")
     return path
 
@@ -54,15 +65,16 @@ def generate_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
         f"Date: {_safe_date(run_date)}",
         "Author: Yixun Hong",
         f"Tags: {', '.join(tags)}",
-        f"Abstract: {_single_line(tldr)}",
+        f"Abstract: {_single_line(_abstract_line(tldr, abstract))}",
+        f"<!-- {ARTICLE_GENERATOR_MARKER} -->",
         "",
         source_url,
         "",
         "## Core Idea",
         "",
-        _paragraph(tldr),
+        _core_idea_text(item, tldr),
         "",
-        "In one sentence, the recommendation is worth opening because it connects the daily architecture profile to a concrete research artifact rather than a generic AI or software item.",
+        _profile_relevance_text(item),
         "",
         "## What Is New",
         "",
@@ -126,10 +138,9 @@ def _llm_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
         return ""
     if not content.startswith("# "):
         return ""
-    required = ("## Core Idea", "## What Is New", "## Methodology", "## Figure To Read First", "## Why It Matters")
-    if not all(marker in content for marker in required):
+    if not all(marker in content for marker in REQUIRED_SECTIONS):
         return ""
-    return content.rstrip() + "\n"
+    return _ensure_generator_marker(content.rstrip() + "\n")
 
 
 def _llm_prompt(item: dict[str, Any], run_date: str) -> str:
@@ -164,7 +175,7 @@ def _figure_markdown(item: dict[str, Any]) -> str:
             pdf_url = pdf_url.rstrip("/") + ".pdf"
         return (
             f"![Paper PDF with figures]({pdf_url})\n\n"
-            "Read the first architecture or pipeline figure before the experiments: it should show what is optimized, what feedback signal is used, and where the system boundary sits."
+            "Read this visual first: focus on the first architecture, workflow, or pipeline figure before the experiments. It should show what is optimized, what feedback signal is used, and where the system boundary sits."
         )
     return "No figure asset is cached yet. Open the source link and inspect the first method or system overview figure."
 
@@ -182,11 +193,11 @@ def _code_markdown(item: dict[str, Any]) -> str:
         ])
     return "\n".join([
         "```text",
-        "candidate design",
-        "  -> model / agent / compiler decision",
-        "  -> simulator or empirical evaluation",
-        "  -> feedback signal",
-        "  -> refined design",
+        "research artifact",
+        "  question      -> what design, runtime, or system boundary changes?",
+        "  mechanism     -> model, agent, compiler, simulator, or hardware feedback",
+        "  evaluation    -> baseline comparison plus cost / latency / accuracy signal",
+        "  reusable idea -> what should carry into the next architecture experiment?",
         "```",
     ])
 
@@ -217,12 +228,17 @@ def _methodology_text(item: dict[str, Any]) -> str:
         language = _clean_text(item.get("repository_language"))
         lang_text = f" The implementation language signal is {language}." if language else ""
         return (
-            "Methodologically, read this as an executable systems artifact: identify its input contract, the core engine, the evaluation path, and the claims implied by examples or linked papers."
+            "Read this as an executable artifact: identify its input contract, the core engine, the evaluation path, and the claims implied by examples or linked papers."
             + lang_text
         )
     if abstract:
-        return f"The daily payload describes the method as: {abstract}"
-    return "The method should be read from the linked paper, with attention to the search space, feedback signal, baseline, and evaluation cost."
+        sentences = _sentences(abstract)
+        mechanism = _clip_text(sentences[0] if sentences else abstract, 280)
+        evidence = _evidence_sentence(sentences[1:])
+        if evidence:
+            return f"Read this as a loop: define the target system, apply the proposed mechanism, measure against a baseline, then use the measured signal to justify the next design choice. Mechanism: {mechanism} Evidence: {_clip_text(evidence, 220)}"
+        return f"Read this as a loop: define the target system, apply the proposed mechanism, measure against a baseline, then use the measured signal to justify the next design choice. Mechanism: {mechanism}"
+    return "Read this as a loop: identify the search space, the feedback signal, the baseline, and the evaluation cost before trusting the headline result."
 
 
 def _why_it_matters(item: dict[str, Any]) -> str:
@@ -282,6 +298,82 @@ def _single_line(value: str) -> str:
 
 def _paragraph(value: str) -> str:
     return _clean_text(value) or "The daily payload does not include a detailed summary yet."
+
+
+def _abstract_line(tldr: str, abstract: str) -> str:
+    return _clip_text(_first_sentence(tldr) or _first_sentence(abstract) or tldr or abstract, 260)
+
+
+def _core_idea_text(item: dict[str, Any], tldr: str) -> str:
+    summary = _clip_text(_first_sentence(tldr) or _clean_text(tldr), 320)
+    if summary:
+        return summary
+    if item.get("item_type") == "repository":
+        return "The core idea is to treat the repository as a runnable systems artifact rather than a passive link."
+    return "The core idea is to identify the design mechanism, the feedback signal, and the evaluation boundary before reading the full paper."
+
+
+def _profile_relevance_text(item: dict[str, Any]) -> str:
+    keywords = _human_list(_string_list(item.get("keywords"))[:3])
+    if item.get("item_type") == "repository":
+        return f"For this daily profile, it is worth opening because it turns {keywords or 'a systems idea'} into code that can be inspected and reused."
+    return f"For this daily profile, it is worth opening because it links {keywords or 'the topic'} to a concrete method, not just a broad trend."
+
+
+def _sentences(value: str) -> list[str]:
+    text = _clean_text(value)
+    if not text:
+        return []
+    return [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
+
+
+def _first_sentence(value: str) -> str:
+    sentences = _sentences(value)
+    return sentences[0] if sentences else ""
+
+
+def _evidence_sentence(sentences: list[str]) -> str:
+    for sentence in sentences:
+        if re.search(r"\b(achieves?|shows?|validates?|evaluates?|improves?|outperforms?|demonstrates?|results?)\b", sentence, re.I):
+            return sentence
+    return sentences[0] if sentences else ""
+
+
+def _clip_text(value: str, limit: int) -> str:
+    text = _clean_text(value)
+    if len(text) <= limit:
+        return text
+    clipped = text[:limit].rsplit(" ", 1)[0].rstrip(".,;:- ")
+    if clipped and not re.search(r"[.!?]$", clipped):
+        clipped = f"{clipped}."
+    return clipped or text[:limit].rstrip()
+
+
+def _is_current_daily_article(path: Path) -> bool:
+    try:
+        if not path.exists() or path.stat().st_size <= 0:
+            return False
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    return ARTICLE_GENERATOR_MARKER in text and all(section in text for section in REQUIRED_SECTIONS)
+
+
+def _ensure_generator_marker(markdown_text: str) -> str:
+    text = markdown_text.rstrip() + "\n"
+    if ARTICLE_GENERATOR_MARKER in text:
+        return text
+    lines = text.splitlines()
+    insert_at = 0
+    for index, line in enumerate(lines):
+        if line.strip().lower().startswith("abstract:"):
+            insert_at = index + 1
+            break
+    marker = f"<!-- {ARTICLE_GENERATOR_MARKER} -->"
+    if insert_at:
+        lines.insert(insert_at, marker)
+        return "\n".join(lines).rstrip() + "\n"
+    return f"{marker}\n{text}"
 
 
 def _human_list(values: list[str]) -> str:
