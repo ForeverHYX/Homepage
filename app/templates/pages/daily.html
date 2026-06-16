@@ -149,7 +149,7 @@
                     <span class="home-liquid-warp" aria-hidden="true"></span>
                     <div class="home-liquid-body daily-profile-body">
                         <h3 class="sidebar-card-title daily-profile-title">Profile</h3>
-                        <svg class="daily-profile-radar" viewBox="0 0 200 200" role="img" aria-label="Daily research profile radar chart">
+                        <svg class="daily-profile-radar" viewBox="{{ profile_radar.view_box or '0 0 200 200' }}" role="img" aria-label="Daily research profile radar chart">
                             {% for ring in profile_radar.rings %}
                             <polygon class="daily-profile-ring" points="{{ ring }}"></polygon>
                             {% endfor %}
@@ -162,11 +162,6 @@
                             <text class="daily-profile-label" x="{{ axis.label_x }}" y="{{ axis.label_y }}" text-anchor="{{ axis.label_anchor }}">{{ axis.label }}</text>
                             {% endfor %}
                         </svg>
-                        <div class="daily-profile-values" aria-label="Profile axis values">
-                            {% for axis in profile_radar.axes %}
-                            <span>{{ axis.label }} <strong>{{ axis.value }}</strong></span>
-                            {% endfor %}
-                        </div>
                     </div>
                 </div>
                 {% endif %}

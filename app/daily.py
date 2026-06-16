@@ -25,15 +25,10 @@ DISPLAY_KEYWORD_LIMIT = 10
 FILTER_KEYWORD_ROW_WIDTH = 252
 FILTER_KEYWORD_GAP = 8
 PROFILE_RADAR_CENTER = 100
-PROFILE_RADAR_RADIUS = 66
-PROFILE_RADAR_AXES = [
-    ("Hardware", {"Hardware", "GPU", "CPU", "CUDA", "Accelerator", "Tensor", "NPU", "Memory"}),
-    ("Architecture", {"Architecture", "Microarchitecture", "Cache", "Interconnect", "Network", "Communication", "Simulation", "Gem5"}),
-    ("Systems", {"HPC", "Distributed", "Workload", "Serving", "Scheduling", "Exascale", "OpenMP", "Mpi", "Bandwidth"}),
-    ("AI", {"AI", "LLM", "Agents", "Agentic", "Agent", "Inference", "Neural", "Transformer", "Training", "Model", "Language", "Learning", "Attention"}),
-    ("Runtime", {"Runtime", "Compiler", "Codesign", "PyTorch", "ROCm", "VLLM", "OpenMP"}),
-    ("Tooling", {"Python", "Docker", "Chrome", "Firefox", "Module", "Tools", "Developer", "Node", "Search", "Data", "Security", "Automation"}),
-]
+PROFILE_RADAR_RADIUS = 58
+PROFILE_RADAR_LABEL_RADIUS = 80
+PROFILE_RADAR_AXIS_LIMIT = 8
+PROFILE_RADAR_LABEL_MAX_LENGTH = 18
 SECTION_KEYWORDS = {
     "agentic_architecture": ["Agentic", "Architecture"],
     "full_stack_codesign": ["Codesign", "Compiler", "Runtime"],
@@ -247,7 +242,7 @@ def load_daily_payload(
         archive_dates=favorite_dates,
         archive_counts=archive_counts,
         current_run_date=current_run_date,
-        profile_radar=_profile_radar_from_favorite_records(favorite_records),
+        profile_radar=_profile_radar_for_payload(current_payload, favorite_records),
     )
 
 
@@ -479,6 +474,8 @@ def build_daily_payload(
     if run_date:
         counts.setdefault(run_date, _recommendation_counts(all_items))
 
+    resolved_profile_radar = _prepare_profile_radar(profile_radar or recommender_payload.get("profile_radar"))
+
     return {
         "run_date": recommender_payload.get("run_date", ""),
         "source_url": source_base_url.rstrip("/"),
@@ -491,7 +488,7 @@ def build_daily_payload(
         "current_run_date": _parse_archive_date(current_run_date) or run_date,
         "archive_dates": archive_dates or ([run_date] if run_date else []),
         "archive_counts": counts,
-        "profile_radar": profile_radar or _profile_radar(items),
+        "profile_radar": resolved_profile_radar,
     }
 
 
@@ -775,49 +772,11 @@ def _concise_summary_from_text(value: str, limit: int, max_sentences: int = 1) -
     return _strip_trailing_ellipsis(summary)
 
 
-def _profile_radar(items: list[dict[str, Any]]) -> dict[str, Any]:
-    axis_counts = []
-    for _label, keywords in PROFILE_RADAR_AXES:
-        count = 0
-        for item in items:
-            item_keywords = set(item.get("keywords", []))
-            count += len(item_keywords.intersection(keywords))
-        axis_counts.append(count)
-    max_count = max(axis_counts) if axis_counts else 0
-    axes = []
-    polygon_points = []
-    total_axes = len(PROFILE_RADAR_AXES)
-    for index, (label, _keywords) in enumerate(PROFILE_RADAR_AXES):
-        angle = -math.pi / 2 + (2 * math.pi * index / total_axes)
-        outer_x, outer_y = _radar_point(angle, PROFILE_RADAR_RADIUS)
-        label_x, label_y = _radar_point(angle, PROFILE_RADAR_RADIUS + 20)
-        value = axis_counts[index]
-        ratio = value / max_count if max_count else 0
-        point_x, point_y = _radar_point(angle, PROFILE_RADAR_RADIUS * ratio)
-        polygon_points.append(_svg_point(point_x, point_y))
-        axes.append({
-            "label": label,
-            "value": value,
-            "line_points": f"{PROFILE_RADAR_CENTER},{PROFILE_RADAR_CENTER} {_svg_point(outer_x, outer_y)}",
-            "point_x": round(point_x, 1),
-            "point_y": round(point_y, 1),
-            "label_x": round(label_x, 1),
-            "label_y": round(label_y, 1),
-            "label_anchor": "middle" if abs(label_x - PROFILE_RADAR_CENTER) < 3 else ("start" if label_x > PROFILE_RADAR_CENTER else "end"),
-        })
-    rings = []
-    for ratio in (1 / 3, 2 / 3, 1):
-        ring_points = [
-            _svg_point(*_radar_point(-math.pi / 2 + (2 * math.pi * index / total_axes), PROFILE_RADAR_RADIUS * ratio))
-            for index in range(total_axes)
-        ]
-        rings.append(" ".join(ring_points))
-    return {
-        "axes": axes,
-        "rings": rings,
-        "polygon_points": " ".join(polygon_points),
-        "max_count": max_count,
-    }
+def _profile_radar_for_payload(current_payload: dict[str, Any], favorite_records: list[dict[str, Any]]) -> dict[str, Any]:
+    backend_radar = _prepare_profile_radar(current_payload.get("profile_radar"))
+    if backend_radar:
+        return backend_radar
+    return _profile_radar_from_favorite_records(favorite_records)
 
 
 def _profile_radar_from_favorite_records(records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -826,7 +785,101 @@ def _profile_radar_from_favorite_records(records: list[dict[str, Any]]) -> dict[
         run_date = _parse_archive_date(str(record.get("created_at") or "")[:10])
         recommendation = _favorite_record_to_recommendation(record)
         items.append(_normalize_item(recommendation, {}, DEFAULT_DAILY_BASE_URL, run_date))
-    return _profile_radar(items)
+    keyword_counts: Counter[str] = Counter()
+    for item in items:
+        keyword_counts.update(item.get("keywords", []))
+    axes = [
+        {"label": label, "value": count}
+        for label, count in sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0].casefold()))[:PROFILE_RADAR_AXIS_LIMIT]
+        if count > 0
+    ]
+    return _prepare_profile_radar({
+        "source": "favorites_archive",
+        "total_likes": len(items),
+        "axes": axes,
+    })
+
+
+def _prepare_profile_radar(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {}
+    raw_axes = value.get("axes")
+    if not isinstance(raw_axes, list):
+        return {}
+    axes = []
+    for raw_axis in raw_axes:
+        if not isinstance(raw_axis, dict):
+            continue
+        label = _profile_axis_label(raw_axis.get("label") or raw_axis.get("name") or raw_axis.get("keyword"))
+        axis_value = _safe_float(raw_axis.get("value", raw_axis.get("weight", raw_axis.get("score", 0))))
+        if not label or axis_value <= 0:
+            continue
+        axes.append({"label": label, "value": _profile_axis_value(axis_value)})
+        if len(axes) >= PROFILE_RADAR_AXIS_LIMIT:
+            break
+    if not axes:
+        return {}
+
+    max_count = max(float(axis["value"]) for axis in axes)
+    polygon_points = []
+    total_axes = len(axes)
+    for index, axis in enumerate(axes):
+        angle = -math.pi / 2 + (2 * math.pi * index / total_axes)
+        outer_x, outer_y = _radar_point(angle, PROFILE_RADAR_RADIUS)
+        label_x, label_y = _radar_point(angle, PROFILE_RADAR_LABEL_RADIUS)
+        ratio = float(axis["value"]) / max_count if max_count else 0
+        point_x, point_y = _radar_point(angle, PROFILE_RADAR_RADIUS * ratio)
+        polygon_points.append(_svg_point(point_x, point_y))
+        axis.update({
+            "line_points": f"{PROFILE_RADAR_CENTER},{PROFILE_RADAR_CENTER} {_svg_point(outer_x, outer_y)}",
+            "point_x": round(point_x, 1),
+            "point_y": round(point_y, 1),
+            "label_x": round(label_x, 1),
+            "label_y": round(label_y, 1),
+            "label_anchor": _profile_label_anchor(label_x),
+        })
+
+    rings = []
+    for ratio in (1 / 3, 2 / 3, 1):
+        ring_points = [
+            _svg_point(*_radar_point(-math.pi / 2 + (2 * math.pi * index / total_axes), PROFILE_RADAR_RADIUS * ratio))
+            for index in range(total_axes)
+        ]
+        rings.append(" ".join(ring_points))
+
+    return {
+        "source": str(value.get("source") or ""),
+        "total_likes": _safe_int(value.get("total_likes")),
+        "axes": axes,
+        "rings": rings,
+        "polygon_points": " ".join(polygon_points),
+        "max_count": _profile_axis_value(max_count),
+        "view_box": "0 0 200 200",
+    }
+
+
+def _profile_axis_label(value: Any) -> str:
+    label = " ".join(str(value or "").split())
+    if len(label) <= PROFILE_RADAR_LABEL_MAX_LENGTH:
+        return label
+    return f"{label[:PROFILE_RADAR_LABEL_MAX_LENGTH - 3].rstrip()}..."
+
+
+def _profile_axis_value(value: float) -> int | float:
+    return int(value) if float(value).is_integer() else round(float(value), 2)
+
+
+def _profile_label_anchor(label_x: float) -> str:
+    if abs(label_x - PROFILE_RADAR_CENTER) < 3:
+        return "middle"
+    return "end" if label_x > PROFILE_RADAR_CENTER else "start"
+
+
+def _safe_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _radar_point(angle: float, radius: float) -> tuple[float, float]:

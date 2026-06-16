@@ -724,21 +724,75 @@ class DailyIntegrationTests(unittest.TestCase):
             )
 
         radar = payload["profile_radar"]
-        self.assertEqual([axis["label"] for axis in radar["axes"]], [
-            "Hardware",
-            "Architecture",
-            "Systems",
-            "AI",
-            "Runtime",
-            "Tooling",
-        ])
+        labels = [axis["label"] for axis in radar["axes"]]
         self.assertIn("polygon_points", radar)
         self.assertTrue(radar["polygon_points"])
         self.assertEqual([item["title"] for item in payload["items"]], ["Cache Archive"])
-        self.assertGreater(radar["axes"][0]["value"], 0)
-        self.assertGreater(radar["axes"][1]["value"], 0)
-        self.assertGreater(radar["axes"][2]["value"], 0)
-        self.assertEqual(radar["axes"][4]["value"], 0)
+        self.assertIn("GPU", labels)
+        self.assertIn("Cache", labels)
+        self.assertIn("Distributed", labels)
+        self.assertNotIn("Runtime", labels)
+
+    def test_daily_payload_uses_recommender_profile_radar_instead_of_current_items(self):
+        backend_radar = {
+            "source": "feedback_events",
+            "total_likes": 12,
+            "axes": [
+                {"label": "Cache", "value": 7},
+                {"label": "Gem5", "value": 5},
+                {"label": "HPC", "value": 3},
+                {"label": "CUDA", "value": 2},
+                {"label": "Simulation", "value": 1},
+            ],
+        }
+
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-16",
+                "profile_radar": backend_radar,
+                "recommendations": [
+                    {
+                        "paper_id": "2606.current",
+                        "title": "Current Runtime LLM Paper",
+                        "abstract": "Runtime LLM inference appears in today's list only.",
+                        "positive_matches": ["hpc_cross_over:runtime llm inference"],
+                    }
+                ],
+            },
+            keywords="Runtime",
+        )
+
+        values = {axis["label"]: axis["value"] for axis in payload["profile_radar"]["axes"]}
+        self.assertEqual(values["Cache"], 7)
+        self.assertEqual(values["Gem5"], 5)
+        self.assertEqual(values["HPC"], 3)
+        self.assertNotIn("Runtime", values)
+        self.assertIn("polygon_points", payload["profile_radar"])
+        self.assertEqual([item["title"] for item in payload["items"]], ["Current Runtime LLM Paper"])
+
+    def test_daily_profile_radar_side_labels_anchor_inward_to_avoid_card_overflow(self):
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-16",
+                "profile_radar": {
+                    "axes": [
+                        {"label": "Cache", "value": 1},
+                        {"label": "RightTopTopic", "value": 1},
+                        {"label": "RightBottomTopic", "value": 1},
+                        {"label": "CUDA", "value": 1},
+                        {"label": "LeftBottomTopic", "value": 1},
+                        {"label": "LeftTopTopic", "value": 1},
+                    ]
+                },
+                "recommendations": [],
+            }
+        )
+
+        anchors = {axis["label"]: axis["label_anchor"] for axis in payload["profile_radar"]["axes"]}
+        self.assertEqual(anchors["RightTopTopic"], "end")
+        self.assertEqual(anchors["RightBottomTopic"], "end")
+        self.assertEqual(anchors["LeftBottomTopic"], "start")
+        self.assertEqual(anchors["LeftTopTopic"], "start")
 
     def test_daily_favorites_archive_fetch_preserves_sidecar_path_slashes(self):
         requested_urls = []
@@ -952,7 +1006,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertIn('href="/daily"', base)
         self.assertIn("Daily", base)
-        self.assertIn('href="/static/css/styles.css?v=125"', base)
+        self.assertIn('href="/static/css/styles.css?v=126"', base)
         self.assertIn("Paper", daily)
         self.assertIn("PDF", daily)
         self.assertIn("Code", daily)
@@ -970,6 +1024,7 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("dailyProfileRadar", daily)
         self.assertIn("daily-profile-card", daily)
         self.assertIn("daily-profile-polygon", daily)
+        self.assertNotIn("daily-profile-values", daily)
         self.assertIn("daily-archive-calendar.js?v=3", daily)
         self.assertIn("daily-card-main-meta", daily)
         self.assertIn("daily-meta-authors", daily)
@@ -1034,6 +1089,7 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn(".daily-grid .sidebar {\n    gap: 24px;", styles)
         self.assertIn(".daily-profile-card", styles)
         self.assertIn(".daily-profile-polygon", styles)
+        self.assertNotIn(".daily-profile-values", styles)
         self.assertNotIn(".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);\n    margin-top: 24px;", styles)
         self.assertNotIn(".daily-archive-day.is-liked::after", styles)
         self.assertNotIn("linear-gradient(135deg, #10b981, #2563eb)", styles)
