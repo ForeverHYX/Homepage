@@ -29,7 +29,7 @@
        difference is alpha/blur, mirroring an Apple Weather-style frosted
        widget instead of carrying two unrelated material languages. */
     --home-material-face-top: rgba(255, 255, 255, 0.72);
-    --home-material-face-mid: rgba(255, 255, 255, 0.24);
+    --home-material-face-mid: rgba(255, 255, 255, 0.10);
     --home-material-face-bottom: rgba(255, 255, 255, 0.44);
     --home-material-tint: rgba(148, 163, 184, 0.14);
     --home-material-edge: rgba(255, 255, 255, 0.82);
@@ -63,7 +63,7 @@
     /* Dark mode: keep the same material language, just darker tints so the
        unified frosted-liquid system reads as one material across cards. */
     --home-material-face-top: rgba(18, 28, 48, 0.82);
-    --home-material-face-mid: rgba(11, 18, 32, 0.56);
+    --home-material-face-mid: rgba(11, 18, 32, 0.20);
     --home-material-face-bottom: rgba(20, 28, 44, 0.82);
     --home-material-tint: rgba(37, 99, 235, 0.12);
     --home-material-edge: rgba(255, 255, 255, 0.22);
@@ -399,78 +399,6 @@ a { color: inherit; text-decoration: none; }
         inset 0 -1px 0 var(--glass-lo-inner);
 }
 
-/* --- High Transparency Glass (Profile, News) --- */
-.profile-card,
-.news-card {
-    background: var(--glass-hi-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--glass-hi-border);
-    box-shadow:
-        0 8px 32px rgba(73, 92, 138, 0.12),
-        inset 0 2px 12px var(--glass-hi-inner),
-        inset 0 -1px 0 var(--glass-hi-inner);
-}
-
-.profile-card::after,
-.news-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--radius);
-    background: var(--glass-hi-shine);
-    backdrop-filter: blur(1px);
-    -webkit-backdrop-filter: blur(1px);
-    box-shadow:
-        inset -10px -8px 0px -11px rgba(255, 255, 255, 0.9),
-        inset 0px -9px 0px -8px rgba(255, 255, 255, 0.9);
-    opacity: 0.5;
-    z-index: 0;
-    pointer-events: none;
-    filter: blur(1px) brightness(110%);
-}
-
-[data-theme="dark"] .profile-card::after,
-[data-theme="dark"] .news-card::after {
-    box-shadow:
-        inset -10px -8px 0px -11px rgba(255, 255, 255, 0.15),
-        inset 0px -9px 0px -8px rgba(255, 255, 255, 0.15);
-    opacity: 0.3;
-}
-
-.profile-card:hover,
-.news-card:hover {
-    transform: translateY(-2px);
-    box-shadow:
-        0 12px 40px rgba(73, 92, 138, 0.18),
-        inset 0 2px 16px var(--glass-hi-inner),
-        inset 0 -1px 0 var(--glass-hi-inner);
-}
-
-/* Ensure card content is above the ::after shine */
-.profile-card > *,
-.news-card > * {
-    position: relative;
-    z-index: 1;
-}
-
-.home-glass.profile-card::after,
-.home-glass.news-card::after {
-    inset: 0;
-    width: auto;
-    height: auto;
-    border-radius: inherit;
-    background: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    box-shadow: none;
-    filter: none;
-    opacity: 0;
-}
-
 .glass-empty-state {
     position: relative;
     display: flex;
@@ -610,8 +538,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* --- Profile Card Specific --- */
-.profile-card { padding: 32px 24px; text-align: center; }
-
 .avatar {
     width: 140px;
     height: 140px;
@@ -628,8 +554,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* --- News Card Specific --- */
-.news-card { padding: 24px; }
-
 .news-title {
     font-size: 18px;
     font-weight: 700;
@@ -3120,13 +3044,6 @@ a { color: inherit; text-decoration: none; }
     padding-left: 4px;
 }
 
-/* --- News Card Markdown --- */
-.news-card ul { list-style: none; padding: 0; margin: 0; }
-.news-card li { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
-.news-card li:last-child { margin-bottom: 0; padding-bottom: 0; }
-.news-card p { margin: 0; }
-.news-card strong { color: var(--heading); font-weight: 600; }
-
 /* --- Upload UI --- */
 .upload-grid { display: grid; gap: 32px; grid-template-columns: 1fr; margin-top: 0; }
 @media (min-width: 860px) { .upload-grid { grid-template-columns: 320px 1fr; } }
@@ -4021,6 +3938,75 @@ a { color: inherit; text-decoration: none; }
     background:
         radial-gradient(90% 100% at 50% -20%, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.018) 34%, rgba(255, 255, 255, 0) 62%),
         linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.012) 18%, rgba(255, 255, 255, 0) 50%, rgba(148, 163, 184, 0.035) 76%, rgba(255, 255, 255, 0.09) 100%);
+}
+
+/* --- Resume page (home-liquid-card + home-glass adaptation) --------------
+   The resume page's outer card already uses .home-liquid-card; this block
+   lifts the inline styles (hero card, PDF wrapper, footer) into named classes
+   so the page participates in dark-mode + material-token changes. The PDF
+   wrapper now draws from the unified --home-material-* tokens instead of the
+   legacy --glass-lo-bg / --glass-hi-border mix. */
+.resume-card .home-liquid-body,
+.resume-body {
+    padding: 40px;
+}
+
+.resume-hero {
+    margin-bottom: 24px;
+}
+
+.resume-hero .home-glass-body {
+    padding: 28px 32px;
+}
+
+.resume-back {
+    margin-bottom: 20px;
+}
+
+.resume-back-link {
+    text-decoration: none;
+    padding-left: 0;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.resume-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    line-height: 1.2;
+    color: var(--heading);
+}
+
+.resume-subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    margin: 0 0 8px 0;
+    line-height: 1.6;
+}
+
+.resume-pdf-wrapper {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px var(--home-material-shadow);
+    background: var(--home-material-face-bottom);
+    backdrop-filter: blur(18px) saturate(165%);
+    -webkit-backdrop-filter: blur(18px) saturate(165%);
+    border: 1px solid var(--home-material-edge);
+}
+
+.resume-pdf-iframe {
+    width: 100%;
+    height: min(80vh, 1000px);
+    border: none;
+    display: block;
+}
+
+.resume-pdf-footer {
+    margin-top: 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
 }
 
 /* --- Footer --- */
