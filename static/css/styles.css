@@ -867,9 +867,9 @@ a { color: inherit; text-decoration: none; }
        layers use fixed anchors / fixed opacities: the old mouse-following
        radials / opacity calcs that tracked var(--liquid-light-x/y) and
        var(--liquid-glow) are gone, so no highlight follows the pointer. */
-    --home-material-face-top: rgba(255, 255, 255, 0.22);
-    --home-material-face-mid: rgba(255, 255, 255, 0.08);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.12);
+    --home-material-face-top: rgba(255, 255, 255, 0.28);
+    --home-material-face-mid: rgba(255, 255, 255, 0.10);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.14);
     --liquid-blur: 24px;
     --liquid-saturation: 180%;
     --liquid-brightness: 1.08;
@@ -1378,9 +1378,9 @@ a { color: inherit; text-decoration: none; }
        alpha) so long-form text reads well, but still drawn from the same
        --home-material-* family so the two cards read as one material, not as
        a near-transparent sliver next to a near-opaque slab. */
-    --home-material-face-top: rgba(255, 255, 255, 0.34);
-    --home-material-face-mid: rgba(255, 255, 255, 0.12);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.18);
+    --home-material-face-top: rgba(255, 255, 255, 0.40);
+    --home-material-face-mid: rgba(255, 255, 255, 0.14);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.22);
     --home-material-shadow: rgba(73, 92, 138, 0.18);
     --home-material-shadow-soft: rgba(73, 92, 138, 0.09);
     --home-material-inner-top: rgba(255, 255, 255, 0.62);
@@ -2040,6 +2040,35 @@ a { color: inherit; text-decoration: none; }
 
 .article-card {
     padding: 0;
+}
+
+/* Article cards draw from the same unified --home-material-* family as the
+   introduction (.home-content) and sidebar (.home-liquid-card) cards so all
+   content cards read as one frosted-liquid material — only transparency
+   differs modestly per scene. The base .home-glass face-top (0.72) made
+   article cards read as a near-opaque white slab next to the introduction
+   card's 0.40, so we override the face gradient + inner highlights here to
+   the same --home-material-* tokens the doc card uses. */
+.home-glass.article-card {
+    --home-glass-face-top: rgba(255, 255, 255, 0.50);
+    --home-glass-face-sheen: rgba(255, 255, 255, 0.20);
+    --home-glass-face-mid: rgba(255, 255, 255, 0.16);
+    --home-glass-face-bottom: rgba(255, 255, 255, 0.28);
+    --home-glass-shadow: rgba(73, 92, 138, 0.18);
+    --home-glass-shadow-soft: rgba(73, 92, 138, 0.09);
+    --home-glass-inner-top: rgba(255, 255, 255, 0.62);
+    --home-glass-inner-bottom: rgba(148, 163, 184, 0.1);
+}
+
+[data-theme="dark"] .home-glass.article-card {
+    --home-glass-face-top: rgba(20, 29, 46, 0.50);
+    --home-glass-face-sheen: rgba(30, 41, 59, 0.30);
+    --home-glass-face-mid: rgba(11, 18, 32, 0.40);
+    --home-glass-face-bottom: rgba(20, 28, 44, 0.52);
+    --home-glass-shadow: rgba(0, 0, 0, 0.42);
+    --home-glass-shadow-soft: rgba(0, 0, 0, 0.24);
+    --home-glass-inner-top: rgba(255, 255, 255, 0.16);
+    --home-glass-inner-bottom: rgba(148, 163, 184, 0.1);
 }
 
 .home-glass.article-card::before {
