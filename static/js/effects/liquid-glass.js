@@ -323,8 +323,7 @@
         return [];
       }
       const navAmbient = card.classList.contains("nav-island");
-      const globalAmbient = navAmbient || card.classList.contains("home-profile-card") || card.classList.contains("home-news-card") || card.classList.contains("ambient-liquid-card");
-      card.classList.contains("home-profile-card") || card.classList.contains("home-news-card");
+      const globalAmbient = navAmbient || card.classList.contains("ambient-liquid-card");
       return [{
         card,
         warp,

@@ -56,6 +56,14 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("POINTER_SYNC_INTERVAL", source)
         self.assertIn("targetSyncTimeoutId", source)
 
+    def test_static_sidebar_cards_do_not_run_ambient_liquid_filter(self) -> None:
+        source = LIQUID_GLASS_JS.read_text()
+        base = BASE_HTML.read_text()
+
+        self.assertIn("card.classList.contains(\"ambient-liquid-card\")", source)
+        self.assertNotIn("card.classList.contains(\"home-profile-card\") || card.classList.contains(\"home-news-card\")", source)
+        self.assertIn('src="/static/js/effects/liquid-glass.js?v=101"', base)
+
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
         styles = STYLES_CSS.read_text()

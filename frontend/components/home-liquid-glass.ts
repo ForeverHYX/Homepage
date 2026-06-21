@@ -420,12 +420,7 @@ export function initHomeLiquidGlass() {
       return [];
     }
 
-    const globalAmbient =
-      card.classList.contains("home-profile-card") ||
-      card.classList.contains("home-news-card") ||
-      card.classList.contains("ambient-liquid-card");
-      card.classList.contains("home-profile-card") ||
-      card.classList.contains("home-news-card");
+    const globalAmbient = card.classList.contains("ambient-liquid-card");
 
     return [{
       card,
