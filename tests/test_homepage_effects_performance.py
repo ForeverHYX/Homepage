@@ -112,17 +112,24 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("backdrop-filter: none", mobile_card_block.group("body"))
         self.assertIn("-webkit-backdrop-filter: none", mobile_card_block.group("body"))
 
-    def test_liquid_card_hover_does_not_create_dirty_shadow_halo(self) -> None:
+    def test_liquid_card_hover_lifts_like_document_card(self) -> None:
+        """The functional sidebar card must hover-lift the same way as the
+        document .home-glass card (translateY(-4px) + a clean, deeper shadow)
+        so the two materials read as one system. The old transform:none freeze
+        is gone; no dirty halo (no oversized far blur) is allowed."""
         styles = STYLES_CSS.read_text()
 
         hover_block = re.search(r"^\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-
         self.assertIsNotNone(hover_block)
         hover_body = hover_block.group("body")
-        self.assertIn("transform: none", hover_body)
-        self.assertNotIn("translateY", hover_body)
-        self.assertNotIn("0 18px 34px", hover_body)
-        self.assertNotIn("0 6px 14px", hover_body)
+
+        self.assertIn("transform: translateY(-4px)", hover_body)
+        # Clean shadow: a closer + a softer layer, both modest, no giant blur.
+        self.assertIn("0 22px 48px rgba(73, 92, 138, 0.16)", hover_body)
+        self.assertIn("0 10px 22px rgba(73, 92, 138, 0.08)", hover_body)
+        # No mouse-follow sheen var mutations on hover.
+        self.assertNotIn("var(--liquid-sheen-opacity)", hover_body)
+        self.assertNotIn("var(--liquid-rim-opacity)", hover_body)
 
     def test_nav_island_material_avoids_dirty_outer_halo(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -157,24 +164,24 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIsNotNone(nav_block)
 
         card_body = card_block.group("body")
-        self.assertIn("--liquid-sheen-opacity", card_body)
-        self.assertIn("--liquid-rim-opacity", card_body)
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=130\"", base)
+        self.assertIn("href=\"/static/css/styles.css?v=131\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
         self.assertIn("contain: paint", warp_body)
         self.assertIn("will-change: transform, opacity", warp_body)
 
-        warp_before_body = next((body for body in warp_before_blocks if "opacity: var(--liquid-sheen-opacity)" in body), "")
-        warp_after_body = next((body for body in warp_after_blocks if "opacity: var(--liquid-rim-opacity)" in body), "")
+        # Sheen layers now use fixed opacities (no var(--liquid-sheen-opacity)
+        # / var(--liquid-rim-opacity)) so no highlight tracks the pointer.
+        warp_before_body = next((body for body in warp_before_blocks if "mix-blend-mode: screen" in body), "")
+        warp_after_body = next((body for body in warp_after_blocks if "mix-blend-mode: soft-light" in body), "")
         self.assertIn("mix-blend-mode: screen", warp_before_body)
-        self.assertIn("opacity: var(--liquid-sheen-opacity)", warp_before_body)
         self.assertIn("mix-blend-mode: soft-light", warp_after_body)
-        self.assertIn("opacity: var(--liquid-rim-opacity)", warp_after_body)
+        self.assertNotIn("var(--liquid-sheen-opacity)", warp_before_body)
+        self.assertNotIn("var(--liquid-rim-opacity)", warp_after_body)
         self.assertIn("--liquid-clear-layer", nav_block.group("body"))
 
     def test_liquid_material_keeps_runtime_cost_low(self) -> None:
@@ -191,11 +198,16 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("state.focused || state.globalAmbient", source)
 
     def test_sidebar_cards_have_no_mouse_following_floating_spot(self) -> None:
-        """The .home-liquid-card / ::before / .home-liquid-warp / ::before/::after
-        layers must not carry a radial-gradient that follows the mouse via
-        var(--liquid-light-x) / var(--liquid-light-y), since the JS keeps
-        updating those and produces a floating spot artefact."""
+        """The .home-liquid-card / ::before / ::after / .home-liquid-warp /
+        ::before/::after layers must not USE any pointer-driven CSS variable
+        (--liquid-light-x/y for the radial anchor, --liquid-glow for the
+        opacity calc, --liquid-angle for the gradient angle, --liquid-sheen/
+        rim-opacity for the sheen strength) in a property value, since
+        liquid-glass.js keeps updating those on pointermove and produces a
+        floating spot artefact. We strip CSS comments before matching so that
+        explanatory comments mentioning these tokens do not trip the check."""
         styles = STYLES_CSS.read_text()
+        styles_no_comments = re.sub(r"/\*.*?\*/", "", styles, flags=re.S)
 
         candidates = [
             (r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", ".home-liquid-card"),
@@ -204,27 +216,37 @@ class HomepageEffectsPerformanceTests(TestCase):
             (r"^\.home-liquid-warp\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp"),
             (r"^\.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp::before"),
             (r"^\.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp::after"),
+            (r"^\[data-theme=\"dark\"\] \.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", "[data-theme=\"dark\"] .home-liquid-card::after"),
+            (r"^\[data-theme=\"dark\"\] \.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", "[data-theme=\"dark\"] .home-liquid-warp::before"),
         ]
 
+        forbidden = (
+            "var(--liquid-light-x)",
+            "var(--liquid-light-y)",
+            "var(--liquid-glow)",
+            "var(--liquid-angle)",
+            "var(--liquid-sheen-opacity)",
+            "var(--liquid-rim-opacity)",
+        )
+
         for pattern, label in candidates:
-            match = re.search(pattern, styles, re.S | re.M)
+            match = re.search(pattern, styles_no_comments, re.S | re.M)
             self.assertIsNotNone(match, f"missing rule for {label}")
             body = match.group("body")
-            self.assertNotIn(
-                "var(--liquid-light-x)",
-                body,
-                f"{label} still references var(--liquid-light-x), which tracks the pointer",
-            )
-            self.assertNotIn(
-                "var(--liquid-light-y)",
-                body,
-                f"{label} still references var(--liquid-light-y), which tracks the pointer",
-            )
+            for token in forbidden:
+                self.assertNotIn(
+                    token,
+                    body,
+                    f"{label} still references {token}, which tracks the pointer",
+                )
 
     def test_nav_island_layers_have_no_mouse_following_floating_spot(self) -> None:
-        """Top island layers must also drop the mouse-following radial spot so
-        Edge does not paint a dirty halo around the pill."""
+        """Top island layers must also not USE any pointer-driven CSS variable
+        in a property value so Edge does not paint a dirty halo around the
+        pill and no highlight tracks the mouse. CSS comments are stripped
+        before matching so explanatory comments do not trip the check."""
         styles = STYLES_CSS.read_text()
+        styles_no_comments = re.sub(r"/\*.*?\*/", "", styles, flags=re.S)
 
         candidates = [
             (r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", ".nav-island.home-liquid-card"),
@@ -233,14 +255,24 @@ class HomepageEffectsPerformanceTests(TestCase):
             (r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", ".nav-island .nav-island-warp"),
             (r"^\.nav-island \.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", ".nav-island .home-liquid-warp::before"),
             (r"^\.nav-island \.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", ".nav-island .home-liquid-warp::after"),
+            (r"^\[data-theme=\"dark\"\] \.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", "[data-theme=\"dark\"] .nav-island.home-liquid-card::after"),
         ]
 
+        forbidden = (
+            "var(--liquid-light-x)",
+            "var(--liquid-light-y)",
+            "var(--liquid-glow)",
+            "var(--liquid-angle)",
+            "var(--liquid-sheen-opacity)",
+            "var(--liquid-rim-opacity)",
+        )
+
         for pattern, label in candidates:
-            match = re.search(pattern, styles, re.S | re.M)
+            match = re.search(pattern, styles_no_comments, re.S | re.M)
             self.assertIsNotNone(match, f"missing rule for {label}")
             body = match.group("body")
-            self.assertNotIn("var(--liquid-light-x)", body, f"{label} still tracks --liquid-light-x")
-            self.assertNotIn("var(--liquid-light-y)", body, f"{label} still tracks --liquid-light-y")
+            for token in forbidden:
+                self.assertNotIn(token, body, f"{label} still tracks {token}")
 
     def test_functional_and_doc_cards_share_unified_material_tokens(self) -> None:
         """Both the sidebar functional card (.home-liquid-card) and the document
@@ -305,8 +337,8 @@ class HomepageEffectsPerformanceTests(TestCase):
             "functional card face should be more transparent (lower alpha) than doc card",
         )
 
-        # Cache-buster is still v130.
-        self.assertIn('href="/static/css/styles.css?v=130"', base)
+        # Cache-buster bumped to v131 so clients refetch the unified material.
+        self.assertIn('href="/static/css/styles.css?v=131"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -381,7 +413,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=130"', base)
+        self.assertIn('href="/static/css/styles.css?v=131"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
