@@ -62,23 +62,6 @@
     --panel-inner: rgba(255, 255, 255, 0.4);
     --panel-shine: rgba(255, 255, 255, 0.08);
 
-    /* Liquid Glass - High Transparency (sidebar cards) */
-    --glass-hi-bg: rgba(255, 255, 255, 0.18);
-    --glass-hi-border: rgba(255, 255, 255, 0.7);
-    --glass-hi-inner: rgba(255, 255, 255, 0.25);
-    --glass-hi-shine: rgba(255, 255, 255, 0.12);
-
-    /* Liquid Glass - Low Transparency (content cards) */
-    --glass-lo-bg: rgba(255, 255, 255, 0.55);
-    --glass-lo-border: rgba(255, 255, 255, 0.85);
-    --glass-lo-inner: rgba(255, 255, 255, 0.4);
-    --glass-lo-shine: rgba(255, 255, 255, 0.08);
-
-    /* Liquid Glass - Medium (header, search, misc) */
-    --glass-md-bg: rgba(255, 255, 255, 0.35);
-    --glass-md-border: rgba(255, 255, 255, 0.75);
-    --glass-md-inner: rgba(255, 255, 255, 0.3);
-
     /* Dark mode: keep the same material language, just darker tints so the
        unified frosted-liquid system reads as one material across cards. */
     --home-material-face-top: rgba(18, 28, 48, 0.82);
@@ -126,20 +109,6 @@
     --warning: #fb923c;
     --warning-strong: #fb923c;
     --muted: #94a3b8;
-
-    --glass-hi-bg: rgba(255, 255, 255, 0.06);
-    --glass-hi-border: rgba(255, 255, 255, 0.12);
-    --glass-hi-inner: rgba(255, 255, 255, 0.08);
-    --glass-hi-shine: rgba(255, 255, 255, 0.04);
-
-    --glass-lo-bg: rgba(255, 255, 255, 0.12);
-    --glass-lo-border: rgba(255, 255, 255, 0.18);
-    --glass-lo-inner: rgba(255, 255, 255, 0.1);
-    --glass-lo-shine: rgba(255, 255, 255, 0.03);
-
-    --glass-md-bg: rgba(255, 255, 255, 0.08);
-    --glass-md-border: rgba(255, 255, 255, 0.14);
-    --glass-md-inner: rgba(255, 255, 255, 0.06);
 
     --surface: var(--panel-bg);
     --surface-highlight: var(--well-bg);
@@ -407,29 +376,19 @@ a { color: inherit; text-decoration: none; }
    LIQUID GLASS CARD SYSTEM
    ============================================ */
 
-/* Base glass card */
+/* Base card primitive — thin shell only. .card fixes box model + radius
+   + transition; every frosted surface brings its own material
+   (.home-liquid-card / .home-glass / .toc / .lightbox-content /
+   .news-modal-card / .carousel-wrapper). .card itself must NOT paint a
+   background/shadow, otherwise it silently reintroduces a competing material
+   language under whichever modifier wins the cascade. */
 .card {
     position: relative;
     border-radius: var(--radius);
     overflow: hidden;
-    background: var(--panel-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--panel-border);
-    box-shadow:
-        0 8px 32px rgba(73, 92, 138, 0.1),
-        inset 0 1px 12px var(--panel-inner),
-        inset 0 -1px 0 var(--panel-inner);
     transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
                 box-shadow 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
                 border-color 0.3s ease;
-}
-
-.card:hover {
-    box-shadow:
-        0 12px 40px rgba(73, 92, 138, 0.15),
-        inset 0 2px 16px var(--panel-inner),
-        inset 0 -1px 0 var(--panel-inner);
 }
 
 .glass-empty-state {
@@ -517,58 +476,6 @@ a { color: inherit; text-decoration: none; }
     text-shadow: 0 18px 48px rgba(96, 165, 250, 0.2);
 }
 
-/* --- Low Transparency Glass (Content Area) --- */
-.content-area {
-    background: var(--panel-bg);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid var(--panel-border);
-    box-shadow:
-        0 8px 32px rgba(73, 92, 138, 0.1),
-        inset 0 2px 16px var(--panel-inner),
-        inset 0 -1px 0 var(--panel-inner);
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    padding: 40px;
-}
-
-.content-area::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--radius);
-    background: var(--panel-shine);
-    box-shadow:
-        inset -10px -8px 0px -11px rgba(255, 255, 255, 0.7),
-        inset 0px -9px 0px -8px rgba(255, 255, 255, 0.7);
-    opacity: 0.3;
-    z-index: 0;
-    pointer-events: none;
-    filter: blur(1px) brightness(108%);
-}
-
-[data-theme="dark"] .content-area::after {
-    box-shadow:
-        inset -10px -8px 0px -11px rgba(255, 255, 255, 0.1),
-        inset 0px -9px 0px -8px rgba(255, 255, 255, 0.1);
-    opacity: 0.15;
-}
-
-.content-area:hover {
-    box-shadow:
-        0 12px 40px rgba(73, 92, 138, 0.15),
-        inset 0 2px 20px var(--panel-inner),
-        inset 0 -1px 0 var(--panel-inner);
-}
-
-.content-area > * {
-    position: relative;
-    z-index: 1;
-}
 
 /* --- Profile Card Specific --- */
 .avatar {
@@ -2138,21 +2045,6 @@ a { color: inherit; text-decoration: none; }
     flex-wrap: wrap;
 }
 
-/* Keep the legacy .content-area rules as a no-op compatibility shim: the
-   article detail page now uses .home-glass.home-content, but any external
-   consumer still referencing .content-area should not pick up the old glass
-   tokens. The block below intentionally drops the old material declarations. */
-.content-area {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    padding: 40px;
-}
-
-.content-area::after {
-    content: none;
-}
-
 .daily-card {
     scroll-margin-top: 120px;
 }
@@ -2633,92 +2525,6 @@ a { color: inherit; text-decoration: none; }
     color: var(--heading);
 }
 
-.article-hero {
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 24px;
-    padding: 24px 28px;
-    background: var(--panel-bg);
-    border-color: var(--panel-border);
-    box-shadow:
-        0 8px 32px rgba(73, 92, 138, 0.09),
-        inset 0 2px 14px var(--panel-inner),
-        inset 0 -1px 0 var(--panel-inner);
-}
-
-.article-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        linear-gradient(120deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 40%, transparent 65%);
-    opacity: 0.55;
-    pointer-events: none;
-}
-
-.article-hero::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    box-shadow:
-        inset -10px -8px 0px -11px rgba(255, 255, 255, 0.7),
-        inset 0px -9px 0px -8px rgba(255, 255, 255, 0.7);
-    opacity: 0.24;
-    filter: blur(1px) brightness(108%);
-    pointer-events: none;
-}
-
-[data-theme="dark"] .article-hero::before {
-    background:
-        linear-gradient(120deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 40%, transparent 65%);
-    opacity: 0.45;
-}
-
-[data-theme="dark"] .article-hero::after {
-    box-shadow:
-        inset -10px -8px 0px -11px rgba(255, 255, 255, 0.12),
-        inset 0px -9px 0px -8px rgba(255, 255, 255, 0.12);
-    opacity: 0.18;
-}
-
-.article-hero > * {
-    position: relative;
-    z-index: 1;
-}
-
-.article-hero-title {
-    margin: 0 0 16px 0;
-    padding-left: 16px;
-    border-left: 6px solid var(--primary);
-    color: var(--heading);
-    font-size: 2.5rem;
-    font-weight: 600;
-    line-height: 1.2;
-}
-
-.article-hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 18px 24px;
-    flex-wrap: wrap;
-    padding-left: 22px;
-    color: var(--muted);
-    font-size: 15px;
-    font-variant-numeric: tabular-nums;
-}
-
-.article-hero-meta > span,
-.article-hero-tags {
-    display: flex;
-    align-items: center;
-}
-
-.article-hero-tags {
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
 .article-tag-chip {
     min-height: 32px;
     padding: 6px 15px;
@@ -2939,7 +2745,7 @@ a { color: inherit; text-decoration: none; }
     0% { opacity: 0; transform: translateY(16px); }
     100% { opacity: 1; transform: translateY(0); }
 }
-.container.main-grid:not(.home-layout), .content-area, .page-shell, .upload-grid { animation: pageLoad 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.container.main-grid:not(.home-layout), .page-shell, .upload-grid { animation: pageLoad 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -3978,7 +3784,7 @@ a { color: inherit; text-decoration: none; }
    lifts the inline styles (hero card, PDF wrapper, footer) into named classes
    so the page participates in dark-mode + material-token changes. The PDF
    wrapper now draws from the unified --home-material-* tokens instead of the
-   legacy --glass-lo-bg / --glass-hi-border mix. */
+   legacy sub-surface tokens, replaced by --home-material-* in batch C. */
 .resume-card .home-liquid-body,
 .resume-body {
     padding: 40px;
@@ -4638,18 +4444,7 @@ footer {
         --home-optic-edge-width: 11px;
         --home-optic-intensity: 0.72;
     }
-    .article-hero {
-        padding: 20px;
     }
-    .article-hero-title {
-        font-size: 2rem;
-    }
-    .article-hero-meta {
-        padding-left: 0;
-        font-size: 14px;
-        gap: 12px 18px;
-    }
-}
 
 /* --- Reduced Motion --- */
 @media (prefers-reduced-motion: reduce) {
