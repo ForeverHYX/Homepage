@@ -10,7 +10,7 @@
     const XLINK_NS = "http://www.w3.org/1999/xlink";
     const desktopLiquidGlass = window.matchMedia("(min-width: 801px)");
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const POINTER_SYNC_INTERVAL = 40;
+    const POINTER_SYNC_INTERVAL = 80;
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
     const lerp = (from, to, t) => from + (to - from) * t;
     const displacementMapCache = /* @__PURE__ */ new Map();

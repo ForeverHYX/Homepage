@@ -8,6 +8,7 @@ export function initHomeLiquidGlass() {
   const XLINK_NS = "http://www.w3.org/1999/xlink";
   const desktopLiquidGlass = window.matchMedia("(min-width: 801px)");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const POINTER_SYNC_INTERVAL = 80;
   const clamp = (value: number, min: number, max: number) =>
     Math.min(max, Math.max(min, value));
   const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
@@ -552,6 +553,8 @@ export function initHomeLiquidGlass() {
 
   let rafId = 0;
   let targetSyncRafId = 0;
+  let targetSyncTimeoutId = 0;
+  let lastTargetSyncAt = 0;
   let geometrySyncRafId = 0;
   let filterSyncRafId = 0;
   let refreshTargetsAfterFilter = false;
@@ -754,14 +757,33 @@ export function initHomeLiquidGlass() {
   };
 
   function scheduleTargetSync() {
-    if (!desktopLiquidGlass.matches || reduceMotion.matches || targetSyncRafId) {
+    if (
+      !desktopLiquidGlass.matches ||
+      reduceMotion.matches ||
+      targetSyncRafId ||
+      targetSyncTimeoutId
+    ) {
       return;
     }
 
-    targetSyncRafId = window.requestAnimationFrame(() => {
-      targetSyncRafId = 0;
-      syncTargetsFromPointer();
-    });
+    const delay = Math.max(0, POINTER_SYNC_INTERVAL - (performance.now() - lastTargetSyncAt));
+    const requestSync = () => {
+      targetSyncTimeoutId = 0;
+      if (targetSyncRafId) {
+        return;
+      }
+      targetSyncRafId = window.requestAnimationFrame(() => {
+        targetSyncRafId = 0;
+        lastTargetSyncAt = performance.now();
+        syncTargetsFromPointer();
+      });
+    };
+
+    if (delay > 0) {
+      targetSyncTimeoutId = window.setTimeout(requestSync, delay);
+    } else {
+      requestSync();
+    }
   }
 
   const scheduleGeometrySync = () => {
@@ -869,6 +891,9 @@ export function initHomeLiquidGlass() {
     }
     if (targetSyncRafId) {
       window.cancelAnimationFrame(targetSyncRafId);
+    }
+    if (targetSyncTimeoutId) {
+      window.clearTimeout(targetSyncTimeoutId);
     }
     if (geometrySyncRafId) {
       window.cancelAnimationFrame(geometrySyncRafId);

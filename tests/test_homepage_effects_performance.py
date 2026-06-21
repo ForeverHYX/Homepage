@@ -88,8 +88,225 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("blur(", dark_card_edge.group("body"))
         self.assertNotIn("blur(", nav_edge.group("body"))
         self.assertNotIn("blur(", nav_warp.group("body"))
+        self.assertNotIn("filter:", card_edge.group("body"))
+        self.assertNotIn("filter:", dark_card_edge.group("body"))
+        self.assertNotIn("filter:", nav_edge.group("body"))
         self.assertIn("backdrop-filter: none", nav_warp.group("body"))
         self.assertIn("-webkit-backdrop-filter: none", nav_warp.group("body"))
+
+    def test_liquid_cards_do_not_inherit_generic_card_backdrop_blur(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        mobile_card_block = re.search(
+            r"\.home-liquid-card,\n\s*\.nav-mobile-panel\s*\{(?P<body>.*?)\n\s*\}",
+            styles,
+            re.S,
+        )
+
+        self.assertIsNotNone(card_block)
+        self.assertIsNotNone(mobile_card_block)
+        self.assertIn("backdrop-filter: none", card_block.group("body"))
+        self.assertIn("-webkit-backdrop-filter: none", card_block.group("body"))
+        self.assertNotIn("backdrop-filter: blur", card_block.group("body"))
+        self.assertIn("backdrop-filter: none", mobile_card_block.group("body"))
+        self.assertIn("-webkit-backdrop-filter: none", mobile_card_block.group("body"))
+
+    def test_liquid_card_hover_does_not_create_dirty_shadow_halo(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        hover_block = re.search(r"^\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+
+        self.assertIsNotNone(hover_block)
+        hover_body = hover_block.group("body")
+        self.assertIn("transform: none", hover_body)
+        self.assertNotIn("translateY", hover_body)
+        self.assertNotIn("0 18px 34px", hover_body)
+        self.assertNotIn("0 6px 14px", hover_body)
+
+    def test_nav_island_material_avoids_dirty_outer_halo(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_hover = re.search(r"^\.nav-island\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+
+        self.assertIsNotNone(nav_block)
+        self.assertIsNotNone(nav_hover)
+        nav_body = nav_block.group("body")
+        nav_hover_body = nav_hover.group("body")
+        self.assertNotIn("0 14px 26px", nav_body)
+        self.assertNotIn("0 8px 18px", nav_body)
+        self.assertNotIn("0 16px 28px", nav_hover_body)
+        self.assertNotIn("0 8px 18px", nav_hover_body)
+        self.assertNotIn("translateY", nav_hover_body)
+
+    def test_liquid_material_restores_crystalline_layering(self) -> None:
+        styles = STYLES_CSS.read_text()
+        base = BASE_HTML.read_text()
+
+        card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        warp_block = re.search(r"^\.home-liquid-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        warp_before_blocks = re.findall(r"^\.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        warp_after_blocks = re.findall(r"^\.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+
+        self.assertIsNotNone(card_block)
+        self.assertIsNotNone(warp_block)
+        self.assertTrue(warp_before_blocks)
+        self.assertTrue(warp_after_blocks)
+        self.assertIsNotNone(nav_block)
+
+        card_body = card_block.group("body")
+        self.assertIn("--liquid-sheen-opacity", card_body)
+        self.assertIn("--liquid-rim-opacity", card_body)
+        self.assertIn("--liquid-content-tint", card_body)
+        self.assertIn("--liquid-inner-shadow", card_body)
+        self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
+        self.assertIn("href=\"/static/css/styles.css?v=130\"", base)
+
+        warp_body = warp_block.group("body")
+        self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
+        self.assertIn("contain: paint", warp_body)
+        self.assertIn("will-change: transform, opacity", warp_body)
+
+        warp_before_body = next((body for body in warp_before_blocks if "opacity: var(--liquid-sheen-opacity)" in body), "")
+        warp_after_body = next((body for body in warp_after_blocks if "opacity: var(--liquid-rim-opacity)" in body), "")
+        self.assertIn("mix-blend-mode: screen", warp_before_body)
+        self.assertIn("opacity: var(--liquid-sheen-opacity)", warp_before_body)
+        self.assertIn("mix-blend-mode: soft-light", warp_after_body)
+        self.assertIn("opacity: var(--liquid-rim-opacity)", warp_after_body)
+        self.assertIn("--liquid-clear-layer", nav_block.group("body"))
+
+    def test_liquid_material_keeps_runtime_cost_low(self) -> None:
+        source = LIQUID_GLASS_JS.read_text()
+        styles = STYLES_CSS.read_text()
+        warp_block = re.search(r"^\.home-liquid-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_warp = re.search(r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+
+        self.assertIsNotNone(warp_block)
+        self.assertIsNotNone(nav_warp)
+        self.assertIn("POINTER_SYNC_INTERVAL = 80", source)
+        self.assertNotIn("backdrop-filter: blur", warp_block.group("body"))
+        self.assertNotIn("backdrop-filter: blur", nav_warp.group("body"))
+        self.assertNotIn("state.focused || state.globalAmbient", source)
+
+    def test_sidebar_cards_have_no_mouse_following_floating_spot(self) -> None:
+        """The .home-liquid-card / ::before / .home-liquid-warp / ::before/::after
+        layers must not carry a radial-gradient that follows the mouse via
+        var(--liquid-light-x) / var(--liquid-light-y), since the JS keeps
+        updating those and produces a floating spot artefact."""
+        styles = STYLES_CSS.read_text()
+
+        candidates = [
+            (r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", ".home-liquid-card"),
+            (r"^\.home-liquid-card::before\s*\{(?P<body>.*?)\n\}", ".home-liquid-card::before"),
+            (r"^\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", ".home-liquid-card::after"),
+            (r"^\.home-liquid-warp\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp"),
+            (r"^\.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp::before"),
+            (r"^\.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp::after"),
+        ]
+
+        for pattern, label in candidates:
+            match = re.search(pattern, styles, re.S | re.M)
+            self.assertIsNotNone(match, f"missing rule for {label}")
+            body = match.group("body")
+            self.assertNotIn(
+                "var(--liquid-light-x)",
+                body,
+                f"{label} still references var(--liquid-light-x), which tracks the pointer",
+            )
+            self.assertNotIn(
+                "var(--liquid-light-y)",
+                body,
+                f"{label} still references var(--liquid-light-y), which tracks the pointer",
+            )
+
+    def test_nav_island_layers_have_no_mouse_following_floating_spot(self) -> None:
+        """Top island layers must also drop the mouse-following radial spot so
+        Edge does not paint a dirty halo around the pill."""
+        styles = STYLES_CSS.read_text()
+
+        candidates = [
+            (r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", ".nav-island.home-liquid-card"),
+            (r"^\.nav-island\.home-liquid-card::before\s*\{(?P<body>.*?)\n\}", ".nav-island.home-liquid-card::before"),
+            (r"^\.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", ".nav-island.home-liquid-card::after"),
+            (r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", ".nav-island .nav-island-warp"),
+            (r"^\.nav-island \.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", ".nav-island .home-liquid-warp::before"),
+            (r"^\.nav-island \.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", ".nav-island .home-liquid-warp::after"),
+        ]
+
+        for pattern, label in candidates:
+            match = re.search(pattern, styles, re.S | re.M)
+            self.assertIsNotNone(match, f"missing rule for {label}")
+            body = match.group("body")
+            self.assertNotIn("var(--liquid-light-x)", body, f"{label} still tracks --liquid-light-x")
+            self.assertNotIn("var(--liquid-light-y)", body, f"{label} still tracks --liquid-light-y")
+
+    def test_functional_and_doc_cards_share_unified_material_tokens(self) -> None:
+        """Both the sidebar functional card (.home-liquid-card) and the document
+        card (.home-content / .home-glass) must draw from the unified
+        --home-material-* token family so they read as one frosted-liquid
+        system instead of two unrelated materials."""
+        styles = STYLES_CSS.read_text()
+        base = BASE_HTML.read_text()
+
+        # Root exposes the shared material tokens.
+        root_block = re.search(r"^:root\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        self.assertIsNotNone(root_block)
+        root_body = root_block.group("body")
+        for token in (
+            "--home-material-face-top",
+            "--home-material-face-mid",
+            "--home-material-face-bottom",
+            "--home-material-tint",
+            "--home-material-edge",
+            "--home-material-inner-top",
+            "--home-material-inner-bottom",
+            "--home-material-blur",
+        ):
+            self.assertIn(token, root_body, f":root must declare {token}")
+
+        # Functional card references the shared tokens instead of hard-coded alphas.
+        card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        self.assertIsNotNone(card_block)
+        card_body = card_block.group("body")
+        self.assertIn("var(--home-material-tint)", card_body)
+        self.assertIn("var(--home-material-inner-top)", card_body)
+        self.assertIn("var(--home-material-inner-bottom)", card_body)
+        self.assertIn("var(--home-material-edge)", card_body)
+        self.assertIn("var(--home-material-face-top)", card_body)
+        self.assertIn("var(--home-material-face-mid)", card_body)
+        self.assertIn("var(--home-material-face-bottom)", card_body)
+
+        # Document card references the shared tokens too.
+        content_block = re.search(r"^\.home-content\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        self.assertIsNotNone(content_block)
+        content_body = content_block.group("body")
+        self.assertIn("var(--home-material-face-top)", content_body)
+        self.assertIn("var(--home-material-face-mid)", content_body)
+        self.assertIn("var(--home-material-face-bottom)", content_body)
+        self.assertIn("var(--home-material-shadow)", content_body)
+
+        # Functional card sits at higher transparency (lower face-top alpha)
+        # than the document card so the doc area stays steadier for text.
+        card_face_alpha = re.search(
+            r"--home-material-face-top:\s*rgba\(255, 255, 255, ([\d.]+)\)",
+            card_body,
+        )
+        content_face_alpha = re.search(
+            r"--home-material-face-top:\s*rgba\(255, 255, 255, ([\d.]+)\)",
+            content_body,
+        )
+        self.assertIsNotNone(card_face_alpha)
+        self.assertIsNotNone(content_face_alpha)
+        self.assertLess(
+            float(card_face_alpha.group(1)),
+            float(content_face_alpha.group(1)),
+            "functional card face should be more transparent (lower alpha) than doc card",
+        )
+
+        # Cache-buster is still v130.
+        self.assertIn('href="/static/css/styles.css?v=130"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -164,7 +381,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=128"', base)
+        self.assertIn('href="/static/css/styles.css?v=130"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
