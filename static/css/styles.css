@@ -3779,13 +3779,13 @@ a { color: inherit; text-decoration: none; }
         linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.012) 18%, rgba(255, 255, 255, 0) 50%, rgba(148, 163, 184, 0.035) 76%, rgba(255, 255, 255, 0.09) 100%);
 }
 
-/* --- Resume page (home-liquid-card + home-glass adaptation) --------------
-   The resume page's outer card already uses .home-liquid-card; this block
-   lifts the inline styles (hero card, PDF wrapper, footer) into named classes
-   so the page participates in dark-mode + material-token changes. The PDF
-   wrapper now draws from the unified --home-material-* tokens instead of the
-   legacy sub-surface tokens, replaced by --home-material-* in batch C. */
-.resume-card .home-liquid-body,
+/* --- Resume page (home-content adaptation) ---------------------------------
+   The resume page's outer card uses the document-card material
+   (.home-glass.home-content, face-top 0.40) so the large surface stays
+   translucent like the home introduction card instead of the denser sidebar
+   .home-liquid-card. The PDF wrapper still draws from --home-material-* so it
+   tracks dark mode. */
+.resume-card .home-glass-body,
 .resume-body {
     padding: 40px;
 }
