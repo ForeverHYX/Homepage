@@ -11,23 +11,24 @@
         <div class="gallery-list">
             {% if albums %}
                 {% for album in albums %}
-                <section class="gallery-album" style="margin-bottom:{{ '60' if is_focused else '24' }}px" data-album="{{ album.path_name }}">
+                <section class="gallery-album gallery-album--{{ 'focused' if is_focused else 'list' }}" data-album="{{ album.path_name }}">
                     {% if is_focused %}
-                    <div class="card home-liquid-card">
-                        <span class="home-liquid-warp" aria-hidden="true"></span>
-                        <div class="home-liquid-body" style="padding:40px">
-                            <div class="card" style="margin-bottom:24px;padding:28px 32px">
-                                    <div style="margin-bottom:20px">
-                                        <a href="/gallery" class="action-btn" style="text-decoration:none;padding-left:0;color:var(--text);font-weight:500">&larr; Back to All Galleries</a>
+                    <div class="card home-glass article-card gallery-album-card gallery-album-card--focused">
+                        <div class="home-glass-body">
+                            <div class="card home-glass article-card gallery-hero">
+                                <div class="home-glass-body">
+                                    <div class="gallery-back">
+                                        <a href="/gallery" class="action-btn gallery-back-link">&larr; Back to All Galleries</a>
                                     </div>
-                                    <h2 style="font-size:2.5rem;font-weight:600;margin:0 0 12px 0;text-transform:capitalize;line-height:1.2;color:var(--heading)">{{ album.title }}</h2>
-                                    <div class="article-card-meta" style="gap:24px;font-size:15px;margin-bottom:12px">
+                                    <h2 class="gallery-hero-title">{{ album.title }}</h2>
+                                    <div class="article-card-meta article-card-meta--md gallery-hero-meta">
                                         <span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> {{ album.date_str }}</span>
                                         <span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> {{ album.author }}</span>
                                     </div>
-                                    {% if album.desc %}<p style="color:var(--text);font-size:1rem;margin:0 0 24px 0;line-height:1.6">{{ album.desc }}</p>{% endif %}
+                                    {% if album.desc %}<p class="gallery-hero-desc">{{ album.desc }}</p>{% endif %}
+                                </div>
                             </div>
-                            <div class="{{ album.wrapper_class }}" style="box-shadow:none;border:none;padding:0;background:transparent">
+                            <div class="{{ album.wrapper_class }} gallery-carousel-wrapper">
                                 <div class="carousel-container" id="carousel-{{ album.path_name }}">
                                     {% for image_url in album.images %}
                                     <div class="carousel-slide" data-src="{{ album.full_images[loop.index0] if album.full_images is defined and album.full_images|length > loop.index0 else image_url }}">
@@ -39,19 +40,19 @@
                         </div>
                     </div>
                     {% else %}
-                    <div class="card home-glass">
-                        <div class="home-glass-body" style="padding:28px 32px">
-                            <div style="margin-bottom:16px">
-                                <h2 class="article-card-title" style="font-size:1.5rem;font-weight:700;margin:0 0 12px 0;text-transform:capitalize;line-height:1.2;color:var(--heading)">
+                    <div class="card home-glass article-card gallery-album-card">
+                        <div class="home-glass-body">
+                            <div class="gallery-list-head">
+                                <h2 class="article-card-title gallery-list-title">
                                     <a href="/gallery?focus={{ album.rel_path }}">{{ album.title }}</a>
                                 </h2>
-                                <div class="article-card-meta" style="gap:16px;font-size:13px;margin-bottom:12px">
+                                <div class="article-card-meta gallery-list-meta">
                                     <span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> {{ album.date_str }}</span>
                                     <span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> {{ album.author }}</span>
                                 </div>
-                                {% if album.desc %}<p style="color:var(--text);font-size:15px;margin:0 0 16px 0;line-height:1.6">{{ album.desc }}</p>{% endif %}
+                                {% if album.desc %}<p class="gallery-list-desc">{{ album.desc }}</p>{% endif %}
                             </div>
-                            <div class="{{ album.wrapper_class }}" style="box-shadow:none;border:none;padding:0;background:transparent">
+                            <div class="{{ album.wrapper_class }} gallery-carousel-wrapper">
                                 <div class="carousel-container" id="carousel-{{ album.path_name }}">
                                     {% for image_url in album.images %}
                                     <div class="carousel-slide" data-src="{{ album.full_images[loop.index0] if album.full_images is defined and album.full_images|length > loop.index0 else image_url }}">
@@ -66,11 +67,14 @@
                 </section>
                 {% endfor %}
             {% else %}
-                <p>No albums found.</p>
+                <div class="glass-empty-state" role="status" aria-live="polite">
+                    <div class="glass-empty-state-title">No available albums.</div>
+                    <div class="glass-empty-state-subtitle">Gallery will appear here when albums are visible.</div>
+                </div>
             {% endif %}
         </div>
     </div>
-    <div id="lightbox-overlay" class="lightbox-overlay" style="display:none">
+    <div id="lightbox-overlay" class="lightbox-overlay gallery-lightbox" style="display:none">
         <button class="lightbox-close" id="lightboxClose">&times;</button>
         <img id="lightboxImg" class="lightbox-content" src="" alt="Full Size">
     </div>

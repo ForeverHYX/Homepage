@@ -4009,6 +4009,110 @@ a { color: inherit; text-decoration: none; }
     font-size: 14px;
 }
 
+/* --- Gallery page (home-glass adaptation) ---------------------------------
+   Both focused and list album cards now use .home-glass.article-card so a
+   user navigating between /gallery and /gallery?focus=<slug> sees the same
+   frosted-liquid surface instead of a swap between .home-liquid-card and
+   .home-glass. The previously inline padding/title/meta/desc styles are
+   factored into named classes so dark-mode + material tokens apply. */
+.gallery-album {
+    margin: 0;
+}
+
+.gallery-album--focused {
+    margin-bottom: 60px;
+}
+
+.gallery-album--list {
+    margin-bottom: 24px;
+}
+
+.gallery-album-card {
+    padding: 0;
+}
+
+.gallery-album-card .home-glass-body {
+    padding: 28px 32px;
+}
+
+.gallery-album-card--focused .home-glass-body {
+    padding: 40px;
+}
+
+.gallery-hero {
+    margin-bottom: 24px;
+}
+
+.gallery-hero .home-glass-body {
+    padding: 28px 32px;
+}
+
+.gallery-back {
+    margin-bottom: 20px;
+}
+
+.gallery-back-link {
+    text-decoration: none;
+    padding-left: 0;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.gallery-hero-title {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    text-transform: capitalize;
+    line-height: 1.2;
+    color: var(--heading);
+}
+
+.gallery-hero-meta {
+    margin-bottom: 12px;
+}
+
+.gallery-hero-desc {
+    color: var(--text);
+    font-size: 1rem;
+    margin: 0 0 24px 0;
+    line-height: 1.6;
+}
+
+.gallery-list-head {
+    margin-bottom: 16px;
+}
+
+.gallery-list-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    text-transform: capitalize;
+    line-height: 1.2;
+    color: var(--heading);
+}
+
+.gallery-list-meta {
+    margin-bottom: 12px;
+}
+
+.gallery-list-desc {
+    color: var(--text);
+    font-size: 15px;
+    margin: 0 0 16px 0;
+    line-height: 1.6;
+}
+
+.gallery-carousel-wrapper {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    background: transparent;
+}
+
+.gallery-lightbox {
+    display: none;
+}
+
 /* --- Footer --- */
 footer {
     text-align: center;
