@@ -25,6 +25,31 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("transition:", spot_block.group("body"))
         self.assertIn("--spot-motion-duration", spot_block.group("body"))
 
+    def test_lightfield_and_card_shadows_stay_subtle(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        lightfield_block = re.search(r"\.home-lightfield\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        lightfield_before = re.search(r"\.home-lightfield::before\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        lightfield_after_blocks = re.findall(r"\.home-lightfield::after\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        spot_block = re.search(r"\.home-lightspot\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+
+        self.assertIsNotNone(lightfield_block)
+        self.assertIsNotNone(lightfield_before)
+        self.assertTrue(lightfield_after_blocks)
+        self.assertIsNotNone(spot_block)
+        self.assertIsNotNone(card_block)
+
+        self.assertIn("contain: paint", lightfield_block.group("body"))
+        self.assertIn("filter: blur(86px)", lightfield_before.group("body"))
+        self.assertIn("opacity: 0.42", lightfield_before.group("body"))
+        lightfield_after = next((body for body in lightfield_after_blocks if "background:" in body), "")
+        self.assertIn("opacity: 0.34", lightfield_after)
+        self.assertIn("blur(calc(var(--spot-blur, 54px) * 0.72))", spot_block.group("body"))
+        self.assertIn("opacity: calc(var(--spot-opacity, 0.3) * 0.32)", spot_block.group("body"))
+        self.assertIn("0 14px 28px rgba(99, 112, 158, 0.075)", card_block.group("body"))
+        self.assertNotIn("0 24px 52px rgba(99, 112, 158, 0.135)", card_block.group("body"))
+
     def test_liquid_glass_throttles_pointer_target_sync(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
 
@@ -104,7 +129,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=126"', base)
+        self.assertIn('href="/static/css/styles.css?v=127"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
