@@ -20,8 +20,11 @@
     --heading: #0f172a;
     --primary: #3b82f6;
     --primary-hover: #2563eb;
+    --danger: #ef4444;
+    --warning: #f97316;
+    --warning-strong: #ea580c;
     --daily-action-blue-gradient: linear-gradient(135deg, #93c5fd, #2563eb);
-    --muted: #64748b;
+    --muted: #475569;
 
     /* Unified frosted-liquid material system.
        Both the document card (.home-glass/.home-content) and the functional
@@ -92,6 +95,9 @@
     --heading: #f1f5f9;
     --primary: #60a5fa;
     --primary-hover: #93c5fd;
+    --danger: #f87171;
+    --warning: #fb923c;
+    --warning-strong: #fb923c;
     --muted: #94a3b8;
 
     --glass-hi-bg: rgba(255, 255, 255, 0.06);
@@ -2284,17 +2290,17 @@ a { color: inherit; text-decoration: none; }
 }
 
 .daily-action-button.daily-action-dislike {
-    color: #ea580c;
-    border-color: rgba(249, 115, 22, 0.32);
-    background: rgba(249, 115, 22, 0.1);
+    color: var(--warning-strong);
+    border-color: color-mix(in srgb, var(--warning) 32%, transparent);
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
     box-shadow: inset 0 1px 8px rgba(255, 237, 213, 0.28);
 }
 
 .daily-action-button.daily-action-dislike:hover {
     transform: translateY(-1px);
     color: #fff;
-    border-color: rgba(249, 115, 22, 0.42);
-    background: linear-gradient(135deg, #f97316, #ef4444);
+    border-color: color-mix(in srgb, var(--warning) 42%, transparent);
+    background: linear-gradient(135deg, var(--warning), var(--danger));
 }
 
 .daily-card.is-feedback-hidden {
@@ -3413,7 +3419,7 @@ a { color: inherit; text-decoration: none; }
     transform: translateY(-1px) scale(1.01);
 }
 
-.action-btn.danger:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.action-btn.danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); }
 
 /* --- Toast --- */
 .toast {
@@ -4893,4 +4899,20 @@ footer {
 
 [data-theme="dark"] .anniversary-card {
     --anniv-grad: linear-gradient(135deg, #93c5fd, #60a5fa);
+}
+
+
+/* --- Keyboard focus (a11y) ------------------------------------------------
+   Visible focus ring for keyboard users. :focus-visible only fires for
+   keyboard / AT navigation, so mouse users do not see it. Disabled elements
+   and elements that already draw their own focus ring (.form-input) keep
+   their existing behavior. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+    outline: none;
 }
