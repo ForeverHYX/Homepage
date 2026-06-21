@@ -61,6 +61,7 @@ export function initHomeLiquidGlass() {
     backdropFilter: string;
     active: boolean;
     focused: boolean;
+    runtimeLiquid: boolean;
     globalAmbient: boolean;
     filterRefs: FilterRefs | null;
     bounds: { left: number; top: number; width: number; height: number };
@@ -420,7 +421,8 @@ export function initHomeLiquidGlass() {
       return [];
     }
 
-    const globalAmbient = card.classList.contains("ambient-liquid-card");
+    const runtimeLiquid = card.classList.contains("ambient-liquid-card");
+    const globalAmbient = runtimeLiquid;
 
     return [{
       card,
@@ -436,6 +438,7 @@ export function initHomeLiquidGlass() {
       backdropFilter: "",
       active: false,
       focused: false,
+      runtimeLiquid,
       globalAmbient,
       filterRefs: null,
       bounds: { left: 0, top: 0, width: 0, height: 0 },
@@ -491,9 +494,7 @@ export function initHomeLiquidGlass() {
     const backdropFilter = `blur(${styles.getPropertyValue("--liquid-blur").trim() || "22px"}) saturate(${styles.getPropertyValue("--liquid-saturation").trim() || "180%"}) brightness(${styles.getPropertyValue("--liquid-brightness").trim() || "1.08"})`;
     const enabled =
       desktopLiquidGlass.matches && warpVisible && width >= 20 && height >= 20;
-    const runtimeEnabled =
-      enabled &&
-      (reduceMotion.matches || state.focused || state.globalAmbient);
+    const runtimeEnabled = enabled && state.runtimeLiquid;
 
     if (!runtimeEnabled) {
       state.width = width;

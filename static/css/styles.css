@@ -220,14 +220,14 @@ a { color: inherit; text-decoration: none; }
     background:
         linear-gradient(var(--liquid-angle), rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.36) 14%, rgba(191, 219, 254, 0.2) 38%, rgba(147, 197, 253, 0.12) 64%, rgba(255, 255, 255, 0.18) 86%, rgba(255, 255, 255, 0.05) 100%);
     opacity: calc(0.36 + ((var(--liquid-glow) - 0.56) * 0.42));
-    filter: blur(0.18px) saturate(118%) brightness(1.02);
+    filter: saturate(118%) brightness(1.02);
 }
 
 .nav-island .nav-island-warp {
     background:
         linear-gradient(180deg, rgba(248, 252, 255, 0.13) 0%, rgba(233, 242, 255, 0.06) 44%, rgba(191, 219, 254, 0.11) 100%);
-    backdrop-filter: blur(var(--nav-idle-blur)) saturate(var(--nav-idle-saturation)) brightness(var(--nav-idle-brightness));
-    -webkit-backdrop-filter: blur(var(--nav-idle-blur)) saturate(var(--nav-idle-saturation)) brightness(var(--nav-idle-brightness));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .nav-island .home-liquid-warp::before {
@@ -865,7 +865,7 @@ a { color: inherit; text-decoration: none; }
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     opacity: calc(0.2 + ((var(--liquid-glow) - 0.58) * 0.48));
-    filter: blur(0.24px) saturate(118%) brightness(1.06);
+    filter: saturate(118%) brightness(1.06);
 }
 
 .home-liquid-warp {
@@ -1424,7 +1424,7 @@ a { color: inherit; text-decoration: none; }
     background:
         linear-gradient(var(--liquid-angle), rgba(255, 255, 255, 0.015) 0%, rgba(255, 255, 255, 0.08) 22%, rgba(96, 165, 250, 0.18) 50%, rgba(59, 130, 246, 0.08) 82%, rgba(255, 255, 255, 0.02) 100%);
     opacity: calc(0.16 + ((var(--liquid-glow) - 0.58) * 0.42));
-    filter: blur(0.44px) saturate(112%) brightness(1.02);
+    filter: saturate(112%) brightness(1.02);
 }
 
 [data-theme="dark"] .home-liquid-warp {

@@ -323,7 +323,8 @@
         return [];
       }
       const navAmbient = card.classList.contains("nav-island");
-      const globalAmbient = navAmbient || card.classList.contains("ambient-liquid-card");
+      const runtimeLiquid = card.classList.contains("ambient-liquid-card");
+      const globalAmbient = runtimeLiquid;
       return [{
         card,
         warp,
@@ -339,6 +340,7 @@
         active: false,
         focused: false,
         navAmbient,
+        runtimeLiquid,
         globalAmbient,
         navIdleGlow: liquidRest.glow,
         navHoverGlow: liquidRest.glow,
@@ -386,7 +388,7 @@
       const navHoverGlow = parseFloat(styles.getPropertyValue("--liquid-nav-hover-glow")) || navIdleGlow;
       const backdropFilter = `blur(${styles.getPropertyValue("--liquid-blur").trim() || "22px"}) saturate(${styles.getPropertyValue("--liquid-saturation").trim() || "180%"}) brightness(${styles.getPropertyValue("--liquid-brightness").trim() || "1.08"})`;
       const enabled = desktopLiquidGlass.matches && warpVisible && width >= 20 && height >= 20;
-      const runtimeEnabled = enabled && (reduceMotion.matches || state.focused || state.globalAmbient);
+      const runtimeEnabled = enabled && state.runtimeLiquid;
       if (!runtimeEnabled) {
         state.width = width;
         state.height = height;

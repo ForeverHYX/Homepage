@@ -62,7 +62,34 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         self.assertIn("card.classList.contains(\"ambient-liquid-card\")", source)
         self.assertNotIn("card.classList.contains(\"home-profile-card\") || card.classList.contains(\"home-news-card\")", source)
-        self.assertIn('src="/static/js/effects/liquid-glass.js?v=101"', base)
+        self.assertIn('src="/static/js/effects/liquid-glass.js?v=102"', base)
+
+    def test_runtime_liquid_filter_requires_explicit_opt_in(self) -> None:
+        source = LIQUID_GLASS_JS.read_text()
+
+        self.assertIn("runtimeLiquid", source)
+        self.assertIn('const runtimeLiquid = card.classList.contains("ambient-liquid-card")', source)
+        self.assertIn("const runtimeEnabled = enabled && state.runtimeLiquid", source)
+        self.assertNotIn("const globalAmbient = navAmbient || card.classList.contains(\"ambient-liquid-card\")", source)
+
+    def test_liquid_card_material_avoids_edge_blur_artifacts(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        card_edge = re.search(r"^\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        dark_card_edge = re.search(r"^\[data-theme=\"dark\"\] \.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_edge = re.search(r"^\.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_warp = re.search(r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+
+        self.assertIsNotNone(card_edge)
+        self.assertIsNotNone(dark_card_edge)
+        self.assertIsNotNone(nav_edge)
+        self.assertIsNotNone(nav_warp)
+        self.assertNotIn("blur(", card_edge.group("body"))
+        self.assertNotIn("blur(", dark_card_edge.group("body"))
+        self.assertNotIn("blur(", nav_edge.group("body"))
+        self.assertNotIn("blur(", nav_warp.group("body"))
+        self.assertIn("backdrop-filter: none", nav_warp.group("body"))
+        self.assertIn("-webkit-backdrop-filter: none", nav_warp.group("body"))
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -137,7 +164,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=127"', base)
+        self.assertIn('href="/static/css/styles.css?v=128"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
