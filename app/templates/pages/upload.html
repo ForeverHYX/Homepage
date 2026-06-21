@@ -5,67 +5,80 @@
 {% block content %}
 <div class="container upload-grid">
     <section>
-        <div class="card" style="padding:24px;position:sticky;top:100px" id="uploadSidebar">
-            <h2 style="margin-top:0;font-size:18px;color:var(--heading)">Upload Manager</h2>
-            <div style="margin-bottom:16px">
-                <div style="font-weight:600;margin-bottom:8px;font-size:14px;color:var(--muted)">Current Path:</div>
-                <div style="display:flex;gap:8px;align-items:center;background:var(--surface-highlight);padding:8px;border-radius:var(--radius-xs);font-family:monospace;overflow-x:auto">
-                    <button class="action-btn" data-nav-home>Home</button>
-                    <span id="currentPathLabel">/</span>
+        <div class="card home-liquid-card upload-sidebar" id="uploadSidebar">
+            <span class="home-liquid-warp" aria-hidden="true"></span>
+            <div class="home-liquid-body">
+                <h2 class="upload-section-title">Upload Manager</h2>
+                <div class="upload-path-block">
+                    <div class="upload-path-label">Current Path:</div>
+                    <div class="upload-path-bar">
+                        <button class="action-btn" data-nav-home>Home</button>
+                        <span id="currentPathLabel">/</span>
+                    </div>
                 </div>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:16px">
-                <input id="folderName" type="text" placeholder="New Folder" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--radius-xs);background:var(--surface);color:var(--text)">
-                <button class="btn btn-primary" id="createFolderBtn" style="padding:0 12px">+</button>
-            </div>
-            <div id="dropZone" style="border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;background:transparent;transition:all 0.2s;cursor:pointer">
-                <div style="color:var(--primary);margin-bottom:12px">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div class="upload-folder-row">
+                    <input id="folderName" type="text" placeholder="New Folder" class="form-input upload-folder-input">
+                    <button class="btn btn-primary upload-folder-add" id="createFolderBtn">+</button>
                 </div>
-                <p style="margin:0;font-weight:600;color:var(--text);font-size:15px">Click to Add Files</p>
-                <input id="fileInput" type="file" multiple style="display:none">
+                <div id="dropZone" class="upload-drop-zone">
+                    <div class="upload-drop-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <p class="upload-drop-text">Click to Add Files</p>
+                    <input id="fileInput" type="file" multiple class="upload-file-input">
+                </div>
+                <div id="queueInfo" class="upload-queue-info"></div>
+                <button class="btn btn-primary btn-block upload-start" id="startUploadBtn" disabled>Start Upload</button>
             </div>
-            <div id="queueInfo" style="margin-top:16px;font-size:14px;text-align:center;color:var(--muted)"></div>
-            <button class="btn btn-primary" id="startUploadBtn" style="margin-top:16px;width:100%" disabled>Start Upload</button>
         </div>
         <div id="anniversaryCalendarMount"></div>
     </section>
     <section>
-        <div class="card" style="padding:32px;min-height:400px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-                <h2 style="margin:0;font-size:20px;color:var(--heading)">Files &amp; Folders</h2>
-                <button class="action-btn" id="refreshBtn">Refresh</button>
+        <div class="card home-glass upload-panel">
+            <div class="home-glass-body upload-panel-body">
+                <div class="upload-panel-header">
+                    <h2 class="upload-section-title upload-panel-title">Files &amp; Folders</h2>
+                    <button class="action-btn" id="refreshBtn">Refresh</button>
+                </div>
+                <div id="fileList"></div>
             </div>
-            <div id="fileList"></div>
         </div>
     </section>
-    <div id="toast" class="toast" style="position:fixed;bottom:80px;left:50%;right:auto;transform:translateX(-50%);z-index:10000"></div>
+    <div id="toast" class="toast upload-toast"></div>
 </div>
 
 <!-- Metadata edit modal -->
-<div id="metaModal" class="lightbox-overlay" style="display:none">
-    <div class="card lightbox-content" style="padding:0;max-width:500px;width:90%" onclick="event.stopPropagation()">
-        <div style="padding:32px">
-            <h2 style="margin-top:0;font-size:18px;color:var(--heading)">Edit Folder Info</h2>
+<div id="metaModal" class="lightbox-overlay upload-meta-modal" style="display:none">
+    <div class="card lightbox-content upload-meta-card" onclick="event.stopPropagation()">
+        <div class="upload-meta-body">
+            <h2 class="upload-section-title">Edit Folder Info</h2>
             <input type="hidden" id="metaPath">
-            <div style="margin-bottom:12px">
-                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Title</label>
+            <div class="form-row">
+                <label class="form-label" for="metaTitle">Title</label>
                 <input id="metaTitle" class="form-input">
             </div>
-            <div style="margin-bottom:12px">
-                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Shoot Date</label>
+            <div class="form-row">
+                <label class="form-label" for="metaDate">Shoot Date</label>
                 <input type="date" id="metaDate" class="form-input">
             </div>
-            <div style="margin-bottom:12px">
-                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Author</label>
+            <div class="form-row">
+                <label class="form-label" for="metaAuthor">Author</label>
                 <input id="metaAuthor" placeholder="Yixun Hong" class="form-input">
             </div>
-            <div style="margin-bottom:20px">
-                <label style="display:block;margin-bottom:4px;font-weight:500;color:var(--text)">Description</label>
-                <textarea id="metaDesc" rows="3" class="form-input" style="resize:vertical"></textarea>
+            <div class="form-row">
+                <label class="form-label" for="metaGalleryVisibility">Gallery Visibility</label>
+                <select id="metaGalleryVisibility" class="form-input">
+                    <option value="hidden">Hidden</option>
+                    <option value="public">Public Gallery</option>
+                    <option value="private">Login-only Gallery</option>
+                </select>
             </div>
-            <div style="display:flex;justify-content:flex-end;gap:8px">
-                <button class="btn" id="metaCancel" style="background:var(--surface-highlight);color:var(--text)">Cancel</button>
+            <div class="form-row form-row--last">
+                <label class="form-label" for="metaDesc">Description</label>
+                <textarea id="metaDesc" rows="3" class="form-input upload-meta-desc"></textarea>
+            </div>
+            <div class="upload-meta-actions">
+                <button class="btn upload-meta-cancel" id="metaCancel">Cancel</button>
                 <button class="btn btn-primary" id="metaSave">Save</button>
             </div>
         </div>
@@ -76,5 +89,5 @@
 {% block scripts %}
 <script src="/static/js/components/anniversary-data.js?v=97" defer></script>
 <script src="/static/js/components/anniversary-calendar.js?v=97" defer></script>
-<script src="/static/js/components/upload-manager.js?v=97" defer></script>
+<script src="/static/js/components/upload-manager.js?v=98" defer></script>
 {% endblock %}

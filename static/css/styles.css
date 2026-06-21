@@ -3162,6 +3162,234 @@ a { color: inherit; text-decoration: none; }
 
 .file-preview { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; background: var(--glass-hi-bg); display: flex; align-items: center; justify-content: center; color: var(--primary); flex-shrink: 0; }
 
+/* --- Upload page (home-liquid-card / home-glass adaptation) -----------------
+   Upload sidebar inherits .home-liquid-card so it reads the same frosted-liquid
+   material as the home sidebar; the files panel uses .home-glass like the
+   document card. All inline style="..." rules that previously lived on the
+   template markup are factored into the named classes below so the page
+   participates in dark-mode / material-token changes. */
+.upload-sidebar .home-liquid-body {
+    padding: 24px;
+}
+
+.upload-sidebar #uploadSidebar {
+    position: sticky;
+    top: 100px;
+}
+
+.upload-section-title {
+    margin-top: 0;
+    font-size: 18px;
+    color: var(--heading);
+}
+
+.upload-path-block {
+    margin-bottom: 16px;
+}
+
+.upload-path-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.upload-path-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--surface-highlight);
+    padding: 8px;
+    border-radius: var(--radius-xs);
+    font-family: var(--font-code);
+    overflow-x: auto;
+}
+
+.upload-folder-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.upload-folder-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: var(--surface);
+    color: var(--text);
+}
+
+.upload-folder-add {
+    padding: 0 12px;
+    width: auto;
+}
+
+.upload-drop-zone {
+    border: 2px dashed var(--glass-hi-border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    background: transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.upload-drop-icon {
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.upload-drop-text {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 15px;
+}
+
+.upload-file-input {
+    display: none;
+}
+
+.upload-queue-info {
+    margin-top: 16px;
+    font-size: 14px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.upload-start {
+    margin-top: 16px;
+    width: 100%;
+}
+
+.upload-panel .home-glass-body,
+.upload-panel-body {
+    padding: 32px;
+    min-height: 400px;
+}
+
+.upload-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.upload-panel-title {
+    margin: 0;
+    font-size: 20px;
+    color: var(--heading);
+}
+
+.upload-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    z-index: 10000;
+}
+
+.upload-meta-card {
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+}
+
+.upload-meta-body {
+    padding: 32px;
+}
+
+.upload-meta-desc {
+    resize: vertical;
+}
+
+.upload-meta-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.upload-meta-cancel {
+    background: var(--surface-highlight);
+    color: var(--text);
+}
+
+/* --- Login page (home-liquid-card adaptation) ----------------------------- */
+.login-shell {
+    display: flex;
+    justify-content: center;
+    padding-top: 80px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+}
+
+.login-body {
+    padding: 40px;
+}
+
+.login-title {
+    margin: 0 0 8px;
+    font-size: 24px;
+    color: var(--heading);
+}
+
+.login-subtitle {
+    color: var(--muted);
+    margin: 0 0 32px;
+}
+
+.login-submit {
+    width: 100%;
+}
+
+/* --- Form rows (login + upload modal) ------------------------------------ */
+.form-row {
+    margin-bottom: 20px;
+}
+
+.form-row--last {
+    margin-bottom: 32px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* --- Error page (404) ---------------------------------------------------- */
+.error-shell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    text-align: center;
+}
+
+.error-code {
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--heading);
+    margin-bottom: 8px;
+}
+
+.error-message {
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+}
+
+.error-action {
+    text-decoration: none;
+}
+
 /* --- Buttons --- */
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -3171,8 +3399,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn-primary {
-    background: var(--primary); color: white; width: 100%;
+    background: var(--primary); color: white;
     box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+}
+
+.btn-block {
+    width: 100%;
 }
 
 .btn-primary:hover {

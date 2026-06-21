@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}404 - Page Not Found{% endblock %}
 {% block content %}
-<div class="container" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center">
-    <h1 style="font-size:4rem;font-weight:700;color:var(--heading);margin-bottom:8px">404</h1>
-    <p style="font-size:1.2rem;color:var(--muted);margin-bottom:24px">This page could not be found.</p>
-    <a href="/" class="btn btn-primary" style="text-decoration:none">Back to Home</a>
+<div class="container error-shell">
+    <h1 class="error-code">404</h1>
+    <p class="error-message">This page could not be found.</p>
+    <a href="/" class="btn btn-primary btn-block error-action">Back to Home</a>
 </div>
 {% endblock %}
