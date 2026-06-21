@@ -41,12 +41,12 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIsNotNone(card_block)
 
         self.assertIn("contain: paint", lightfield_block.group("body"))
-        self.assertIn("filter: blur(86px)", lightfield_before.group("body"))
-        self.assertIn("opacity: 0.42", lightfield_before.group("body"))
+        self.assertIn("filter: blur(108px)", lightfield_before.group("body"))
+        self.assertIn("opacity: 0.82", lightfield_before.group("body"))
         lightfield_after = next((body for body in lightfield_after_blocks if "background:" in body), "")
-        self.assertIn("opacity: 0.34", lightfield_after)
-        self.assertIn("blur(calc(var(--spot-blur, 54px) * 0.72))", spot_block.group("body"))
-        self.assertIn("opacity: calc(var(--spot-opacity, 0.3) * 0.32)", spot_block.group("body"))
+        self.assertIn("opacity: 0.68", lightfield_after)
+        self.assertIn("blur(var(--spot-blur, 54px))", spot_block.group("body"))
+        self.assertIn("opacity: var(--spot-opacity, 0.3)", spot_block.group("body"))
         self.assertIn("0 14px 28px rgba(99, 112, 158, 0.075)", card_block.group("body"))
         self.assertNotIn("0 24px 52px rgba(99, 112, 158, 0.135)", card_block.group("body"))
 
@@ -131,7 +131,10 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("var(--liquid-sheen-opacity)", hover_body)
         self.assertNotIn("var(--liquid-rim-opacity)", hover_body)
 
-    def test_nav_island_material_avoids_dirty_outer_halo(self) -> None:
+    def test_nav_island_has_modest_drop_shadow_without_dirty_halo(self) -> None:
+        """The top nav pill must carry a modest bottom drop shadow at rest so
+        it doesn't float flat against the background, but no oversized far blur
+        (no dirty halo). It does not lift on hover (transform: none)."""
         styles = STYLES_CSS.read_text()
 
         nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
@@ -141,10 +144,16 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIsNotNone(nav_hover)
         nav_body = nav_block.group("body")
         nav_hover_body = nav_hover.group("body")
+
+        # Modest drop shadow present at rest (pill is grounded, not floating flat).
+        self.assertIn("0 10px 28px rgba(73, 92, 138, 0.1)", nav_body)
+        self.assertIn("0 4px 10px rgba(73, 92, 138, 0.05)", nav_body)
+        # No dirty oversized far blur (old halo values are gone).
         self.assertNotIn("0 14px 26px", nav_body)
         self.assertNotIn("0 8px 18px", nav_body)
         self.assertNotIn("0 16px 28px", nav_hover_body)
         self.assertNotIn("0 8px 18px", nav_hover_body)
+        # The pill does not lift.
         self.assertNotIn("translateY", nav_hover_body)
 
     def test_liquid_material_restores_crystalline_layering(self) -> None:
@@ -167,7 +176,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=131\"", base)
+        self.assertIn("href=\"/static/css/styles.css?v=132\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -337,8 +346,8 @@ class HomepageEffectsPerformanceTests(TestCase):
             "functional card face should be more transparent (lower alpha) than doc card",
         )
 
-        # Cache-buster bumped to v131 so clients refetch the unified material.
-        self.assertIn('href="/static/css/styles.css?v=131"', base)
+        # Cache-buster bumped to v132 so clients refetch the unified material.
+        self.assertIn('href="/static/css/styles.css?v=132"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -413,7 +422,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=131"', base)
+        self.assertIn('href="/static/css/styles.css?v=132"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()

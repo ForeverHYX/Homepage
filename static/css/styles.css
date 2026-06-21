@@ -222,7 +222,9 @@ a { color: inherit; text-decoration: none; }
        just with the nav's own tighter radius. Sheen layers are pinned to fixed
        anchors with fixed opacities (no var(--liquid-glow) calc, no
        var(--liquid-angle) gradient, no mouse-follow radial) so Edge does not
-       paint a dirty halo and no highlight tracks the pointer. */
+       paint a dirty halo and no highlight tracks the pointer. A modest drop
+       shadow at rest keeps the pill from looking like it floats flat against
+       the background, without creating a dirty halo. */
     --home-material-face-top: rgba(255, 255, 255, 0.34);
     --home-material-face-mid: rgba(255, 255, 255, 0.1);
     --home-material-face-bottom: rgba(255, 255, 255, 0.18);
@@ -234,7 +236,8 @@ a { color: inherit; text-decoration: none; }
         linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 46%, var(--home-material-face-bottom) 100%),
         linear-gradient(180deg, var(--liquid-content-tint), transparent);
     box-shadow:
-        0 1px 2px rgba(73, 92, 138, 0.026),
+        0 10px 28px rgba(73, 92, 138, 0.1),
+        0 4px 10px rgba(73, 92, 138, 0.05),
         inset 0 1px 0 var(--liquid-inner-highlight),
         inset 0 -10px 24px var(--liquid-inner-shadow),
         inset 0 -1px 0 rgba(148, 163, 184, 0.08);
@@ -247,7 +250,8 @@ a { color: inherit; text-decoration: none; }
     transform: none;
     border-color: rgba(255, 255, 255, 0.4);
     box-shadow:
-        0 2px 8px rgba(73, 92, 138, 0.08),
+        0 14px 34px rgba(73, 92, 138, 0.14),
+        0 6px 14px rgba(73, 92, 138, 0.07),
         inset 0 1px 0 rgba(255, 255, 255, 0.34),
         inset 0 -10px 24px rgba(148, 163, 184, 0.1),
         inset 0 -1px 0 rgba(148, 163, 184, 0.1);
@@ -818,8 +822,8 @@ a { color: inherit; text-decoration: none; }
         radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.44) 16%, rgba(255, 255, 255, 0) 38%),
         radial-gradient(circle at 84% 16%, rgba(255, 255, 255, 0.66) 0%, rgba(255, 255, 255, 0.2) 16%, rgba(255, 255, 255, 0) 34%),
         radial-gradient(circle at 48% 82%, rgba(191, 219, 254, 0.34) 0%, rgba(191, 219, 254, 0.12) 22%, rgba(191, 219, 254, 0) 44%);
-    filter: blur(86px);
-    opacity: 0.42;
+    filter: blur(108px);
+    opacity: 0.82;
 }
 
 .home-lightfield::after {
@@ -827,7 +831,7 @@ a { color: inherit; text-decoration: none; }
         radial-gradient(118% 84% at 48% 34%, rgba(219, 234, 254, 0.34) 0%, rgba(219, 234, 254, 0.12) 22%, rgba(219, 234, 254, 0) 54%),
         radial-gradient(88% 74% at 18% 78%, rgba(191, 219, 254, 0.18) 0%, rgba(191, 219, 254, 0.06) 28%, rgba(191, 219, 254, 0) 62%),
         radial-gradient(92% 78% at 84% 74%, rgba(196, 181, 253, 0.12) 0%, rgba(196, 181, 253, 0.04) 28%, rgba(196, 181, 253, 0) 62%);
-    opacity: 0.34;
+    opacity: 0.68;
 }
 
 .home-lightspot {
@@ -839,8 +843,8 @@ a { color: inherit; text-decoration: none; }
     border-radius: 999px;
     pointer-events: none;
     mix-blend-mode: normal;
-    filter: blur(calc(var(--spot-blur, 54px) * 0.72)) saturate(108%);
-    opacity: calc(var(--spot-opacity, 0.3) * 0.32);
+    filter: blur(var(--spot-blur, 54px)) saturate(118%);
+    opacity: var(--spot-opacity, 0.3);
     will-change: transform, opacity;
     transition:
         transform var(--spot-motion-duration, 6800ms) cubic-bezier(0.22, 1, 0.36, 1),
@@ -859,9 +863,9 @@ a { color: inherit; text-decoration: none; }
        and fixed opacities: the old mouse-following radials / opacity calcs
        that tracked var(--liquid-light-x/y) and var(--liquid-glow) are gone, so
        no highlight follows the pointer. */
-    --home-material-face-top: rgba(255, 255, 255, 0.26);
-    --home-material-face-mid: rgba(255, 255, 255, 0.08);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.14);
+    --home-material-face-top: rgba(255, 255, 255, 0.18);
+    --home-material-face-mid: rgba(255, 255, 255, 0.06);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.1);
     --liquid-blur: 24px;
     --liquid-saturation: 180%;
     --liquid-brightness: 1.08;
@@ -1366,12 +1370,13 @@ a { color: inherit; text-decoration: none; }
    white face/highlight strength so this much taller home frame does not read
    as a flat white slab. */
 .home-content {
-    /* Document card: lower transparency (higher alpha) so text reads steadier,
-       but still draws from the same --home-material-* family as the sidebar
-       functional cards so the whole page reads as one frosted-liquid system. */
-    --home-material-face-top: rgba(255, 255, 255, 0.50);
-    --home-material-face-mid: rgba(255, 255, 255, 0.16);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.26);
+    /* Document card: slightly steadier than the sidebar card (a touch higher
+       alpha) so long-form text reads well, but still drawn from the same
+       --home-material-* family so the two cards read as one material, not as
+       a near-transparent sliver next to a near-opaque slab. */
+    --home-material-face-top: rgba(255, 255, 255, 0.30);
+    --home-material-face-mid: rgba(255, 255, 255, 0.10);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.16);
     --home-material-shadow: rgba(73, 92, 138, 0.18);
     --home-material-shadow-soft: rgba(73, 92, 138, 0.09);
     --home-material-inner-top: rgba(255, 255, 255, 0.62);
@@ -1451,25 +1456,25 @@ a { color: inherit; text-decoration: none; }
 
 [data-theme="dark"] .home-lightfield::before {
     background:
-        radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.24) 0%, rgba(37, 99, 235, 0.18) 18%, rgba(15, 23, 42, 0) 38%),
-        radial-gradient(circle at 82% 20%, rgba(168, 85, 247, 0.24) 0%, rgba(99, 102, 241, 0.16) 18%, rgba(15, 23, 42, 0) 34%),
-        radial-gradient(circle at 48% 86%, rgba(34, 211, 238, 0.16) 0%, rgba(15, 23, 42, 0) 34%);
-    opacity: 0.46;
+        radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.34) 0%, rgba(37, 99, 235, 0.24) 18%, rgba(15, 23, 42, 0) 38%),
+        radial-gradient(circle at 82% 20%, rgba(168, 85, 247, 0.32) 0%, rgba(99, 102, 241, 0.22) 18%, rgba(15, 23, 42, 0) 34%),
+        radial-gradient(circle at 48% 86%, rgba(34, 211, 238, 0.22) 0%, rgba(15, 23, 42, 0) 34%);
+    opacity: 0.78;
 }
 
 [data-theme="dark"] .home-lightfield::after {
     background:
-        radial-gradient(116% 82% at 46% 34%, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0.08) 24%, rgba(37, 99, 235, 0) 58%),
-        radial-gradient(88% 74% at 18% 78%, rgba(14, 165, 233, 0.1) 0%, rgba(14, 165, 233, 0.04) 30%, rgba(14, 165, 233, 0) 64%),
-        radial-gradient(92% 78% at 84% 74%, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.05) 30%, rgba(99, 102, 241, 0) 64%);
-    opacity: 0.36;
+        radial-gradient(116% 82% at 46% 34%, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0.1) 24%, rgba(37, 99, 235, 0) 58%),
+        radial-gradient(88% 74% at 18% 78%, rgba(14, 165, 233, 0.16) 0%, rgba(14, 165, 233, 0.06) 30%, rgba(14, 165, 233, 0) 64%),
+        radial-gradient(92% 78% at 84% 74%, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0.06) 30%, rgba(99, 102, 241, 0) 64%);
+    opacity: 0.62;
 }
 
 [data-theme="dark"] .home-lightspot {
     mix-blend-mode: screen;
-    filter: blur(calc(var(--spot-blur, 54px) * 0.72)) saturate(112%);
+    filter: blur(var(--spot-blur, 54px)) saturate(120%);
     background:
-        radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.24) 0%, rgba(59, 130, 246, 0.22) 24%, rgba(37, 99, 235, 0.16) 48%, rgba(30, 64, 175, 0.06) 66%, rgba(30, 64, 175, 0) 80%);
+        radial-gradient(circle at 50% 50%, rgba(96, 165, 250, 0.36) 0%, rgba(59, 130, 246, 0.3) 24%, rgba(37, 99, 235, 0.22) 48%, rgba(30, 64, 175, 0.08) 66%, rgba(30, 64, 175, 0) 80%);
 }
 
 [data-theme="dark"] .home-liquid-card {
@@ -1479,9 +1484,9 @@ a { color: inherit; text-decoration: none; }
     /* Functional sidebar card dark variant: same unified material tokens, lower
        alpha for the face so the card stays translucent and matches the doc card.
        Sheen opacities are fixed (no var(--liquid-sheen-opacity) / glow calc). */
-    --home-material-face-top: rgba(18, 27, 45, 0.46);
-    --home-material-face-mid: rgba(12, 18, 32, 0.28);
-    --home-material-face-bottom: rgba(18, 27, 45, 0.4);
+    --home-material-face-top: rgba(18, 27, 45, 0.34);
+    --home-material-face-mid: rgba(12, 18, 32, 0.2);
+    --home-material-face-bottom: rgba(18, 27, 45, 0.28);
     --liquid-blur: 18px;
     --liquid-saturation: 154%;
     --liquid-brightness: 1.02;
@@ -3650,7 +3655,8 @@ a { color: inherit; text-decoration: none; }
     background:
         linear-gradient(180deg, rgba(20, 35, 61, 0.32), rgba(8, 17, 32, 0.16));
     box-shadow:
-        0 1px 2px rgba(0, 0, 0, 0.18),
+        0 12px 30px rgba(0, 0, 0, 0.32),
+        0 4px 12px rgba(0, 0, 0, 0.18),
         inset 0 1px 0 rgba(255, 255, 255, 0.1),
         inset 0 -1px 0 rgba(148, 163, 184, 0.06);
 }
@@ -3659,7 +3665,8 @@ a { color: inherit; text-decoration: none; }
     transform: none;
     border-color: rgba(255, 255, 255, 0.16);
     box-shadow:
-        0 2px 10px rgba(0, 0, 0, 0.28),
+        0 16px 38px rgba(0, 0, 0, 0.42),
+        0 6px 16px rgba(0, 0, 0, 0.24),
         inset 0 1px 0 rgba(255, 255, 255, 0.12),
         inset 0 -1px 0 rgba(148, 163, 184, 0.08);
 }
