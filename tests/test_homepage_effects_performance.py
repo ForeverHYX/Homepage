@@ -94,7 +94,12 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("backdrop-filter: none", nav_warp.group("body"))
         self.assertIn("-webkit-backdrop-filter: none", nav_warp.group("body"))
 
-    def test_liquid_cards_do_not_inherit_generic_card_backdrop_blur(self) -> None:
+    def test_liquid_cards_frost_background_like_document_card(self) -> None:
+        """Both the functional sidebar card and the document card must carry a
+        real backdrop-filter blur so they read as one frosted-liquid material
+        (the sidebar card is no longer a flat, un-blurred transparent sliver).
+        The generic .card backdrop blur is overridden in favor of a card-type
+        specific blur."""
         styles = STYLES_CSS.read_text()
 
         card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
@@ -103,14 +108,24 @@ class HomepageEffectsPerformanceTests(TestCase):
             styles,
             re.S,
         )
+        nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
 
         self.assertIsNotNone(card_block)
         self.assertIsNotNone(mobile_card_block)
-        self.assertIn("backdrop-filter: none", card_block.group("body"))
-        self.assertIn("-webkit-backdrop-filter: none", card_block.group("body"))
-        self.assertNotIn("backdrop-filter: blur", card_block.group("body"))
-        self.assertIn("backdrop-filter: none", mobile_card_block.group("body"))
-        self.assertIn("-webkit-backdrop-filter: none", mobile_card_block.group("body"))
+        self.assertIsNotNone(nav_block)
+
+        card_body = card_block.group("body")
+        self.assertIn("backdrop-filter: blur(30px)", card_body)
+        self.assertIn("-webkit-backdrop-filter: blur(30px)", card_body)
+        self.assertNotIn("backdrop-filter: none", card_body)
+
+        # Mobile breakpoint keeps a blur on the sidebar / mobile panel too.
+        self.assertIn("backdrop-filter: blur(18px)", mobile_card_block.group("body"))
+        self.assertIn("-webkit-backdrop-filter: blur(18px)", mobile_card_block.group("body"))
+
+        nav_body = nav_block.group("body")
+        self.assertIn("backdrop-filter: blur(20px)", nav_body)
+        self.assertIn("-webkit-backdrop-filter: blur(20px)", nav_body)
 
     def test_liquid_card_hover_lifts_like_document_card(self) -> None:
         """The functional sidebar card must hover-lift the same way as the
@@ -176,7 +191,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=132\"", base)
+        self.assertIn("href=\"/static/css/styles.css?v=133\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -347,7 +362,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         )
 
         # Cache-buster bumped to v132 so clients refetch the unified material.
-        self.assertIn('href="/static/css/styles.css?v=132"', base)
+        self.assertIn('href="/static/css/styles.css?v=133"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -422,7 +437,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=132"', base)
+        self.assertIn('href="/static/css/styles.css?v=133"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()

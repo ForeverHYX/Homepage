@@ -224,7 +224,8 @@ a { color: inherit; text-decoration: none; }
        var(--liquid-angle) gradient, no mouse-follow radial) so Edge does not
        paint a dirty halo and no highlight tracks the pointer. A modest drop
        shadow at rest keeps the pill from looking like it floats flat against
-       the background, without creating a dirty halo. */
+       the background, without creating a dirty halo. backdrop-filter blur
+       frosts the content scrolling behind the pill, same as the sidebar cards. */
     --home-material-face-top: rgba(255, 255, 255, 0.34);
     --home-material-face-mid: rgba(255, 255, 255, 0.1);
     --home-material-face-bottom: rgba(255, 255, 255, 0.18);
@@ -232,6 +233,8 @@ a { color: inherit; text-decoration: none; }
     overflow: hidden;
     padding: 10px 14px 10px 18px;
     border-color: rgba(255, 255, 255, 0.34);
+    backdrop-filter: blur(20px) saturate(170%) contrast(1.06) brightness(1.02);
+    -webkit-backdrop-filter: blur(20px) saturate(170%) contrast(1.06) brightness(1.02);
     background:
         linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 46%, var(--home-material-face-bottom) 100%),
         linear-gradient(180deg, var(--liquid-content-tint), transparent);
@@ -857,15 +860,16 @@ a { color: inherit; text-decoration: none; }
     --liquid-content-tint: var(--home-material-tint);
     --liquid-inner-highlight: var(--home-material-inner-top);
     --liquid-inner-shadow: var(--home-material-inner-bottom);
-    /* Functional sidebar cards sit at higher transparency (lower alpha) than the
-       document card, but share the same frosted-liquid material tokens so the
-       whole page reads as one glass system. All sheen layers use fixed anchors
-       and fixed opacities: the old mouse-following radials / opacity calcs
-       that tracked var(--liquid-light-x/y) and var(--liquid-glow) are gone, so
-       no highlight follows the pointer. */
-    --home-material-face-top: rgba(255, 255, 255, 0.18);
-    --home-material-face-mid: rgba(255, 255, 255, 0.06);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.1);
+    /* Functional sidebar cards draw from the same --home-material-* family as
+       the document card and now carry a real backdrop-filter blur so they frost
+       the background the same way the doc card does — the two cards read as one
+       frosted-liquid material, differing only modestly in alpha. All sheen
+       layers use fixed anchors / fixed opacities: the old mouse-following
+       radials / opacity calcs that tracked var(--liquid-light-x/y) and
+       var(--liquid-glow) are gone, so no highlight follows the pointer. */
+    --home-material-face-top: rgba(255, 255, 255, 0.22);
+    --home-material-face-mid: rgba(255, 255, 255, 0.08);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.12);
     --liquid-blur: 24px;
     --liquid-saturation: 180%;
     --liquid-brightness: 1.08;
@@ -876,8 +880,8 @@ a { color: inherit; text-decoration: none; }
     isolation: isolate;
     border-radius: 32px;
     border: 1px solid var(--home-material-edge);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    backdrop-filter: blur(30px) saturate(180%) contrast(1.08) brightness(1.04);
+    -webkit-backdrop-filter: blur(30px) saturate(180%) contrast(1.08) brightness(1.04);
     background:
         linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 42%, var(--home-material-face-bottom) 100%),
         linear-gradient(180deg, var(--liquid-content-tint), transparent);
@@ -1374,9 +1378,9 @@ a { color: inherit; text-decoration: none; }
        alpha) so long-form text reads well, but still drawn from the same
        --home-material-* family so the two cards read as one material, not as
        a near-transparent sliver next to a near-opaque slab. */
-    --home-material-face-top: rgba(255, 255, 255, 0.30);
-    --home-material-face-mid: rgba(255, 255, 255, 0.10);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.16);
+    --home-material-face-top: rgba(255, 255, 255, 0.34);
+    --home-material-face-mid: rgba(255, 255, 255, 0.12);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.18);
     --home-material-shadow: rgba(73, 92, 138, 0.18);
     --home-material-shadow-soft: rgba(73, 92, 138, 0.09);
     --home-material-inner-top: rgba(255, 255, 255, 0.62);
@@ -1483,7 +1487,8 @@ a { color: inherit; text-decoration: none; }
     --liquid-inner-shadow: var(--home-material-inner-bottom);
     /* Functional sidebar card dark variant: same unified material tokens, lower
        alpha for the face so the card stays translucent and matches the doc card.
-       Sheen opacities are fixed (no var(--liquid-sheen-opacity) / glow calc). */
+       Sheen opacities are fixed (no var(--liquid-sheen-opacity) / glow calc).
+       backdrop-filter blur frosts the dark background like the doc card. */
     --home-material-face-top: rgba(18, 27, 45, 0.34);
     --home-material-face-mid: rgba(12, 18, 32, 0.2);
     --home-material-face-bottom: rgba(18, 27, 45, 0.28);
@@ -1491,6 +1496,8 @@ a { color: inherit; text-decoration: none; }
     --liquid-saturation: 154%;
     --liquid-brightness: 1.02;
     border-color: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(28px) saturate(160%) contrast(1.06) brightness(1.02);
+    -webkit-backdrop-filter: blur(28px) saturate(160%) contrast(1.06) brightness(1.02);
     background:
         linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 48%, var(--home-material-face-bottom) 100%),
         linear-gradient(180deg, var(--liquid-content-tint), transparent);
@@ -3652,6 +3659,8 @@ a { color: inherit; text-decoration: none; }
     --nav-idle-saturation: 144%;
     --nav-idle-brightness: 1;
     border-color: rgba(255, 255, 255, 0.13);
+    backdrop-filter: blur(18px) saturate(150%) contrast(1.04) brightness(1.01);
+    -webkit-backdrop-filter: blur(18px) saturate(150%) contrast(1.04) brightness(1.01);
     background:
         linear-gradient(180deg, rgba(20, 35, 61, 0.32), rgba(8, 17, 32, 0.16));
     box-shadow:
@@ -4116,8 +4125,8 @@ footer {
     }
     .home-liquid-card,
     .nav-mobile-panel {
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
+        backdrop-filter: blur(18px) saturate(165%);
+        -webkit-backdrop-filter: blur(18px) saturate(165%);
     }
     .home-profile-card,
     .home-news-card {
