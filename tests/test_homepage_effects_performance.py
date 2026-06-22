@@ -191,7 +191,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=142\"", base)
+        self.assertIn("href=\"/static/css/styles.css?v=143\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -361,8 +361,8 @@ class HomepageEffectsPerformanceTests(TestCase):
             "functional card face should be more transparent (lower alpha) than doc card",
         )
 
-        # Cache-buster bumped to v132 so clients refetch the unified material.
-        self.assertIn('href="/static/css/styles.css?v=142"', base)
+        # Cache-buster bumps when CSS material changes so clients refetch it.
+        self.assertIn('href="/static/css/styles.css?v=143"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -437,7 +437,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=142"', base)
+        self.assertIn('href="/static/css/styles.css?v=143"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -449,6 +449,19 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("backdrop-filter", inline_code_body)
         self.assertIn("box-decoration-break: clone", inline_code_body)
         self.assertIn("-webkit-box-decoration-break: clone", inline_code_body)
+
+    def test_daily_cards_avoid_nested_backdrop_repaint_cost(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        daily_card = re.search(r"\.daily-card\.home-glass\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        daily_action = re.search(r"\.daily-action-button\s*\{(?P<body>.*?)\n\}", styles, re.S)
+
+        self.assertIsNotNone(daily_card)
+        self.assertIsNotNone(daily_action)
+        self.assertIn("--home-glass-blur: 18px", daily_card.group("body"))
+        self.assertIn("backdrop-filter: none", daily_action.group("body"))
+        self.assertIn("-webkit-backdrop-filter: none", daily_action.group("body"))
+        self.assertNotIn("backdrop-filter: blur", daily_action.group("body"))
 
     def test_news_modal_uses_dedicated_layout_instead_of_generic_lightbox_card(self) -> None:
         source = SITE_HEADER_JS.read_text()
