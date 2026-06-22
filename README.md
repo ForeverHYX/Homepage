@@ -5,9 +5,9 @@ process** built entirely on **FastAPI + Jinja2 templates + vanilla JS** — no
 React, no Next.js, no build step, no database. Markdown files in `content/`
 are the sole data source.
 
-> **Note on `frontend/`**: the original Next.js app still lives in the
-> `frontend/` directory for reference, but it is **no longer part of the
-> deployment**. Everything described below is the current, live system.
+> **Note on the old Next.js app**: the original `frontend/` tree was removed
+> from the runtime repository. Git history still preserves it for reference,
+> but everything described below is the current, live system.
 
 ### Why Next.js was removed
 
@@ -23,11 +23,11 @@ front of FastAPI. Removing it:
 
 ## Architecture
 
-A single FastAPI application (run under gunicorn with 2 uvicorn workers in
+A single FastAPI application (run under gunicorn with 1 uvicorn worker in
 production) serves both HTML pages and JSON APIs out of one process:
 
 - **FastAPI 0.115.8** serves HTML pages (via Jinja2 templates) **and** JSON APIs
-- **Uvicorn workers** managed by **gunicorn** (2 workers in production)
+- **Uvicorn worker** managed by **gunicorn** (1 worker in production)
 - **Vanilla JS** for all client-side interactivity — no React, no Next.js,
   no build step
 - **Markdown files in `content/`** as the sole data source — zero database
@@ -147,7 +147,6 @@ The backend lives in `app/` and is organized as:
 │   └── transcript.pdf
 ├── deploy/                       # Saved deployment configs
 │   └── nginx-foreverhyx.conf
-├── frontend/                     # LEGACY Next.js code — kept for reference, NOT deployed
 ├── requirements.txt
 └── README.md
 ```
@@ -226,7 +225,7 @@ There is **no build step** — gunicorn runs the FastAPI app directly.
 ```bash
 # Backend only — no build step
 gunicorn app.main:app -k uvicorn.workers.UvicornWorker \
-  --bind 127.0.0.1:8000 --workers 2 --timeout 60
+  --bind 127.0.0.1:8000 --workers 1 --timeout 60
 ```
 
 Nginx proxies `/*` and `/api/*` to FastAPI on `127.0.0.1:8000` and serves
@@ -245,8 +244,8 @@ process.
   `?v=N` query param when iterating on CSS/JS during development.
 - **`static/css/styles.css` is the single source of truth for styling** —
   one ~3400-line stylesheet powers the entire site.
-- Sessions are stored in `.sessions.json` and are safe across the multiple
-  uvicorn workers; this is plain `token_urlsafe(32)` plus bcrypt, intentionally
+- Sessions are stored in `.sessions.json`; this is plain
+  `token_urlsafe(32)` plus bcrypt, intentionally
   simple — replace it with a real session store if you need more.
 - Rate limiting is provided by `slowapi` (200/min global, stricter on
   `/login` and `/upload`).

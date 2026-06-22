@@ -11,10 +11,8 @@ content/**
 !content/articles/
 !content/articles/.gitkeep
 
-# Test files
+# Local smoke/debug entrypoints
 smoke_test.py
-test_*.py
-*_test.py
 
 # Local debug / scratch files
 output.html

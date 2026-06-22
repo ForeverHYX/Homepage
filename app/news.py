@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 import markdown
-from app.config import CONTENT_DIR, ARTICLES_DIR, UPLOAD_DIR
+from app.config import CONTENT_DIR, ARTICLES_DIR, UPLOAD_DIR, GALLERY_CONFIG_FILE
 from app.articles import get_all_articles
 from app.utils import get_gallery_folders, get_folder_meta, safe_join
 
@@ -113,7 +113,7 @@ def parse_and_merge_news(limit: int = 6) -> str:
     from app.articles import _articles_mtime
     news_mtime = (CONTENT_DIR / "news.md").stat().st_mtime if (CONTENT_DIR / "news.md").exists() else 0
     art_mtime = _articles_mtime()
-    gal_mtime = (UPLOAD_DIR / "gallery_config.json").stat().st_mtime if (UPLOAD_DIR / "gallery_config.json").exists() else 0
+    gal_mtime = GALLERY_CONFIG_FILE.stat().st_mtime if GALLERY_CONFIG_FILE.exists() else 0
     combined = f"{news_mtime}-{art_mtime}-{gal_mtime}-{limit}"
     from app.cache import _cache
     cache_key = f"news_html:{combined}"

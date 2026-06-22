@@ -12,7 +12,7 @@ from app.config import (
 )
 from app.utils import (
     safe_join, process_uploaded_image, get_folder_meta, save_folder_meta,
-    get_gallery_folders, toggle_gallery_folder
+    get_gallery_visibility_map, set_gallery_folder_visibility, toggle_gallery_folder
 )
 from app.auth import require_login
 
@@ -26,6 +26,10 @@ BLOCKED_EXTENSIONS = {
     ".apk", ".ipa", ".deb", ".rpm", ".msi", ".com", ".scr", ".hta",
     ".html", ".htm", ".xml", ".svg", ".svgz",
 }
+
+
+def _relative_upload_path(path: Path) -> str:
+    return str(path.resolve().relative_to(Path(UPLOAD_DIR).resolve()))
 
 
 @router.post("/api/upload")
@@ -69,8 +73,8 @@ async def upload_file_api(request: Request, file: UploadFile = File(...), path: 
     final_name = process_uploaded_image(target_path)
     
     # Return relative URL
-    rel_path = target_path.parent.relative_to(UPLOAD_DIR)
-    if str(rel_path) == ".":
+    rel_path = _relative_upload_path(target_path.parent)
+    if rel_path == ".":
         url = f"/uploads/{final_name}"
     else:
         url = f"/uploads/{rel_path}/{final_name}"
@@ -116,9 +120,30 @@ def toggle_gallery_api(request: Request, path: str = Form(...), enable: bool = F
          raise HTTPException(status_code=404, detail="Folder not found")
     
     # Store relative path by normalized string
-    rel_path = str(target.relative_to(UPLOAD_DIR))
+    rel_path = _relative_upload_path(target)
     toggle_gallery_folder(rel_path, enable)
     return JSONResponse({"detail": "Updated"})
+
+
+@router.post("/api/gallery/visibility")
+@limiter.limit("30/minute")
+def update_gallery_visibility_api(
+    request: Request,
+    path: str = Form(...),
+    visibility: str = Form(...),
+) -> JSONResponse:
+    require_login(request)
+    target = safe_join(UPLOAD_DIR, path)
+    if not target.exists() or not target.is_dir():
+         raise HTTPException(status_code=404, detail="Folder not found")
+
+    normalized = visibility.lower()
+    if normalized not in {"hidden", "public", "private"}:
+         raise HTTPException(status_code=400, detail="Invalid gallery visibility")
+
+    rel_path = _relative_upload_path(target)
+    set_gallery_folder_visibility(rel_path, normalized)  # type: ignore[arg-type]
+    return JSONResponse({"detail": "Updated", "visibility": normalized})
 
 
 @router.get("/api/files")
@@ -141,7 +166,7 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
          raise HTTPException(status_code=404, detail="Path not found")
 
     items: List[dict] = []
-    gallery_set = set(get_gallery_folders())
+    gallery_visibility = get_gallery_visibility_map()
     
     try:
         entries = list(target_dir.iterdir())
@@ -149,19 +174,22 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
         
         for p in entries:
             try:
-                rel_path = str(p.relative_to(UPLOAD_DIR))
+                rel_path = _relative_upload_path(p)
             except ValueError:
                 continue
 
             if p.is_dir():
                 meta = get_folder_meta(p)
+                visibility = gallery_visibility.get(rel_path, "hidden")
                 items.append({
                     "name": p.name,
                     "type": "dir",
-                    "is_gallery": rel_path in gallery_set,
+                    "is_gallery": visibility in {"public", "private"},
+                    "gallery_visibility": visibility,
                     "path": rel_path,
                     "title": meta.get("title", p.name),
                     "description": meta.get("description", ""),
+                    "desc": meta.get("description", ""),
                     "date": meta.get("date", ""),
                     "author": meta.get("author", "Yixun Hong")
                 })

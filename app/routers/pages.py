@@ -6,7 +6,7 @@ import re
 import markdown
 
 from fastapi import APIRouter, Request, Form, status, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from app.config import (
@@ -32,6 +32,15 @@ router = APIRouter()
 # Template setup
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "app" / "templates"))
+SITE_URL = "https://foreverhyx.top"
+INDEXNOW_KEY = "f3124866af9054b4f96d7cf251a01281"
+SITEMAP_PATHS = (
+    "/",
+    "/articles",
+    "/daily",
+    "/gallery",
+    "/resume",
+)
 
 
 def _tags_url(current_tags: list[str], toggle: Optional[str] = None) -> str:
@@ -188,13 +197,16 @@ def _build_daily_payload(keywords: Optional[str] = None, item_type: Optional[str
     return load_daily_payload(keywords=keywords, item_type=item_type, date=date)
 
 
-def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
+def _build_gallery_payload(focus: Optional[str] = None, include_private: bool = False) -> dict[str, Any]:
     upload_dir = Path(UPLOAD_DIR).resolve()
-    gallery_dirs = get_gallery_folders()
+    gallery_dirs = get_gallery_folders(include_private=include_private)
     is_focused = False
-    if focus and focus in gallery_dirs:
-        gallery_dirs = [focus]
-        is_focused = True
+    if focus:
+        if focus in gallery_dirs:
+            gallery_dirs = [focus]
+            is_focused = True
+        else:
+            gallery_dirs = []
 
     albums = []
     for rel_path in gallery_dirs:
@@ -282,6 +294,11 @@ def _build_gallery_payload(focus: Optional[str] = None) -> dict[str, Any]:
         "is_focused": is_focused,
         "focus": focus,
     }
+
+
+def _gallery_cache_headers(include_private: bool) -> dict[str, str]:
+    cache_control = "private, no-store" if include_private else "public, max-age=60"
+    return {"Cache-Control": cache_control, "Vary": "Cookie"}
 
 
 def _build_article_detail_payload(slug: str) -> dict[str, Any]:
@@ -436,8 +453,12 @@ def daily_api(request: Request, keyword: Optional[str] = None, keywords: Optiona
 
 
 @router.get("/api/site/gallery")
-def gallery_api(focus: Optional[str] = None) -> Any:
-    return JSONResponse(_build_gallery_payload(focus), headers={"Cache-Control": "public, max-age=60"})
+def gallery_api(request: Request, focus: Optional[str] = None) -> Any:
+    include_private = bool(get_current_user(request))
+    return JSONResponse(
+        _build_gallery_payload(focus, include_private=include_private),
+        headers=_gallery_cache_headers(include_private),
+    )
 
 
 
@@ -455,6 +476,53 @@ def revalidate_gallery():
 # ============================================
 # HTML Page Routes (Jinja2 templates)
 # ============================================
+
+@router.get("/robots.txt", include_in_schema=False)
+def robots_txt():
+    body = "\n".join([
+        "User-agent: *",
+        "Allow: /",
+        "",
+        f"Sitemap: {SITE_URL}/sitemap.xml",
+        "",
+    ])
+    return Response(
+        content=body,
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+@router.get("/sitemap.xml", include_in_schema=False)
+def sitemap_xml():
+    urls = "\n".join(
+        f"""  <url>
+    <loc>{SITE_URL}{path}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>{'1.0' if path == '/' else '0.7'}</priority>
+  </url>"""
+        for path in SITEMAP_PATHS
+    )
+    body = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls}
+</urlset>
+"""
+    return Response(
+        content=body,
+        media_type="application/xml; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+@router.get(f"/{INDEXNOW_KEY}.txt", include_in_schema=False)
+def indexnow_key_file():
+    return Response(
+        content=f"{INDEXNOW_KEY}\n",
+        media_type="text/plain; charset=utf-8",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
 
 @router.get("/", response_class=HTMLResponse)
 def home_page(request: Request):
@@ -532,12 +600,15 @@ def article_detail_page(request: Request, slug: str):
 
 @router.get("/gallery", response_class=HTMLResponse)
 def gallery_page(request: Request, focus: Optional[str] = None):
-    payload = _build_gallery_payload(focus)
-    return templates.TemplateResponse(request, "pages/gallery.html", {
+    include_private = bool(get_current_user(request))
+    payload = _build_gallery_payload(focus, include_private=include_private)
+    response = templates.TemplateResponse(request, "pages/gallery.html", {
         "albums": payload["albums"],
         "is_focused": payload["is_focused"],
         "focus": payload["focus"],
     })
+    response.headers.update(_gallery_cache_headers(include_private))
+    return response
 
 
 @router.get("/resume", response_class=HTMLResponse)

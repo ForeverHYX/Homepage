@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="920" viewBox="0 0 1600 920" role="img" aria-labelledby="title desc">
+<title id="title">Request and Data Flow</title>
+<desc id="desc">Diagram showing the browser request through Nginx to FastAPI, content parsing with an mtime cache, Jinja2 HTML rendering, direct Nginx asset serving, and deferred JavaScript enhancements.</desc>
+
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#f8fafc"/>
+    <stop offset="52%" stop-color="#eef6ff"/>
+    <stop offset="100%" stop-color="#f7fee7"/>
+  </linearGradient>
+  <filter id="shadow" x="-12%" y="-18%" width="124%" height="136%">
+    <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity=".12"/>
+  </filter>
+  <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+    <path d="M2 2 L10 6 L2 10 Z" fill="#334155"/>
+  </marker>
+  <marker id="arrowMuted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+    <path d="M2 2 L10 6 L2 10 Z" fill="#64748b"/>
+  </marker>
+</defs>
+
+<style>
+  .title { fill: #0f172a; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 44px; font-weight: 800; }
+  .subtitle { fill: #475569; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 20px; font-weight: 500; }
+  .label { fill: #0f172a; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 24px; font-weight: 750; }
+  .small { fill: #475569; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 17px; font-weight: 500; }
+  .tiny { fill: #64748b; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 14px; font-weight: 600; }
+  .mono { fill: #334155; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace; font-size: 15px; font-weight: 650; }
+  .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; filter: url(#shadow); }
+  .box-soft { fill: #f8fafc; stroke: #dbe3ee; stroke-width: 2; }
+  .accent-blue { fill: #2563eb; }
+  .accent-cyan { fill: #0891b2; }
+  .accent-green { fill: #16a34a; }
+  .accent-amber { fill: #d97706; }
+  .accent-rose { fill: #e11d48; }
+  .chip { fill: #eff6ff; stroke: #bfdbfe; stroke-width: 1.4; }
+  .chip-text { fill: #1d4ed8; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 14px; font-weight: 700; }
+  .arrow { stroke: #334155; stroke-width: 3.2; fill: none; marker-end: url(#arrow); }
+  .arrow-muted { stroke: #64748b; stroke-width: 2.6; fill: none; marker-end: url(#arrowMuted); stroke-dasharray: 8 8; }
+  .line-label { fill: #475569; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; font-size: 14px; font-weight: 700; }
+</style>
+<rect fill="url(#bg)" x="0" y="0" width="1600" height="920" rx="32"/>
+<text class="title" x="72" y="72">Request and Data Flow</text>
+<text class="subtitle" x="74" y="108">A complete HTML page is rendered server-side first; JavaScript enhances it afterward.</text>
+<rect class="box" x="60" y="150" width="1480" height="360" rx="26"/>
+<rect class="accent-blue" x="92" y="184" width="86" height="8" rx="4"/>
+<text class="label" x="92" y="226">Initial HTML request</text>
+<rect class="box" x="92" y="295" width="210" height="125" rx="26"/>
+<rect class="accent-blue" x="114" y="317" width="74" height="8" rx="4"/>
+<text class="label" style="font-size:22px" x="114" y="360">1 Browser</text>
+<text class="small" x="114" y="393">GET /articles</text>
+<text class="small" x="114" y="418">or any HTML page</text>
+<rect class="box" x="380" y="295" width="210" height="125" rx="26"/>
+<rect class="accent-cyan" x="402" y="317" width="74" height="8" rx="4"/>
+<text class="label" style="font-size:22px" x="402" y="360">2 Nginx</text>
+<text class="small" x="402" y="393">TLS + routing</text>
+<text class="small" x="402" y="418">proxy app paths</text>
+<rect class="box" x="668" y="295" width="225" height="125" rx="26"/>
+<rect class="accent-rose" x="690" y="317" width="74" height="8" rx="4"/>
+<text class="label" style="font-size:22px" x="690" y="360">3 FastAPI route</text>
+<text class="small" x="690" y="393">routers/pages.py</text>
+<text class="small" x="690" y="418">matches URL</text>
+<rect class="box" x="970" y="295" width="225" height="125" rx="26"/>
+<rect class="accent-green" x="992" y="317" width="74" height="8" rx="4"/>
+<text class="label" style="font-size:22px" x="992" y="360">4 Payload</text>
+<text class="small" x="992" y="393">read content/*.md</text>
+<text class="small" x="992" y="418">cache hit/miss</text>
+<rect class="box" x="1270" y="295" width="210" height="125" rx="26"/>
+<rect class="accent-amber" x="1292" y="317" width="74" height="8" rx="4"/>
+<text class="label" style="font-size:22px" x="1292" y="360">5 Jinja2</text>
+<text class="small" x="1292" y="393">render template</text>
+<text class="small" x="1292" y="418">full HTML string</text>
+<path class="arrow" d="M302 358 L364 358"/>
+<path class="arrow" d="M590 358 L652 358"/>
+<path class="arrow" d="M893 358 L954 358"/>
+<path class="arrow" d="M1195 358 L1254 358"/>
+<path class="arrow-muted" d="M1375 420 C1375 468 205 468 205 420"/>
+<text class="line-label" x="650" y="483">text/html returned to browser</text>
+<rect class="box" x="60" y="560" width="700" height="270" rx="26"/>
+<rect class="accent-green" x="92" y="594" width="86" height="8" rx="4"/>
+<text class="label" x="92" y="636">Assets bypass Python</text>
+<text class="small" x="92" y="676">Nginx serves /static/* and /uploads/* directly.</text>
+<text class="small" x="92" y="701">CSS, JS, gallery images, avatar, and documents use cache headers.</text>
+<text class="small" x="92" y="726">FastAPI workers stay focused on HTML, APIs, upload logic, and Markdown parsing.</text>
+<rect class="box-soft" x="110" y="755" width="250" height="42" rx="18"/>
+<text class="mono" x="134" y="782">/static/js/*.js</text>
+<rect class="box-soft" x="390" y="755" width="250" height="42" rx="18"/>
+<text class="mono" x="414" y="782">/uploads/*</text>
+<path class="arrow-muted" d="M485 420 C475 500 450 520 420 560"/>
+<rect class="box" x="840" y="560" width="700" height="270" rx="26"/>
+<rect class="accent-cyan" x="872" y="594" width="86" height="8" rx="4"/>
+<text class="label" x="872" y="636">Deferred browser enhancement</text>
+<text class="small" x="872" y="676">The page is readable before JavaScript runs.</text>
+<text class="small" x="872" y="701">After DOM parse, defer-loaded modules attach behavior to server-rendered markup.</text>
+<text class="small" x="872" y="726">Search and admin interactions fetch /api/site/* from the same FastAPI process.</text>
+<rect class="chip" x="872" y="755" width="128" height="31" rx="15.5"/>
+<text class="chip-text" x="888" y="776">site-header</text>
+<rect class="chip" x="1012" y="755" width="132" height="31" rx="15.5"/>
+<text class="chip-text" x="1028" y="776">liquid-glass</text>
+<rect class="chip" x="1156" y="755" width="104" height="31" rx="15.5"/>
+<text class="chip-text" x="1172" y="776">lightfield</text>
+<rect class="chip" x="1272" y="755" width="124" height="31" rx="15.5"/>
+<text class="chip-text" x="1288" y="776">gallery-view</text>
+<rect class="chip" x="1408" y="755" width="110" height="31" rx="15.5"/>
+<text class="chip-text" x="1424" y="776">content-enhancer</text>
+<path class="arrow-muted" d="M205 420 C350 545 985 520 1120 560"/>
+<path class="arrow-muted" d="M1240 755 C1320 675 1268 502 781 420"/>
+<text class="line-label" x="1180" y="530">optional JSON fetch</text>
+</svg>

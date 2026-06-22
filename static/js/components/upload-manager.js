@@ -20,7 +20,7 @@
         fileList, refreshBtn, toast,
         folderNameInput, createFolderBtn, navHomeBtn,
         metaModal, metaPath, metaTitle, metaDate, metaAuthor, metaDesc,
-        metaSave, metaCancel;
+        metaGalleryVisibility, metaSave, metaCancel;
 
     // ---- Star icon SVGs (gallery toggle) -----------------------------------
     var STAR_GRAD_DEFS =
@@ -39,6 +39,12 @@
 
     function starOffSvg() {
         return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + STAR_POLYGON + '</svg>';
+    }
+
+    function visibilityLabel(visibility) {
+        if (visibility === "private") return "Login-only Gallery";
+        if (visibility === "public") return "Public Gallery";
+        return "Hidden";
     }
 
     function ensureStarGradDefs() {
@@ -209,6 +215,14 @@
             nameEl.style.fontWeight = "500";
             nameEl.textContent = item.title || item.name;
             label.appendChild(nameEl);
+            var visibility = item.gallery_visibility || (item.is_gallery ? "public" : "hidden");
+            if (visibility !== "hidden") {
+                var visibilityEl = document.createElement("div");
+                visibilityEl.style.fontSize = "12px";
+                visibilityEl.style.color = "var(--muted)";
+                visibilityEl.textContent = visibilityLabel(visibility);
+                label.appendChild(visibilityEl);
+            }
             left.appendChild(label);
 
             row.appendChild(left);
@@ -225,7 +239,7 @@
 
             actions.appendChild(iconButton(
                 item.is_gallery ? starOnSvg() : starOffSvg(),
-                item.is_gallery ? "Remove from gallery" : "Add to gallery",
+                item.is_gallery ? "Remove from gallery" : "Add public gallery",
                 function () {
                     toggleGallery(item);
                 }
@@ -459,7 +473,10 @@
         metaTitle.value = item.title || "";
         metaDate.value = item.date || "";
         metaAuthor.value = item.author || "";
-        metaDesc.value = item.desc || "";
+        metaDesc.value = item.description || item.desc || "";
+        if (metaGalleryVisibility) {
+            metaGalleryVisibility.value = item.gallery_visibility || (item.is_gallery ? "public" : "hidden");
+        }
         // Use the .active class so the .lightbox-overlay opacity transition
         // (opacity:0 -> 1) applies. Setting display alone leaves it invisible.
         metaModal.classList.add("active");
@@ -490,6 +507,17 @@
         })
             .then(function (res) {
                 if (!res.ok) throw new Error("Save meta failed");
+                var visibilityData = new FormData();
+                visibilityData.append("path", metaPath.value);
+                visibilityData.append("visibility", metaGalleryVisibility ? metaGalleryVisibility.value : "hidden");
+                return fetch("/api/gallery/visibility", {
+                    method: "POST",
+                    body: visibilityData,
+                    credentials: "include"
+                });
+            })
+            .then(function (res) {
+                if (!res.ok) throw new Error("Save visibility failed");
                 closeMetaModal();
                 refresh();
                 showToast("Saved");
@@ -557,6 +585,7 @@
         metaDate = document.getElementById("metaDate");
         metaAuthor = document.getElementById("metaAuthor");
         metaDesc = document.getElementById("metaDesc");
+        metaGalleryVisibility = document.getElementById("metaGalleryVisibility");
         metaSave = document.getElementById("metaSave");
         metaCancel = document.getElementById("metaCancel");
 

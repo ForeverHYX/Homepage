@@ -1,10 +1,5 @@
 /**
- * site-header.js — Vanilla JS port of:
- *   - frontend/components/site-header.tsx
- *   - frontend/components/site-search-dropdown.tsx
- *   - frontend/components/use-active-theme.ts
- *
- * Hooks into the markup rendered by app/templates/base.html and
+ * site-header.js hooks into the markup rendered by app/templates/base.html and
  * app/templates/pages/home.html. Pure vanilla JS, no dependencies.
  * Load with `<script ... defer>`.
  */
@@ -62,9 +57,8 @@
   /* ---------------------------------------------------------------------------
    * Header: mobile menu + search + search dropdown
    *
-   * Mirrors the React SiteHeader + SiteSearchDropdown components. State is
-   * held in plain local variables; rendering is done by toggling classes and
-   * rebuilding the portaled dropdown DOM.
+   * State is held in plain local variables; rendering is done by toggling
+   * classes and rebuilding the portaled dropdown DOM.
    * ------------------------------------------------------------------------- */
   function initHeader() {
     var navCluster = document.getElementById("navCluster");
@@ -276,8 +270,7 @@
     }
 
     /**
-     * Ensure /api/search-index has been fetched (cached on state). Mirrors the
-     * React useEffect that runs when search opens.
+     * Ensure /api/search-index has been fetched and cached on state.
      */
     function ensureSearchIndex() {
       if (state.searchIndex || state.searchIndexLoading) return;
@@ -308,7 +301,7 @@
         navIsland.classList.add("search-mode");
         openDropdown();
         ensureSearchIndex();
-        // Mirror the React setTimeout focus (input needs to be visible first).
+        // The input needs to be visible before focus is reliable.
         window.setTimeout(function () {
           if (state.searchOpen) inlineSearchInput.focus();
         }, 100);
@@ -367,8 +360,7 @@
     });
 
     // Clicking anywhere inside #navCluster keeps menus open; clicking outside
-    // closes both search and mobile menu. Mirrors the React document click
-    // handler bound to navClusterRef.
+    // closes both search and mobile menu.
     document.addEventListener("click", function (event) {
       if (!navCluster || navCluster.contains(event.target)) return;
       if (state.searchOpen) closeSearch();
