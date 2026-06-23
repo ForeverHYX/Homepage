@@ -365,11 +365,18 @@ a { color: inherit; text-decoration: none; }
 
 /* --- Sidebar --- */
 .sidebar {
+    /* Establish the same stacking context .home-sidebar uses so the
+       .home-liquid-card material composites against the .home-lightfield
+       backdrop identically on every page (home / articles / daily / detail).
+       position:sticky + z-index is valid and keeps the sidebar pinned while
+       lifting it above the fixed lightfield (z-index:0). */
     display: flex;
     flex-direction: column;
     gap: 24px;
     position: sticky;
     top: 100px;
+    z-index: 2;
+    isolation: isolate;
 }
 
 /* ============================================
