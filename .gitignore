@@ -10,8 +10,6 @@ content/**
 !content/.gitkeep
 !content/articles/
 !content/articles/.gitkeep
-!content/exams/
-!content/exams/*.md
 
 # Local smoke/debug entrypoints
 smoke_test.py

@@ -24,7 +24,6 @@ from app.daily import (
     load_daily_payload,
 )
 from app.daily_articles import DAILY_ARTICLES_DIR, ensure_daily_article_markdown
-from app.exams import get_all_exams, get_exam_detail
 from app.auth import get_current_user
 from app.gallery_thumbnail_utils import ensure_gallery_thumbnail
 
@@ -38,7 +37,6 @@ INDEXNOW_KEY = "f3124866af9054b4f96d7cf251a01281"
 SITEMAP_PATHS = (
     "/",
     "/articles",
-    "/exams",
     "/daily",
     "/gallery",
     "/resume",
@@ -422,12 +420,6 @@ def search_api():
             "tags": a.get('tags', []), "date": a['date'],
             "url": f"/articles/{a['slug']}"
         })
-    for exam in get_all_exams():
-        data.append({
-            "type": "Exam", "title": exam["title"], "desc": exam["summary"],
-            "tags": exam.get("tags", []), "date": exam["date"],
-            "url": f"/exams/{exam['slug']}",
-        })
     data.extend(daily_payload_search_entries(load_daily_payload()))
     for rel_path in get_gallery_folders():
         path = safe_join(UPLOAD_DIR, rel_path)
@@ -473,19 +465,6 @@ def gallery_api(request: Request, focus: Optional[str] = None) -> Any:
 @router.get("/api/site/articles/{slug}")
 def article_detail_api(slug: str) -> Any:
     return JSONResponse(_build_article_detail_payload(slug), headers={"Cache-Control": "public, max-age=300"})
-
-
-@router.get("/api/site/exams")
-def exams_api() -> Any:
-    return JSONResponse({"exams": get_all_exams()}, headers={"Cache-Control": "public, max-age=300"})
-
-
-@router.get("/api/site/exams/{slug}")
-def exam_detail_api(slug: str) -> Any:
-    exam = get_exam_detail(slug)
-    if not exam:
-        raise HTTPException(status_code=404, detail="Exam not found")
-    return JSONResponse(exam, headers={"Cache-Control": "public, max-age=300"})
 
 
 @router.post("/api/revalidate-gallery")
@@ -565,23 +544,6 @@ def articles_page(request: Request, tags: Optional[str] = None):
         "filter_tags": payload["filter_tags"],
         "sorted_tags": payload["sorted_tags"],
         "tags_url": _tags_url,
-    })
-
-
-@router.get("/exams", response_class=HTMLResponse)
-def exams_page(request: Request):
-    return templates.TemplateResponse(request, "pages/exams.html", {
-        "exams": get_all_exams(),
-    })
-
-
-@router.get("/exams/{slug}", response_class=HTMLResponse)
-def exam_detail_page(request: Request, slug: str):
-    exam = get_exam_detail(slug)
-    if not exam:
-        raise HTTPException(status_code=404, detail="Exam not found")
-    return templates.TemplateResponse(request, "pages/article_detail.html", {
-        "article": exam,
     })
 
 
