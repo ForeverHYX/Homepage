@@ -57,15 +57,56 @@ def _publication_icon(kind: str) -> str:
     )
 
 
-def _render_publication(fields: dict[str, str]) -> str:
+
+def _publication_kind(fields: dict[str, str], venue: str) -> str:
+    explicit = fields.get("type", fields.get("kind", fields.get("category", ""))).strip().lower()
+    if explicit in {"journal", "j", "transaction", "transactions"}:
+        return "journal"
+    if explicit in {"conference", "conf", "c", "proceedings"}:
+        return "conference"
+
+    venue_lower = venue.lower()
+    if "journal" in venue_lower or "transactions" in venue_lower:
+        return "journal"
+    return "conference"
+
+
+def _publication_index_label(kind: str, counters: dict[str, int]) -> str:
+    key = "journal" if kind == "journal" else "conference"
+    counters[key] = counters.get(key, 0) + 1
+    prefix = "T" if key == "journal" else "C"
+    return f"{prefix}{counters[key]}"
+
+
+def _publication_venue_label(fields: dict[str, str], venue: str) -> str:
+    explicit = fields.get("venue_short", fields.get("venue_label", fields.get("abbr", ""))).strip()
+    if explicit:
+        return explicit
+
+    parenthetical = re.findall(r"\(([^()]{2,24})\)", venue)
+    for candidate in reversed(parenthetical):
+        compact = candidate.strip()
+        if re.search(r"[A-Z]", compact) and not re.search(r"\s", compact):
+            return compact
+    return ""
+
+
+def _render_publication(fields: dict[str, str], counters: dict[str, int]) -> str:
     title = fields.get("title", "").strip()
     venue = fields.get("venue", "").strip()
     authors = fields.get("authors", "").strip()
     keywords = _split_publication_keywords(fields.get("keywords", fields.get("tags", "")))
+    publication_kind = _publication_kind(fields, venue)
+    index_label = _publication_index_label(publication_kind, counters)
+    venue_label = _publication_venue_label(fields, venue)
 
     title_html = _render_inline_markdown(title) if title else ""
     venue_html = _render_inline_markdown(venue) if venue else ""
     authors_html = _render_inline_markdown(authors) if authors else ""
+
+    badge_html = f'<span class="publication-badge publication-index publication-index-{publication_kind}">{escape(index_label)}</span>'
+    if venue_label:
+        badge_html += f'<span class="publication-badge publication-venue-label">{escape(venue_label)}</span>'
 
     tag_html = "".join(
         f'<span class="publication-keyword">{escape(keyword)}</span>'
@@ -88,15 +129,20 @@ def _render_publication(fields: dict[str, str]) -> str:
 
     return (
         '<article class="publication-entry">'
+        '<div class="publication-heading">'
+        f'<div class="publication-badges">{badge_html}</div>'
+        '<div class="publication-copy">'
         f'<div class="publication-title"><strong>{title_html}</strong></div>'
         f'<div class="publication-venue"><em>{venue_html}</em></div>'
         f'<div class="publication-authors">{authors_html}</div>'
         f'{footer}'
+        '</div>'
+        '</div>'
         '</article>'
     )
 
 
-def _parse_publication_block(lines: list[str]) -> str:
+def _parse_publication_block(lines: list[str], counters: dict[str, int]) -> str:
     fields: dict[str, str] = {}
     current_key = ""
     for raw_line in lines:
@@ -108,12 +154,13 @@ def _parse_publication_block(lines: list[str]) -> str:
             fields[current_key] = match.group(2).strip()
         elif current_key:
             fields[current_key] = f"{fields[current_key]} {line.strip()}".strip()
-    return _render_publication(fields)
+    return _render_publication(fields, counters)
 
 
 def _preprocess_publication_blocks(text: str) -> str:
     output: list[str] = []
     block: list[str] = []
+    counters = {"conference": 0, "journal": 0}
     in_publication = False
 
     for line in text.splitlines():
@@ -123,7 +170,7 @@ def _preprocess_publication_blocks(text: str) -> str:
             block = []
             continue
         if in_publication and stripped == ":::":
-            output.append(_parse_publication_block(block))
+            output.append(_parse_publication_block(block, counters))
             in_publication = False
             block = []
             continue
