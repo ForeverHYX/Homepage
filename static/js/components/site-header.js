@@ -40,6 +40,10 @@
    * ------------------------------------------------------------------------- */
   function initActiveRoutes() {
     var path = window.location.pathname || "/";
+    if (path === "/login") {
+      var intendedPath = new URLSearchParams(window.location.search).get("next");
+      if (intendedPath === "/upload") path = intendedPath;
+    }
     var links = document.querySelectorAll(
       ".nav-link[data-route], .nav-mobile-link[data-route]"
     );
@@ -51,6 +55,11 @@
           ? path === "/"
           : path === route || path.indexOf(route + "/") === 0;
       link.setAttribute("data-active", isActive ? "true" : "false");
+      if (isActive) {
+        link.setAttribute("aria-current", "page");
+      } else {
+        link.removeAttribute("aria-current");
+      }
     }
   }
 
@@ -63,6 +72,7 @@
   function initHeader() {
     var navCluster = document.getElementById("navCluster");
     var navIsland = document.getElementById("navIsland");
+    var navLinks = document.getElementById("navLinks");
     var navMobileTrigger = document.getElementById("navMobileTrigger");
     var navMobilePanel = document.getElementById("navMobilePanel");
     var searchTrigger = document.getElementById("searchTrigger");
@@ -80,6 +90,8 @@
     ) {
       return; // markup not present, nothing to wire up
     }
+
+    navMobilePanel.inert = true;
 
     // --- State --------------------------------------------------------------
     var state = {
@@ -103,11 +115,15 @@
       var dd = document.createElement("div");
       dd.id = "searchDropdown";
       dd.className = "search-dropdown";
+      dd.setAttribute("role", "region");
+      dd.setAttribute("aria-label", "Search results");
       dd.style.position = "fixed";
       dd.style.zIndex = "9999";
+      dd.addEventListener("keydown", handleDropdownKeydown);
 
       var results = document.createElement("div");
       results.id = "inlineSearchResults";
+      results.setAttribute("aria-live", "polite");
       results.style.padding = "8px 0";
       dd.appendChild(results);
 
@@ -122,26 +138,33 @@
     function startDropdownTracking(dropdown, input) {
       var cancelled = false;
 
+      function anchorRect() {
+        var useIsland = window.matchMedia("(max-width: 820px)").matches;
+        return (useIsland ? navIsland : input).getBoundingClientRect();
+      }
+
       function positionDropdown() {
         if (cancelled || !dropdown || !input) return;
-        var rect = input.getBoundingClientRect();
+        var rect = anchorRect();
         if (rect.width > 100) {
+          var viewport = window.visualViewport;
+          var viewportBottom = viewport
+            ? viewport.offsetTop + viewport.height
+            : window.innerHeight;
+          var top = rect.bottom + 8;
+          var availableHeight = Math.max(0, viewportBottom - top - 12);
           dropdown.style.left = rect.left + "px";
-          dropdown.style.top = rect.bottom + 8 + "px";
+          dropdown.style.top = top + "px";
           dropdown.style.width = rect.width + "px";
+          dropdown.style.maxHeight = Math.min(400, availableHeight) + "px";
         }
       }
 
-      // Poll every 50ms until the input has a sensible width, then stop polling.
+      // Track the full width transition so the dropdown finishes aligned with
+      // the expanded input rather than freezing at an intermediate width.
       var intervalId = window.setInterval(function () {
         if (cancelled || !input) return;
-        var rect = input.getBoundingClientRect();
-        if (rect.width > 100) {
-          dropdown.style.left = rect.left + "px";
-          dropdown.style.top = rect.bottom + 8 + "px";
-          dropdown.style.width = rect.width + "px";
-          window.clearInterval(intervalId);
-        }
+        positionDropdown();
       }, 50);
 
       // Safety net: stop polling after 500ms no matter what.
@@ -155,6 +178,14 @@
         passive: true,
         capture: true,
       });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", positionDropdown, {
+          passive: true,
+        });
+        window.visualViewport.addEventListener("scroll", positionDropdown, {
+          passive: true,
+        });
+      }
 
       return function cleanup() {
         cancelled = true;
@@ -162,6 +193,10 @@
         window.clearTimeout(timeoutId);
         window.removeEventListener("resize", positionDropdown);
         window.removeEventListener("scroll", positionDropdown, true);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener("resize", positionDropdown);
+          window.visualViewport.removeEventListener("scroll", positionDropdown);
+        }
       };
     }
 
@@ -220,6 +255,7 @@
         var hit = hits[i];
         var anchor = document.createElement("a");
         anchor.href = hit.url;
+        anchor.tabIndex = -1;
         var title = document.createElement("div");
         title.className = "search-result-title";
         var chip = document.createElement("span");
@@ -234,6 +270,44 @@
           passive: true,
         });
         dropdownResultsEl.appendChild(anchor);
+      }
+    }
+
+    function resultLinks() {
+      return dropdownResultsEl
+        ? Array.prototype.slice.call(dropdownResultsEl.querySelectorAll("a"))
+        : [];
+    }
+
+    function focusResult(index) {
+      var links = resultLinks();
+      if (!links.length) return false;
+      var nextIndex = Math.max(0, Math.min(index, links.length - 1));
+      links[nextIndex].focus();
+      return true;
+    }
+
+    function handleDropdownKeydown(event) {
+      var links = resultLinks();
+      if (!links.length) return;
+      var index = links.indexOf(document.activeElement);
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        focusResult(index < 0 ? 0 : index + 1);
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (index <= 0) {
+          inlineSearchInput.focus();
+        } else {
+          focusResult(index - 1);
+        }
+      } else if (event.key === "Tab" && index >= 0) {
+        event.preventDefault();
+        if (event.shiftKey) {
+          inlineSearchInput.focus();
+        } else {
+          searchCloseBtn.focus();
+        }
       }
     }
 
@@ -294,23 +368,42 @@
     }
 
     // --- State mutators -----------------------------------------------------
+    function setSearchControlsHidden(hidden) {
+      searchTrigger.inert = hidden;
+      searchTrigger.setAttribute("aria-hidden", hidden ? "true" : "false");
+      if (navLinks) {
+        navLinks.inert = hidden;
+        navLinks.setAttribute("aria-hidden", hidden ? "true" : "false");
+      }
+    }
+
     function setSearchOpen(open) {
+      var activeElement = document.activeElement;
+      var shouldRestoreFocus =
+        !open &&
+        activeElement &&
+        (inlineSearchInput === activeElement ||
+          searchCloseBtn === activeElement ||
+          (dropdownEl && dropdownEl.contains(activeElement)));
       state.searchOpen = open;
       searchTrigger.setAttribute("aria-expanded", open ? "true" : "false");
+      inlineSearchInput.setAttribute("aria-expanded", open ? "true" : "false");
       if (open) {
         navIsland.classList.add("search-mode");
         openDropdown();
         ensureSearchIndex();
-        // The input needs to be visible before focus is reliable.
-        window.setTimeout(function () {
-          if (state.searchOpen) inlineSearchInput.focus();
-        }, 100);
+        inlineSearchInput.focus({ preventScroll: true });
+        setSearchControlsHidden(true);
       } else {
+        setSearchControlsHidden(false);
         navIsland.classList.remove("search-mode");
         closeDropdown();
         // Clear query both in state and in the DOM input.
         state.query = "";
         if (inlineSearchInput.value !== "") inlineSearchInput.value = "";
+        if (shouldRestoreFocus) {
+          searchTrigger.focus({ preventScroll: true });
+        }
       }
     }
 
@@ -319,6 +412,10 @@
     }
 
     function setMobileMenuOpen(open) {
+      var shouldRestoreFocus =
+        !open &&
+        document.activeElement &&
+        navMobilePanel.contains(document.activeElement);
       state.mobileMenuOpen = open;
       navMobileTrigger.setAttribute("aria-expanded", open ? "true" : "false");
       navMobileTrigger.setAttribute(
@@ -330,8 +427,15 @@
         open ? "Close menu" : "Open menu"
       );
       if (open) {
+        navMobilePanel.setAttribute("aria-hidden", "false");
+        navMobilePanel.inert = false;
         navMobilePanel.classList.add("open");
       } else {
+        if (shouldRestoreFocus) {
+          navMobileTrigger.focus({ preventScroll: true });
+        }
+        navMobilePanel.setAttribute("aria-hidden", "true");
+        navMobilePanel.inert = true;
         navMobilePanel.classList.remove("open");
       }
     }
@@ -357,6 +461,17 @@
     inlineSearchInput.addEventListener("input", function (event) {
       state.query = event.target.value;
       renderResults();
+    });
+
+    inlineSearchInput.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown") {
+        if (focusResult(0)) event.preventDefault();
+      } else if (event.key === "ArrowUp") {
+        var links = resultLinks();
+        if (links.length && focusResult(links.length - 1)) {
+          event.preventDefault();
+        }
+      }
     });
 
     // Clicking anywhere inside #navCluster keeps menus open; clicking outside
@@ -412,6 +527,12 @@
       var isDark = currentTheme() === "dark";
       if (moonIcon) moonIcon.style.display = isDark ? "none" : "";
       if (sunIcon) sunIcon.style.display = isDark ? "" : "none";
+      if (themeToggle) {
+        var label = isDark ? "Switch to light mode" : "Switch to dark mode";
+        themeToggle.setAttribute("aria-label", label);
+        themeToggle.setAttribute("title", label);
+        themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+      }
     }
 
     // Initial sync (the inline head script has already applied the theme).
@@ -457,6 +578,9 @@
 
     var overlay = null;
     var closeBtn = null;
+    var modalCard = null;
+    var previousFocus = null;
+    var isModalClosing = false;
     var savedOverflow = "";
     var savedPaddingRight = "";
 
@@ -465,9 +589,15 @@
 
       overlay = document.createElement("div");
       overlay.className = "news-modal-overlay";
+      previousFocus = document.activeElement;
 
       var card = document.createElement("div");
       card.className = "news-modal-card";
+      card.setAttribute("role", "dialog");
+      card.setAttribute("aria-modal", "true");
+      card.setAttribute("aria-labelledby", "newsModalTitle");
+      card.tabIndex = -1;
+      modalCard = card;
       // Keep clicks on the card from bubbling to the overlay (which closes).
       card.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -476,6 +606,7 @@
       var header = document.createElement("div");
       header.className = "news-modal-header";
       var title = document.createElement("h2");
+      title.id = "newsModalTitle";
       title.className = "news-modal-title";
       title.textContent = "News";
       header.appendChild(title);
@@ -495,6 +626,7 @@
       // Loading placeholder while we fetch.
       var loading = document.createElement("div");
       loading.className = "news-modal-status";
+      loading.setAttribute("role", "status");
       loading.textContent = "Loading…";
       body.appendChild(loading);
 
@@ -514,7 +646,10 @@
 
       // Force a frame so the CSS opacity transition kicks in.
       window.requestAnimationFrame(function () {
-        if (overlay) overlay.classList.add("is-active");
+        if (overlay && !isModalClosing) {
+          overlay.classList.add("is-active");
+          closeBtn.focus({ preventScroll: true });
+        }
       });
 
       // Wire up close interactions.
@@ -542,34 +677,72 @@
           while (body.firstChild) body.removeChild(body.firstChild);
           var err = document.createElement("div");
           err.className = "news-modal-status";
+          err.setAttribute("role", "alert");
           err.textContent = "Failed to load news.";
           body.appendChild(err);
         });
     }
 
     function closeModal() {
-      if (!overlay) return;
-      document.removeEventListener("keydown", onKeydown);
-      if (closeBtn) closeBtn.removeEventListener("click", closeModal);
+      if (!overlay || isModalClosing) return;
+      isModalClosing = true;
       var current = overlay;
-      overlay = null;
-      closeBtn = null;
+      var currentCloseBtn = closeBtn;
+      var returnFocus = previousFocus;
 
       // Fade out, then remove.
       current.classList.remove("is-active");
       window.setTimeout(function () {
+        document.removeEventListener("keydown", onKeydown);
+        if (currentCloseBtn) {
+          currentCloseBtn.removeEventListener("click", closeModal);
+        }
         if (current.parentNode) current.parentNode.removeChild(current);
-      }, 400);
-
-      // Restore body scroll.
-      document.body.style.overflow = savedOverflow;
-      document.body.style.paddingRight = savedPaddingRight;
+        overlay = null;
+        closeBtn = null;
+        modalCard = null;
+        previousFocus = null;
+        isModalClosing = false;
+        if (returnFocus && returnFocus.isConnected) {
+          returnFocus.focus({ preventScroll: true });
+        }
+        document.body.style.overflow = savedOverflow;
+        document.body.style.paddingRight = savedPaddingRight;
+      }, 300);
     }
 
     function onKeydown(event) {
+      if (isModalClosing) {
+        if (event.key === "Tab" || event.key === "Escape") {
+          event.preventDefault();
+        }
+        return;
+      }
       if (event.key === "Escape") {
         event.preventDefault();
         closeModal();
+        return;
+      }
+      if (event.key === "Tab" && modalCard) {
+        var focusable = Array.prototype.slice.call(
+          modalCard.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (!focusable.length) {
+          event.preventDefault();
+          modalCard.focus();
+          return;
+        }
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     }
 

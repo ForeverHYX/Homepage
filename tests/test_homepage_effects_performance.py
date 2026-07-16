@@ -62,7 +62,7 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         self.assertIn("card.classList.contains(\"ambient-liquid-card\")", source)
         self.assertNotIn("card.classList.contains(\"home-profile-card\") || card.classList.contains(\"home-news-card\")", source)
-        self.assertIn('src="/static/js/effects/liquid-glass.js?v=102"', base)
+        self.assertIn('src="/static/js/effects/liquid-glass.js?v=103"', base)
 
     def test_runtime_liquid_filter_requires_explicit_opt_in(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -191,7 +191,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=144\"", base)
+        self.assertIn("href=\"/static/css/styles.css?v=148\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -362,7 +362,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         )
 
         # Cache-buster bumps when CSS material changes so clients refetch it.
-        self.assertIn('href="/static/css/styles.css?v=144"', base)
+        self.assertIn('href="/static/css/styles.css?v=148"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -437,7 +437,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=144"', base)
+        self.assertIn('href="/static/css/styles.css?v=148"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -479,3 +479,27 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIsNotNone(modal_card)
         self.assertIn("overflow: auto", modal_card.group("body"))
         self.assertIn("max-height: min(82vh, 760px)", modal_card.group("body"))
+
+    def test_navigation_details_cover_keyboard_touch_and_mobile_search(self) -> None:
+        source = SITE_HEADER_JS.read_text()
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn('link.setAttribute("aria-current", "page")', source)
+        self.assertIn("searchTrigger.inert = hidden", source)
+        self.assertIn("navMobilePanel.inert = true", source)
+        self.assertIn('window.matchMedia("(max-width: 820px)")', source)
+        self.assertIn("(useIsland ? navIsland : input).getBoundingClientRect()", source)
+        self.assertIn("window.visualViewport", source)
+        self.assertIn("touch-action: manipulation", styles)
+        self.assertIn("transform: scale(0.97)", styles)
+
+    def test_homepage_honors_apple_accessibility_preferences(self) -> None:
+        source = SITE_HEADER_JS.read_text()
+        liquid_source = LIQUID_GLASS_JS.read_text()
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn('card.setAttribute("role", "dialog")', source)
+        self.assertIn('card.setAttribute("aria-modal", "true")', source)
+        self.assertIn("prefers-reduced-transparency: reduce", styles)
+        self.assertIn("prefers-contrast: more", styles)
+        self.assertIn("(hover: hover) and (pointer: fine)", liquid_source)

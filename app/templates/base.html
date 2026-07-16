@@ -14,7 +14,7 @@
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Marcellus&family=Noto+Serif+SC:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Zhi+Mang+Xing&display=swap">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
     </noscript>
-    <link rel="stylesheet" href="/static/css/styles.css?v=147">
+    <link rel="stylesheet" href="/static/css/styles.css?v=148">
     <script>
       (function () {
         try {
@@ -39,7 +39,7 @@
                 <div class="nav-island home-liquid-card" id="navIsland">
                     <span class="home-liquid-warp nav-island-warp" aria-hidden="true"></span>
                     <div class="nav-island-body">
-                        <a href="/" class="brand nav-brand" id="navBrand">
+                        <a href="/" class="brand nav-brand" id="navBrand" aria-label="Yixun Hong homepage">
                             <svg class="nav-brand-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                             <span class="nav-brand-label nav-brand-label-full">Yixun Hong&rsquo;s Homepage</span>
                             <span class="nav-brand-label nav-brand-label-short">Yixun Hong</span>
@@ -56,17 +56,18 @@
                             <div class="nav-divider" aria-hidden="true"></div>
                             <div id="inlineSearchBar" class="search-bar-container">
                                 <svg class="search-bar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                <input type="text" id="inlineSearchInput" class="search-input" placeholder="Search..." autocomplete="off">
+                                <input type="text" id="inlineSearchInput" class="search-input" placeholder="Search..." autocomplete="off" inputmode="search" enterkeyhint="search" aria-label="Search site" aria-expanded="false" aria-controls="inlineSearchResults" aria-describedby="searchKeyboardHint">
+                                <span id="searchKeyboardHint" class="visually-hidden">Use the up and down arrow keys to navigate search results.</span>
                                 <button type="button" class="search-close-btn" id="searchCloseBtn" aria-label="Close search">&times;</button>
                             </div>
                             <div class="nav-actions">
-                                <button type="button" class="action-btn nav-mobile-trigger" id="navMobileTrigger" title="Open Menu" aria-label="Open menu" aria-expanded="false">
+                                <button type="button" class="action-btn nav-mobile-trigger" id="navMobileTrigger" title="Open Menu" aria-label="Open menu" aria-expanded="false" aria-controls="navMobilePanel">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
                                 </button>
-                                <button type="button" id="searchTrigger" class="action-btn search-trigger" title="Search" aria-expanded="false">
+                                <button type="button" id="searchTrigger" class="action-btn search-trigger" title="Search site" aria-label="Search site" aria-expanded="false" aria-controls="inlineSearchBar">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                                 </button>
-                                <button type="button" id="themeToggle" class="action-btn nav-theme-toggle" title="Toggle Theme">
+                                <button type="button" id="themeToggle" class="action-btn nav-theme-toggle" title="Switch to dark mode" aria-label="Switch to dark mode" aria-pressed="false">
                                     <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
                                     <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                                 </button>
@@ -74,7 +75,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="nav-mobile-panel home-liquid-card" id="navMobilePanel">
+                <div class="nav-mobile-panel home-liquid-card" id="navMobilePanel" aria-hidden="true">
                     <span class="home-liquid-warp nav-island-warp" aria-hidden="true"></span>
                     <div class="nav-mobile-panel-body">
                         <nav class="nav-mobile-links" aria-label="Mobile primary">
@@ -103,8 +104,8 @@
     </footer>
     <!-- Search dropdown portal target -->
     <script src="/static/js/effects/lightfield.js?v=98" defer></script>
-    <script src="/static/js/effects/liquid-glass.js?v=102" defer></script>
-    <script src="/static/js/components/site-header.js?v=98" defer></script>
+    <script src="/static/js/effects/liquid-glass.js?v=103" defer></script>
+    <script src="/static/js/components/site-header.js?v=99" defer></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

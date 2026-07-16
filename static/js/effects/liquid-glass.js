@@ -8,7 +8,9 @@
     };
     const SVG_NS = "http://www.w3.org/2000/svg";
     const XLINK_NS = "http://www.w3.org/1999/xlink";
-    const desktopLiquidGlass = window.matchMedia("(min-width: 801px)");
+    const desktopLiquidGlass = window.matchMedia(
+      "(min-width: 801px) and (hover: hover) and (pointer: fine)"
+    );
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const POINTER_SYNC_INTERVAL = 80;
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
