@@ -1,4 +1,5 @@
 import re
+import struct
 from pathlib import Path
 from unittest import TestCase
 
@@ -9,6 +10,8 @@ LIQUID_GLASS_JS = ROOT / "static" / "js" / "effects" / "liquid-glass.js"
 SITE_HEADER_JS = ROOT / "static" / "js" / "components" / "site-header.js"
 STYLES_CSS = ROOT / "static" / "css" / "styles.css"
 BASE_HTML = ROOT / "app" / "templates" / "base.html"
+FAVICON_32 = ROOT / "static" / "images" / "site" / "favicon-32.png"
+FAVICON_64 = ROOT / "static" / "images" / "site" / "favicon-64.png"
 
 
 class HomepageEffectsPerformanceTests(TestCase):
@@ -428,6 +431,18 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("Noto+Serif+SC", base)
         blocking_head = re.sub(r"<noscript>.*?</noscript>", "", base, flags=re.S)
         self.assertNotIn('rel="stylesheet" href="https://fonts.googleapis.com', blocking_head)
+
+    def test_favicon_uses_right_sized_static_assets(self) -> None:
+        base = BASE_HTML.read_text()
+
+        self.assertIn('/static/images/site/favicon-32.png?v=1', base)
+        self.assertIn('/static/images/site/favicon-64.png?v=1', base)
+        self.assertNotIn('/uploads/favicon.png', base)
+
+        for path, expected_size in ((FAVICON_32, 32), (FAVICON_64, 64)):
+            data = path.read_bytes()
+            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack(">II", data[16:24]), (expected_size, expected_size))
 
     def test_education_logo_overrides_generic_prose_image_style(self) -> None:
         styles = STYLES_CSS.read_text()
