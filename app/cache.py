@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from pathlib import Path
 from threading import RLock
-from typing import Any, Callable, Hashable, TypeVar
+from typing import Any, Callable, Hashable, TypeVar, cast
 
 
 T = TypeVar("T")
@@ -47,7 +47,7 @@ def cache_by_signature(
         entry = _cache.get(cache_key)
         if entry is not None and entry["signature"] == signature:
             _cache.move_to_end(cache_key)
-            return entry["value"]
+            return cast(T, entry["value"])
 
         value = loader()
         _cache[cache_key] = {"signature": signature, "value": value}

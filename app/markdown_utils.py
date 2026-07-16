@@ -230,11 +230,9 @@ def _parse_publications_raw(path: Path) -> list[dict[str, object]]:
 def get_publications(filename: str = "content.md") -> list[dict[str, object]]:
     """Return structured publication blocks with stable badges and anchors."""
     path = CONTENT_DIR / filename
-    if not path.exists():
-        return []
     return cache_by_mtime(
         path,
-        lambda: _parse_publications_raw(path),
+        lambda: _parse_publications_raw(path) if path.exists() else [],
         namespace="publications",
     )
 
@@ -297,11 +295,9 @@ def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
     Returns a list of (Title, HTML_Content) tuples.
     """
     path = CONTENT_DIR / filename
-    if not path.exists():
-        return []
     return cache_by_mtime(
         path,
-        lambda: _parse_sections_raw(path),
+        lambda: _parse_sections_raw(path) if path.exists() else [],
         namespace="markdown_sections",
     )
 
@@ -311,10 +307,8 @@ def _render_markdown_raw(path: Path) -> str:
 
 def render_markdown_file(filename: str) -> str:
     path = CONTENT_DIR / filename
-    if not path.exists():
-        return ""
     return cache_by_mtime(
         path,
-        lambda: _render_markdown_raw(path),
+        lambda: _render_markdown_raw(path) if path.exists() else "",
         namespace="rendered_markdown",
     )

@@ -85,11 +85,9 @@ def _parse_raw_sections(path: Path) -> dict[str, str]:
 def get_raw_section_body(filename: str, section_title: str) -> str:
     """Read a markdown file and return the raw text body for a specific H1 section."""
     path = CONTENT_DIR / filename
-    if not path.exists():
-        return ""
     sections = cache_by_mtime(
         path,
-        lambda: _parse_raw_sections(path),
+        lambda: _parse_raw_sections(path) if path.exists() else {},
         namespace="raw_markdown_sections",
     )
     return sections.get(section_title.casefold(), "")

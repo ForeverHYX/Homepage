@@ -6,7 +6,7 @@ import os
 import tempfile
 from pathlib import Path
 from threading import RLock
-from typing import Dict, List, Literal
+from typing import Literal, cast
 
 from app.cache import cache_by_mtime, invalidate, invalidate_namespace
 from app.config import GALLERY_CONFIG_FILE
@@ -73,13 +73,13 @@ def _normalize_visibility(value: object) -> GalleryVisibility:
     if isinstance(value, str):
         lowered = value.lower()
         if lowered in {"public", "private"}:
-            return lowered  # type: ignore[return-value]
+            return cast(GalleryVisibility, lowered)
     return "hidden"
 
 
-def get_gallery_visibility_map() -> Dict[str, GalleryVisibility]:
+def get_gallery_visibility_map() -> dict[str, GalleryVisibility]:
     data = _load_gallery_config()
-    visibility: Dict[str, GalleryVisibility] = {}
+    visibility: dict[str, GalleryVisibility] = {}
 
     # Backward compatibility: legacy configs stored only public folders.
     folders = data.get("folders", [])
@@ -97,7 +97,7 @@ def get_gallery_visibility_map() -> Dict[str, GalleryVisibility]:
     return visibility
 
 
-def get_gallery_folders(include_private: bool = False) -> List[str]:
+def get_gallery_folders(include_private: bool = False) -> list[str]:
     allowed = {"public", "private"} if include_private else {"public"}
     return [
         folder
