@@ -124,8 +124,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("-webkit-backdrop-filter: blur(18px)", mobile_card_block.group("body"))
 
         nav_body = nav_block.group("body")
-        self.assertIn("backdrop-filter: blur(20px)", nav_body)
-        self.assertIn("-webkit-backdrop-filter: blur(20px)", nav_body)
+        self.assertIn("backdrop-filter: blur(22px)", nav_body)
+        self.assertIn("-webkit-backdrop-filter: blur(22px)", nav_body)
+        self.assertIn("saturate(168%)", nav_body)
 
     def test_liquid_card_hover_lifts_like_document_card(self) -> None:
         """The functional sidebar card must hover-lift the same way as the
@@ -160,14 +161,14 @@ class HomepageEffectsPerformanceTests(TestCase):
         nav_body = nav_block.group("body")
         nav_hover_body = nav_hover.group("body")
 
-        # Modest drop shadow present at rest (pill is grounded, not floating flat).
-        self.assertIn("0 10px 28px rgba(73, 92, 138, 0.1)", nav_body)
-        self.assertIn("0 4px 10px rgba(73, 92, 138, 0.05)", nav_body)
-        # No dirty oversized far blur (old halo values are gone).
-        self.assertNotIn("0 14px 26px", nav_body)
-        self.assertNotIn("0 8px 18px", nav_body)
-        self.assertNotIn("0 16px 28px", nav_hover_body)
-        self.assertNotIn("0 8px 18px", nav_hover_body)
+        # A soft grounded shadow, bright top catch-light, and darker lower rim
+        # create depth without reintroducing the old oversized dirty halo.
+        self.assertIn("0 12px 32px rgba(55, 65, 95, 0.12)", nav_body)
+        self.assertIn("0 3px 8px rgba(55, 65, 95, 0.055)", nav_body)
+        self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", nav_body)
+        self.assertIn("inset 0 -1px 0 rgba(51, 65, 85, 0.14)", nav_body)
+        self.assertNotIn("0 24px 50px", nav_body)
+        self.assertNotIn("0 24px 50px", nav_hover_body)
         # The pill does not lift.
         self.assertNotIn("translateY", nav_hover_body)
 
@@ -191,7 +192,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=149\"", base)
+        self.assertIn("href=\"/static/css/styles.css?v=150\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -362,7 +363,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         )
 
         # Cache-buster bumps when CSS material changes so clients refetch it.
-        self.assertIn('href="/static/css/styles.css?v=149"', base)
+        self.assertIn('href="/static/css/styles.css?v=150"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -437,7 +438,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=149"', base)
+        self.assertIn('href="/static/css/styles.css?v=150"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -504,4 +505,11 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn('card.setAttribute("aria-modal", "true")', source)
         self.assertIn("prefers-reduced-transparency: reduce", styles)
         self.assertIn("prefers-contrast: more", styles)
+        self.assertIn("forced-colors: active", styles)
         self.assertIn("(hover: hover) and (pointer: fine)", liquid_source)
+
+    def test_floating_navigation_keeps_sticky_positioning(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn("@supports (overflow: clip)", styles)
+        self.assertIn("html, body { overflow-x: clip; }", styles)

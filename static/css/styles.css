@@ -132,6 +132,13 @@ html {
 
 html, body { max-width: 100vw; overflow-x: hidden; }
 
+/* Unlike hidden, clip does not establish a scrolling ancestor, so the
+   floating navigation can remain sticky while still containing decorative
+   light-field overflow. Keep hidden above as the compatibility fallback. */
+@supports (overflow: clip) {
+    html, body { overflow-x: clip; }
+}
+
 body {
     font-family: var(--font-ui);
     font-optical-sizing: auto;
@@ -221,13 +228,15 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-island.home-liquid-card {
-    --liquid-content-tint: var(--home-material-tint);
-    --liquid-inner-highlight: var(--home-material-inner-top);
-    --liquid-inner-shadow: var(--home-material-inner-bottom);
-    --liquid-clear-layer: var(--home-material-edge);
-    --liquid-blur: 18px;
-    --liquid-saturation: 162%;
-    --liquid-brightness: 1.012;
+    /* A neutral, content-aware functional layer. The page's color should
+       travel through the glass; the material itself should not paint it blue. */
+    --liquid-content-tint: rgba(255, 255, 255, 0.035);
+    --liquid-inner-highlight: rgba(255, 255, 255, 0.52);
+    --liquid-inner-shadow: rgba(71, 85, 105, 0.07);
+    --liquid-clear-layer: rgba(255, 255, 255, 0.44);
+    --liquid-blur: 22px;
+    --liquid-saturation: 168%;
+    --liquid-brightness: 1.035;
     --liquid-displacement-scale: 21;
     --liquid-aberration: 1.2;
     --liquid-nav-idle-glow: 0.56;
@@ -237,32 +246,29 @@ a { color: inherit; text-decoration: none; }
     --nav-idle-blur: 16px;
     --nav-idle-saturation: 158%;
     --nav-idle-brightness: 1.006;
-    /* Top island uses the same frosted-liquid material as the sidebar cards,
-       just with the nav's own tighter radius. Sheen layers are pinned to fixed
-       anchors with fixed opacities (no var(--liquid-glow) calc, no
-       var(--liquid-angle) gradient, no mouse-follow radial) so Edge does not
-       paint a dirty halo and no highlight tracks the pointer. A modest drop
-       shadow at rest keeps the pill from looking like it floats flat against
-       the background, without creating a dirty halo. backdrop-filter blur
-       frosts the content scrolling behind the pill, same as the sidebar cards. */
-    --home-material-face-top: rgba(255, 255, 255, 0.34);
-    --home-material-face-mid: rgba(255, 255, 255, 0.1);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.18);
+    /* Apple-style Liquid Glass on the web is an approximation: one narrow
+       backdrop sample, a low-alpha neutral carrier, and optical highlights at
+       the rim. No nested backdrop filters or animated blur are used. */
+    --home-material-face-top: rgba(255, 255, 255, 0.24);
+    --home-material-face-mid: rgba(255, 255, 255, 0.105);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.16);
     border-radius: 999px;
     overflow: hidden;
     padding: 10px 14px 10px 18px;
-    border-color: rgba(255, 255, 255, 0.34);
-    backdrop-filter: blur(20px) saturate(170%) contrast(1.06) brightness(1.02);
-    -webkit-backdrop-filter: blur(20px) saturate(170%) contrast(1.06) brightness(1.02);
+    border-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(22px) saturate(168%) contrast(1.025) brightness(1.035);
+    -webkit-backdrop-filter: blur(22px) saturate(168%) contrast(1.025) brightness(1.035);
     background:
-        linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 46%, var(--home-material-face-bottom) 100%),
-        linear-gradient(180deg, var(--liquid-content-tint), transparent);
+        radial-gradient(130% 150% at 18% -80%, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 44%, transparent 68%),
+        linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 48%, var(--home-material-face-bottom) 100%),
+        var(--liquid-content-tint);
+    background-blend-mode: screen, normal, normal;
     box-shadow:
-        0 10px 28px rgba(73, 92, 138, 0.1),
-        0 4px 10px rgba(73, 92, 138, 0.05),
+        0 12px 32px rgba(55, 65, 95, 0.12),
+        0 3px 8px rgba(55, 65, 95, 0.055),
         inset 0 1px 0 var(--liquid-inner-highlight),
-        inset 0 -10px 24px var(--liquid-inner-shadow),
-        inset 0 -1px 0 rgba(148, 163, 184, 0.08);
+        inset 0 -1px 0 rgba(51, 65, 85, 0.14),
+        inset 0 -12px 24px var(--liquid-inner-shadow);
 }
 
 .nav-island.home-liquid-card:hover {
@@ -270,49 +276,53 @@ a { color: inherit; text-decoration: none; }
        card), but it still shifts to a cleaner, slightly stronger shadow so the
        hover state reads consistently with the rest of the material. */
     transform: none;
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.47);
+    background-color: rgba(255, 255, 255, 0.035);
     box-shadow:
-        0 14px 34px rgba(73, 92, 138, 0.14),
-        0 6px 14px rgba(73, 92, 138, 0.07),
-        inset 0 1px 0 rgba(255, 255, 255, 0.34),
-        inset 0 -10px 24px rgba(148, 163, 184, 0.1),
-        inset 0 -1px 0 rgba(148, 163, 184, 0.1);
+        0 14px 34px rgba(55, 65, 95, 0.14),
+        0 4px 10px rgba(55, 65, 95, 0.065),
+        inset 0 1px 0 rgba(255, 255, 255, 0.58),
+        inset 0 -1px 0 rgba(51, 65, 85, 0.16),
+        inset 0 -12px 24px rgba(71, 85, 105, 0.075);
 }
 
 .nav-island.home-liquid-card::before {
     background:
-        radial-gradient(42% 110% at 50% 0%, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.12) 24%, rgba(255, 255, 255, 0) 58%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.02) 52%, rgba(148, 163, 184, 0.04));
-    opacity: 0.48;
+        radial-gradient(34% 145% at 17% -42%, rgba(255, 255, 255, 0.76) 0%, rgba(255, 255, 255, 0.2) 36%, rgba(255, 255, 255, 0) 68%),
+        radial-gradient(26% 120% at 89% 132%, rgba(191, 219, 254, 0.2) 0%, rgba(191, 219, 254, 0.05) 42%, rgba(191, 219, 254, 0) 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 46%, rgba(71, 85, 105, 0.045));
+    opacity: 0.7;
 }
 
 .nav-island.home-liquid-card::after {
     padding: 1px;
     background:
-        linear-gradient(118deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.36) 14%, rgba(226, 232, 240, 0.18) 38%, rgba(148, 163, 184, 0.1) 64%, rgba(255, 255, 255, 0.18) 86%, rgba(255, 255, 255, 0.05) 100%);
-    opacity: 0.36;
+        linear-gradient(112deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.58) 12%, rgba(226, 232, 240, 0.28) 33%, rgba(100, 116, 139, 0.13) 62%, rgba(255, 255, 255, 0.36) 86%, rgba(255, 255, 255, 0.1) 100%);
+    opacity: 0.82;
 }
 
 .nav-island .nav-island-warp {
     background:
-        radial-gradient(100% 180% at 50% -30%, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.12) 30%, rgba(255, 255, 255, 0) 64%),
-        linear-gradient(180deg, rgba(248, 250, 252, 0.18) 0%, rgba(241, 245, 249, 0.07) 44%, rgba(226, 232, 240, 0.1) 100%);
+        radial-gradient(72% 190% at 22% -78%, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0) 72%),
+        linear-gradient(180deg, rgba(248, 250, 252, 0.11) 0%, rgba(241, 245, 249, 0.025) 48%, rgba(100, 116, 139, 0.055) 100%);
+    background-blend-mode: screen, normal;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
 }
 
 .nav-island .home-liquid-warp::before {
     background:
-        radial-gradient(38% 160% at 50% 0%, rgba(255, 255, 255, 0.46) 0%, rgba(241, 245, 249, 0.18) 12%, rgba(148, 163, 184, 0.05) 32%, rgba(148, 163, 184, 0) 58%),
-        linear-gradient(108deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.012) 34%, rgba(148, 163, 184, 0.03) 62%, rgba(255, 255, 255, 0.06) 100%);
-    opacity: 0.26;
+        radial-gradient(30% 175% at 16% -42%, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0.16) 34%, rgba(255, 255, 255, 0) 68%),
+        linear-gradient(104deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.015) 36%, rgba(148, 163, 184, 0.035) 66%, rgba(255, 255, 255, 0.08) 100%);
+    opacity: 0.42;
 }
 
 .nav-island .home-liquid-warp::after {
     background:
-        radial-gradient(90% 100% at 50% -20%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 34%, rgba(255, 255, 255, 0) 62%),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.018) 18%, rgba(255, 255, 255, 0) 50%, rgba(148, 163, 184, 0.04) 76%, rgba(255, 255, 255, 0.16) 100%);
-    opacity: 0.18;
+        radial-gradient(110% 150% at 50% -82%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.025) 48%, rgba(255, 255, 255, 0) 70%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.02) 15%, rgba(255, 255, 255, 0) 50%, rgba(71, 85, 105, 0.055) 78%, rgba(255, 255, 255, 0.24) 100%),
+        linear-gradient(180deg, transparent 56%, rgba(51, 65, 85, 0.08) 100%);
+    opacity: 0.46;
 }
 
 .nav-island-body {
@@ -4017,10 +4027,15 @@ a { color: inherit; text-decoration: none; }
 
 [data-theme="dark"] .nav-island .nav-island-warp {
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(148, 163, 184, 0.025) 42%, rgba(100, 116, 139, 0.035) 100%);
+        radial-gradient(76% 190% at 18% -82%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.035) 44%, transparent 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(148, 163, 184, 0.012) 48%, rgba(15, 23, 42, 0.08) 100%);
 }
 
 [data-theme="dark"] .nav-island.home-liquid-card {
+    --liquid-content-tint: rgba(2, 6, 23, 0.08);
+    --liquid-inner-highlight: rgba(255, 255, 255, 0.18);
+    --liquid-inner-shadow: rgba(0, 0, 0, 0.14);
+    --liquid-clear-layer: rgba(255, 255, 255, 0.18);
     --liquid-saturation: 158%;
     --liquid-brightness: 1.004;
     --liquid-displacement-scale: 18;
@@ -4032,49 +4047,55 @@ a { color: inherit; text-decoration: none; }
     --nav-idle-blur: 14px;
     --nav-idle-saturation: 144%;
     --nav-idle-brightness: 1;
-    border-color: rgba(255, 255, 255, 0.13);
-    backdrop-filter: blur(18px) saturate(150%) contrast(1.04) brightness(1.01);
-    -webkit-backdrop-filter: blur(18px) saturate(150%) contrast(1.04) brightness(1.01);
+    border-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(22px) saturate(158%) contrast(1.03) brightness(0.96);
+    -webkit-backdrop-filter: blur(22px) saturate(158%) contrast(1.03) brightness(0.96);
     background:
-        linear-gradient(180deg, rgba(20, 35, 61, 0.32), rgba(8, 17, 32, 0.16));
+        radial-gradient(120% 170% at 16% -92%, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.025) 46%, transparent 68%),
+        linear-gradient(180deg, rgba(20, 30, 48, 0.34), rgba(5, 10, 20, 0.22));
     box-shadow:
-        0 12px 30px rgba(0, 0, 0, 0.32),
-        0 4px 12px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        inset 0 -1px 0 rgba(148, 163, 184, 0.06);
+        0 14px 36px rgba(0, 0, 0, 0.3),
+        0 3px 10px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+        inset 0 -12px 24px rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="dark"] .nav-island.home-liquid-card:hover {
     transform: none;
-    border-color: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.25);
+    background-color: rgba(255, 255, 255, 0.025);
     box-shadow:
-        0 16px 38px rgba(0, 0, 0, 0.42),
-        0 6px 16px rgba(0, 0, 0, 0.24),
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        inset 0 -1px 0 rgba(148, 163, 184, 0.08);
+        0 16px 38px rgba(0, 0, 0, 0.34),
+        0 4px 12px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+        inset 0 -12px 24px rgba(0, 0, 0, 0.14);
 }
 
 [data-theme="dark"] .nav-island.home-liquid-card::before {
     background:
-        radial-gradient(42% 110% at 50% 0%, rgba(255, 255, 255, 0.1) 0%, rgba(203, 213, 225, 0.05) 24%, rgba(255, 255, 255, 0) 58%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(148, 163, 184, 0.01) 52%, rgba(15, 23, 42, 0));
+        radial-gradient(34% 145% at 17% -42%, rgba(255, 255, 255, 0.28) 0%, rgba(203, 213, 225, 0.08) 36%, transparent 68%),
+        radial-gradient(26% 120% at 89% 132%, rgba(96, 165, 250, 0.11) 0%, rgba(96, 165, 250, 0.025) 42%, transparent 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 46%, rgba(0, 0, 0, 0.12));
 }
 
 [data-theme="dark"] .nav-island.home-liquid-card::after {
     background:
-        linear-gradient(118deg, rgba(255, 255, 255, 0.04) 0%, rgba(203, 213, 225, 0.14) 14%, rgba(148, 163, 184, 0.1) 38%, rgba(100, 116, 139, 0.06) 64%, rgba(255, 255, 255, 0.11) 86%, rgba(255, 255, 255, 0.035) 100%);
+        linear-gradient(112deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.28) 12%, rgba(148, 163, 184, 0.14) 33%, rgba(15, 23, 42, 0.12) 62%, rgba(255, 255, 255, 0.2) 86%, rgba(255, 255, 255, 0.06) 100%);
 }
 
 [data-theme="dark"] .nav-island .home-liquid-warp::before {
     background:
-        radial-gradient(38% 160% at 50% 0%, rgba(203, 213, 225, 0.18) 0%, rgba(148, 163, 184, 0.1) 12%, rgba(100, 116, 139, 0.03) 32%, rgba(100, 116, 139, 0) 58%),
-        linear-gradient(108deg, rgba(255, 255, 255, 0.045) 0%, rgba(148, 163, 184, 0.01) 34%, rgba(148, 163, 184, 0.024) 62%, rgba(255, 255, 255, 0.036) 100%);
+        radial-gradient(30% 175% at 16% -42%, rgba(255, 255, 255, 0.25) 0%, rgba(203, 213, 225, 0.065) 34%, transparent 68%),
+        linear-gradient(104deg, rgba(255, 255, 255, 0.055) 0%, rgba(148, 163, 184, 0.008) 36%, rgba(96, 165, 250, 0.02) 66%, rgba(255, 255, 255, 0.04) 100%);
 }
 
 [data-theme="dark"] .nav-island .home-liquid-warp::after {
     background:
-        radial-gradient(90% 100% at 50% -20%, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.018) 34%, rgba(255, 255, 255, 0) 62%),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.012) 18%, rgba(255, 255, 255, 0) 50%, rgba(148, 163, 184, 0.035) 76%, rgba(255, 255, 255, 0.09) 100%);
+        radial-gradient(110% 150% at 50% -82%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.014) 48%, transparent 70%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.012) 15%, transparent 50%, rgba(15, 23, 42, 0.07) 78%, rgba(255, 255, 255, 0.13) 100%),
+        linear-gradient(180deg, transparent 56%, rgba(0, 0, 0, 0.13) 100%);
 }
 
 /* --- Resume page (home-content adaptation) ---------------------------------
@@ -4964,6 +4985,34 @@ footer {
 
     :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
         outline-width: 3px !important;
+    }
+
+    .nav-island.home-liquid-card {
+        background: rgba(248, 250, 252, 0.94);
+        border-color: rgba(15, 23, 42, 0.52);
+    }
+
+    [data-theme="dark"] .nav-island.home-liquid-card {
+        background: rgba(7, 18, 33, 0.94);
+        border-color: rgba(248, 250, 252, 0.56);
+    }
+}
+
+@media (forced-colors: active) {
+    .nav-island.home-liquid-card,
+    .nav-mobile-panel {
+        color: ButtonText;
+        background: Canvas;
+        border: 1px solid ButtonText;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .nav-island.home-liquid-card::before,
+    .nav-island.home-liquid-card::after,
+    .nav-island .home-liquid-warp {
+        display: none;
     }
 }
 
