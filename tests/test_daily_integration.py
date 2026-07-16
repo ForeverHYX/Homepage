@@ -1006,7 +1006,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertIn('href="/daily"', base)
         self.assertIn("Daily", base)
-        self.assertIn('href="/static/css/styles.css?v=150"', base)
+        self.assertIn('href="/static/css/styles.css?v=151"', base)
         self.assertIn("Paper", daily)
         self.assertIn("PDF", daily)
         self.assertIn("Code", daily)

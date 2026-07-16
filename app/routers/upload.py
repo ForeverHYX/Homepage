@@ -1,9 +1,10 @@
-import os
+import mimetypes
 import shutil
 from pathlib import Path
-from typing import List, Any
+from typing import List
+from urllib.parse import quote
 
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, status
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 
 from app.config import (
@@ -15,6 +16,7 @@ from app.utils import (
     get_gallery_visibility_map, set_gallery_folder_visibility, toggle_gallery_folder
 )
 from app.auth import require_login
+from app.gallery_thumbnail_utils import THUMBNAIL_DIR_NAME, get_gallery_thumbnail_path
 
 router = APIRouter()
 
@@ -27,9 +29,127 @@ BLOCKED_EXTENSIONS = {
     ".html", ".htm", ".xml", ".svg", ".svgz",
 }
 
+FILE_KIND_EXTENSIONS = {
+    "image": {".avif", ".bmp", ".gif", ".ico", ".jpeg", ".jpg", ".png", ".webp"},
+    "pdf": {".pdf"},
+    "document": {".doc", ".docx", ".odt", ".pages", ".rtf"},
+    "spreadsheet": {".csv", ".numbers", ".ods", ".xls", ".xlsx"},
+    "presentation": {".key", ".odp", ".ppt", ".pptx"},
+    "archive": {".7z", ".bz2", ".gz", ".rar", ".tar", ".tgz", ".xz", ".zip"},
+    "audio": {".aac", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".wav"},
+    "video": {".m4v", ".mov", ".mp4", ".mpeg", ".mpg", ".ogv", ".webm"},
+    "code": {".c", ".cpp", ".css", ".go", ".h", ".hpp", ".java", ".js", ".json", ".md", ".rs", ".sh", ".toml", ".ts", ".yaml", ".yml"},
+    "text": {".log", ".tex", ".txt"},
+}
+
+PREVIEWABLE_KINDS = {"image", "pdf", "audio", "video", "code", "text"}
+PREVIEWABLE_SPREADSHEET_EXTENSIONS = {".csv"}
+
 
 def _relative_upload_path(path: Path) -> str:
     return str(path.resolve().relative_to(Path(UPLOAD_DIR).resolve()))
+
+
+def _upload_url(relative_path: str) -> str:
+    return f"/uploads/{quote(relative_path, safe='/')}"
+
+
+def _download_url(relative_path: str) -> str:
+    return f"/api/files/{quote(relative_path, safe='/')}?download=true"
+
+
+def _file_kind(path: Path) -> str:
+    suffix = path.suffix.lower()
+    for kind, extensions in FILE_KIND_EXTENSIONS.items():
+        if suffix in extensions:
+            return kind
+    return "file"
+
+
+def _file_payload(path: Path) -> dict:
+    relative_path = _relative_upload_path(path)
+    kind = _file_kind(path)
+    is_previewable = kind in PREVIEWABLE_KINDS or path.suffix.lower() in PREVIEWABLE_SPREADSHEET_EXTENSIONS
+    return {
+        "name": path.name,
+        "type": "file",
+        "path": relative_path,
+        "size": path.stat().st_size,
+        "url": _upload_url(relative_path),
+        "download_url": _download_url(relative_path),
+        "mime_type": mimetypes.guess_type(path.name)[0] or "application/octet-stream",
+        "file_kind": kind,
+        "is_image": kind == "image",
+        "is_previewable": is_previewable,
+    }
+
+
+def _resolve_upload_item(path: str) -> Path:
+    clean_path = path.strip().lstrip("/")
+    if not clean_path or clean_path == ".":
+        raise HTTPException(status_code=400, detail="A file or folder path is required")
+    target = safe_join(UPLOAD_DIR, clean_path)
+    if target.resolve() == Path(UPLOAD_DIR).resolve():
+        raise HTTPException(status_code=400, detail="The upload root cannot be modified")
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="File or folder not found")
+    return target
+
+
+def _validate_new_name(new_name: str) -> str:
+    clean_name = new_name.strip()
+    if (
+        not clean_name
+        or clean_name in {".", ".."}
+        or Path(clean_name).name != clean_name
+        or "/" in clean_name
+        or "\\" in clean_name
+        or "\x00" in clean_name
+    ):
+        raise HTTPException(status_code=400, detail="Invalid file name")
+    if Path(clean_name).suffix.lower() in BLOCKED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="File type not allowed")
+    return clean_name
+
+
+def _prune_empty_thumbnail_parents(path: Path) -> None:
+    thumbnail_root = (Path(UPLOAD_DIR) / THUMBNAIL_DIR_NAME).resolve()
+    parent = path.parent
+    while parent != thumbnail_root:
+        try:
+            parent.rmdir()
+        except OSError:
+            break
+        parent = parent.parent
+
+
+def _remove_thumbnail_for_file(path: Path) -> None:
+    thumbnail_path = get_gallery_thumbnail_path(Path(UPLOAD_DIR).resolve(), path)
+    thumbnail_path.unlink(missing_ok=True)
+    _prune_empty_thumbnail_parents(thumbnail_path)
+
+
+def _remove_gallery_entries(relative_path: str) -> None:
+    prefix = f"{relative_path}/"
+    for gallery_path in list(get_gallery_visibility_map()):
+        if gallery_path == relative_path or gallery_path.startswith(prefix):
+            set_gallery_folder_visibility(gallery_path, "hidden")
+
+
+def _delete_upload_item(path: str) -> str:
+    target = _resolve_upload_item(path)
+    relative_path = _relative_upload_path(target)
+
+    if target.is_dir():
+        thumbnail_dir = Path(UPLOAD_DIR) / THUMBNAIL_DIR_NAME / relative_path
+        shutil.rmtree(target)
+        shutil.rmtree(thumbnail_dir, ignore_errors=True)
+        _remove_gallery_entries(relative_path)
+    else:
+        target.unlink()
+        _remove_thumbnail_for_file(target)
+
+    return relative_path
 
 
 @router.post("/api/upload")
@@ -173,6 +293,8 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
         entries.sort(key=lambda x: (not x.is_dir(), -x.stat().st_mtime))
         
         for p in entries:
+            if p.name == THUMBNAIL_DIR_NAME or p.name.startswith("."):
+                continue
             try:
                 rel_path = _relative_upload_path(p)
             except ValueError:
@@ -194,12 +316,7 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
                     "author": meta.get("author", "Yixun Hong")
                 })
             else:
-                items.append({
-                    "name": p.name,
-                    "type": "file",
-                    "size": p.stat().st_size,
-                    "url": f"/uploads/{rel_path}"
-                })
+                items.append(_file_payload(p))
     except Exception as e:
          print(f"Error listing files: {e}")
          return JSONResponse({"files": [], "error": str(e)})
@@ -207,24 +324,53 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
     return JSONResponse({"files": items, "current_path": path})
 
 
+@router.post("/api/files/delete")
+@limiter.limit("30/minute")
+def delete_file_api(request: Request, path: str = Form(...)) -> JSONResponse:
+    require_login(request)
+    deleted_path = _delete_upload_item(path)
+    return JSONResponse({"detail": "Deleted", "path": deleted_path})
+
+
 @router.delete("/api/files/{path:path}")
 @limiter.limit("30/minute")
-def delete_file_api(request: Request, path: str) -> JSONResponse:
+def delete_file_legacy_api(request: Request, path: str) -> JSONResponse:
+    """Compatibility route for older clients; new clients send paths in form data."""
     require_login(request)
-    target = safe_join(UPLOAD_DIR, path)
-    if not target.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    if target.is_dir():
-         shutil.rmtree(target)
-    else:
-         os.remove(target)
-    return JSONResponse({"detail": "Deleted"})
+    deleted_path = _delete_upload_item(path)
+    return JSONResponse({"detail": "Deleted", "path": deleted_path})
+
+
+@router.post("/api/files/rename")
+@limiter.limit("30/minute")
+def rename_file_api(
+    request: Request,
+    path: str = Form(...),
+    new_name: str = Form(...),
+) -> JSONResponse:
+    require_login(request)
+    target = _resolve_upload_item(path)
+    if not target.is_file():
+        raise HTTPException(status_code=400, detail="Only files can be renamed")
+
+    clean_name = _validate_new_name(new_name)
+    destination = target.with_name(clean_name)
+    if destination == target:
+        return JSONResponse({"detail": "Unchanged", **_file_payload(target)})
+    if destination.exists():
+        raise HTTPException(status_code=409, detail="A file with that name already exists")
+
+    old_thumbnail = get_gallery_thumbnail_path(Path(UPLOAD_DIR).resolve(), target)
+    target.rename(destination)
+    old_thumbnail.unlink(missing_ok=True)
+    _prune_empty_thumbnail_parents(old_thumbnail)
+
+    return JSONResponse({"detail": "Renamed", **_file_payload(destination)})
 
 
 @router.get("/api/files/{file_path:path}")
-def download_file_api(file_path: str) -> FileResponse:
+def download_file_api(file_path: str, download: bool = False) -> FileResponse:
     target = safe_join(UPLOAD_DIR, file_path)
     if not target.exists() or not target.is_file():
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(target)
+    return FileResponse(target, filename=target.name if download else None)

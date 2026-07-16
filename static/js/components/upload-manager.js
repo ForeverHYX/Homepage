@@ -20,7 +20,8 @@
         fileList, refreshBtn, toast,
         folderNameInput, createFolderBtn, navHomeBtn,
         metaModal, metaPath, metaTitle, metaDate, metaAuthor, metaDesc,
-        metaGalleryVisibility, metaSave, metaCancel;
+        metaGalleryVisibility, metaSave, metaCancel,
+        renameModal, renamePath, renameName, renameSave, renameCancel;
 
     // ---- Star icon SVGs (gallery toggle) -----------------------------------
     var STAR_GRAD_DEFS =
@@ -39,6 +40,32 @@
 
     function starOffSvg() {
         return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + STAR_POLYGON + '</svg>';
+    }
+
+    var ICON_PATHS = {
+        folder: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/>',
+        image: '<rect width="18" height="16" x="3" y="4" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/>',
+        pdf: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
+        document: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>',
+        spreadsheet: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+        presentation: '<path d="M4 3h16v12H4zM8 21l4-6 4 6M2 3h20"/>',
+        archive: '<path d="M4 4h16v5H4zM5 9h14v11H5zM10 13h4"/>',
+        audio: '<path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
+        video: '<rect width="18" height="16" x="3" y="4" rx="2"/><path d="m10 9 5 3-5 3z"/>',
+        code: '<path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/>',
+        text: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+        file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+        back: '<path d="M19 12H5M12 19l-7-7 7-7"/>',
+        edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4z"/>',
+        copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+        trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v6M14 11v6"/>',
+        download: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'
+    };
+
+    function iconSvg(name, size) {
+        var iconName = ICON_PATHS[name] ? name : "file";
+        var dimension = size || 20;
+        return '<svg width="' + dimension + '" height="' + dimension + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON_PATHS[iconName] + '</svg>';
     }
 
     function visibilityLabel(visibility) {
@@ -79,17 +106,43 @@
     /**
      * Small helper to build a button element with inline SVG/emoji + listener.
      */
-    function iconButton(emojiOrSvg, title, onClick) {
+    function iconButton(emojiOrSvg, title, onClick, extraClass) {
         var btn = document.createElement("button");
-        btn.className = "action-btn";
+        btn.type = "button";
+        btn.className = "action-btn file-action-btn" + (extraClass ? " " + extraClass : "");
         btn.title = title;
+        btn.setAttribute("aria-label", title);
         btn.innerHTML = emojiOrSvg;
-        btn.style.padding = "4px 8px";
         btn.addEventListener("click", function (e) {
             e.stopPropagation();
             onClick();
         });
         return btn;
+    }
+
+    function iconDownloadLink(item) {
+        var link = document.createElement("a");
+        link.className = "file-leading-icon file-leading-icon--download file-kind-" + (item.file_kind || "file");
+        link.href = item.download_url || item.url || "#";
+        link.download = item.name || "download";
+        link.title = "Download " + (item.name || "file");
+        link.setAttribute("aria-label", link.title);
+        link.innerHTML = iconSvg(item.file_kind || "file", 24) + '<span class="file-download-badge">' + iconSvg("download", 11) + '</span>';
+        link.addEventListener("click", function (e) { e.stopPropagation(); });
+        return link;
+    }
+
+    function requestJson(url, options) {
+        return fetch(url, options).then(function (res) {
+            if (res.status === 401) {
+                window.location.href = "/login";
+                throw new Error("Unauthorized");
+            }
+            return res.json().catch(function () { return {}; }).then(function (data) {
+                if (!res.ok) throw new Error(data.detail || "Request failed");
+                return data;
+            });
+        });
     }
 
     /**
@@ -150,12 +203,12 @@
         // Parent-directory navigation row
         if (state.currentPath) {
             var prev = document.createElement("div");
-            prev.className = "file-item";
-            prev.style.cursor = "pointer";
+            prev.className = "file-item file-item--parent";
             prev.innerHTML =
-                '<div class="file-icon" style="display:flex;align-items:center;gap:8px">' +
-                '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>' +
-                '<span>Previous Directory</span></div>';
+                '<div class="file-item-main">' +
+                '<div class="file-leading-icon file-kind-folder">' + iconSvg("back", 24) + '</div>' +
+                '<div class="file-item-copy"><div class="file-item-name">Previous Directory</div></div>' +
+                '</div>';
             prev.addEventListener("click", function () {
                 fetchFiles(parentPath(state.currentPath));
             });
@@ -171,55 +224,38 @@
         var row = document.createElement("div");
         row.className = "file-item";
         row.dataset.path = item.path || "";
-        row.style.display = "flex";
-        row.style.alignItems = "center";
-        row.style.justifyContent = "space-between";
-        row.style.gap = "12px";
-        row.style.padding = "10px 8px";
-        row.style.borderBottom = "1px solid var(--border)";
-        row.style.cursor = "default";
 
         var left = document.createElement("div");
-        left.style.display = "flex";
-        left.style.alignItems = "center";
-        left.style.gap = "12px";
-        left.style.minWidth = "0";
-        left.style.flex = "1";
+        left.className = "file-item-main";
 
         if (item.type === "dir" || item.is_dir) {
             // ---- Directory ----
-            row.style.cursor = "pointer";
+            row.classList.add("file-item--directory");
             row.addEventListener("click", function () {
                 fetchFiles(item.path);
             });
 
             var iconWrap = document.createElement("div");
-            iconWrap.style.position = "relative";
-            iconWrap.innerHTML =
-                '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+            iconWrap.className = "file-leading-icon file-kind-folder";
+            iconWrap.innerHTML = iconSvg("folder", 24);
             if (item.is_gallery) {
                 var star = document.createElement("span");
-                star.style.position = "absolute";
-                star.style.top = "-6px";
-                star.style.right = "-8px";
+                star.className = "file-gallery-badge";
                 star.innerHTML = starOnSvg();
                 iconWrap.appendChild(star);
             }
             left.appendChild(iconWrap);
 
             var label = document.createElement("div");
-            label.style.overflow = "hidden";
-            label.style.textOverflow = "ellipsis";
-            label.style.whiteSpace = "nowrap";
+            label.className = "file-item-copy";
             var nameEl = document.createElement("div");
-            nameEl.style.fontWeight = "500";
+            nameEl.className = "file-item-name";
             nameEl.textContent = item.title || item.name;
             label.appendChild(nameEl);
             var visibility = item.gallery_visibility || (item.is_gallery ? "public" : "hidden");
             if (visibility !== "hidden") {
                 var visibilityEl = document.createElement("div");
-                visibilityEl.style.fontSize = "12px";
-                visibilityEl.style.color = "var(--muted)";
+                visibilityEl.className = "file-item-meta";
                 visibilityEl.textContent = visibilityLabel(visibility);
                 label.appendChild(visibilityEl);
             }
@@ -229,11 +265,9 @@
 
             // Action buttons
             var actions = document.createElement("div");
-            actions.style.display = "flex";
-            actions.style.gap = "6px";
-            actions.style.flexShrink = "0";
+            actions.className = "file-item-actions";
 
-            actions.appendChild(iconButton("✎", "Edit metadata", function () {
+            actions.appendChild(iconButton(iconSvg("edit"), "Edit folder info", function () {
                 openMetaModal(item);
             }));
 
@@ -245,45 +279,38 @@
                 }
             ));
 
-            actions.appendChild(iconButton("🗑", "Delete", function () {
+            actions.appendChild(iconButton(iconSvg("trash"), "Delete folder", function () {
                 deleteItem(item);
-            }));
+            }, "file-action-btn--danger"));
 
             row.appendChild(actions);
 
         } else {
             // ---- File ----
-            var thumb = document.createElement("div");
-            thumb.style.width = "40px";
-            thumb.style.height = "40px";
-            thumb.style.borderRadius = "6px";
-            thumb.style.flexShrink = "0";
-            thumb.style.background = "var(--surface-highlight)";
-            thumb.style.display = "flex";
-            thumb.style.alignItems = "center";
-            thumb.style.justifyContent = "center";
-
-            if (item.is_image && item.url) {
-                thumb.style.backgroundImage = "url('" + item.url + "')";
-                thumb.style.backgroundSize = "cover";
-                thumb.style.backgroundPosition = "center";
+            var leading;
+            if (!item.is_previewable) {
+                leading = iconDownloadLink(item);
             } else {
-                thumb.innerHTML =
-                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+                leading = document.createElement("div");
+                leading.className = "file-leading-icon file-kind-" + (item.file_kind || "file");
+                leading.innerHTML = iconSvg(item.file_kind || "file", 24);
             }
-            left.appendChild(thumb);
+            left.appendChild(leading);
 
             var labelWrap = document.createElement("div");
-            labelWrap.style.overflow = "hidden";
-            var nameDiv = document.createElement("div");
-            nameDiv.style.fontWeight = "500";
-            nameDiv.style.overflow = "hidden";
-            nameDiv.style.textOverflow = "ellipsis";
-            nameDiv.style.whiteSpace = "nowrap";
+            labelWrap.className = "file-item-copy";
+            var nameDiv = document.createElement(item.is_previewable && item.url ? "a" : "div");
+            nameDiv.className = "file-item-name" + (item.is_previewable && item.url ? " file-item-name--link" : "");
             nameDiv.textContent = item.name;
+            if (item.is_previewable && item.url) {
+                nameDiv.href = item.url;
+                nameDiv.target = "_blank";
+                nameDiv.rel = "noopener noreferrer";
+                nameDiv.title = "Open " + item.name;
+                nameDiv.addEventListener("click", function (e) { e.stopPropagation(); });
+            }
             var sizeDiv = document.createElement("div");
-            sizeDiv.style.fontSize = "12px";
-            sizeDiv.style.color = "var(--muted)";
+            sizeDiv.className = "file-item-meta";
             sizeDiv.textContent = formatSize(item.size);
             labelWrap.appendChild(nameDiv);
             labelWrap.appendChild(sizeDiv);
@@ -292,15 +319,13 @@
             row.appendChild(left);
 
             var actions = document.createElement("div");
-            actions.style.display = "flex";
-            actions.style.gap = "6px";
-            actions.style.flexShrink = "0";
+            actions.className = "file-item-actions";
 
-            actions.appendChild(iconButton("↗", "Open", function () {
-                if (item.url) window.open(item.url, "_blank");
+            actions.appendChild(iconButton(iconSvg("edit"), "Rename file", function () {
+                openRenameModal(item);
             }));
 
-            actions.appendChild(iconButton("⧉", "Copy link", function () {
+            actions.appendChild(iconButton(iconSvg("copy"), "Copy link", function () {
                 if (!item.url) return;
                 if (navigator.clipboard) {
                     navigator.clipboard.writeText(item.url).then(function () {
@@ -311,9 +336,9 @@
                 }
             }));
 
-            actions.appendChild(iconButton("🗑", "Delete", function () {
+            actions.appendChild(iconButton(iconSvg("trash"), "Delete file", function () {
                 deleteItem(item);
-            }));
+            }, "file-action-btn--danger"));
 
             row.appendChild(actions);
         }
@@ -329,18 +354,69 @@
 
     function deleteItem(item) {
         if (!confirm("Delete '" + (item.name || item.title || item.path) + "'?")) return;
-        fetch("/api/files/" + encodeURIComponent(item.path), {
-            method: "DELETE",
+        var formData = new FormData();
+        formData.append("path", item.path);
+        requestJson("/api/files/delete", {
+            method: "POST",
+            body: formData,
             credentials: "include"
         })
-            .then(function (res) {
-                if (!res.ok) throw new Error("Delete failed");
+            .then(function () {
                 showToast("Deleted");
-                refresh();
+                return refresh();
             })
             .catch(function (err) {
                 console.error(err);
-                showToast("Delete failed");
+                if (err.message !== "Unauthorized") showToast(err.message || "Delete failed");
+            });
+    }
+
+    function openRenameModal(item) {
+        if (!renameModal) return;
+        renamePath.value = item.path || "";
+        renameName.value = item.name || "";
+        renameModal.classList.add("active");
+        renameModal.style.display = "";
+        window.setTimeout(function () {
+            renameName.focus();
+            var dot = renameName.value.lastIndexOf(".");
+            renameName.setSelectionRange(0, dot > 0 ? dot : renameName.value.length);
+        }, 0);
+    }
+
+    function closeRenameModal() {
+        if (!renameModal) return;
+        renameModal.classList.remove("active");
+        renameModal.style.display = "none";
+    }
+
+    function saveRename() {
+        var newName = (renameName.value || "").trim();
+        if (!newName) {
+            showToast("Enter a file name");
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append("path", renamePath.value);
+        formData.append("new_name", newName);
+        renameSave.disabled = true;
+        requestJson("/api/files/rename", {
+            method: "POST",
+            body: formData,
+            credentials: "include"
+        })
+            .then(function () {
+                closeRenameModal();
+                showToast("Renamed");
+                return refresh();
+            })
+            .catch(function (err) {
+                console.error(err);
+                if (err.message !== "Unauthorized") showToast(err.message || "Rename failed");
+            })
+            .then(function () {
+                renameSave.disabled = false;
             });
     }
 
@@ -589,6 +665,12 @@
         metaSave = document.getElementById("metaSave");
         metaCancel = document.getElementById("metaCancel");
 
+        renameModal = document.getElementById("renameModal");
+        renamePath = document.getElementById("renamePath");
+        renameName = document.getElementById("renameName");
+        renameSave = document.getElementById("renameSave");
+        renameCancel = document.getElementById("renameCancel");
+
         return true;
     }
 
@@ -614,6 +696,21 @@
             metaModal.addEventListener("click", function (e) {
                 // Only close when clicking the overlay itself, not its children
                 if (e.target === metaModal) closeMetaModal();
+            });
+        }
+
+        // File rename modal
+        if (renameSave) renameSave.addEventListener("click", saveRename);
+        if (renameCancel) renameCancel.addEventListener("click", closeRenameModal);
+        if (renameModal) {
+            renameModal.addEventListener("click", function (e) {
+                if (e.target === renameModal) closeRenameModal();
+            });
+        }
+        if (renameName) {
+            renameName.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") saveRename();
+                if (e.key === "Escape") closeRenameModal();
             });
         }
 
