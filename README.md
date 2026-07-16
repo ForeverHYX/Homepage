@@ -41,7 +41,7 @@ The backend lives in `app/` and is organized as:
 | `app/main.py` | App entry + Jinja2Templates setup |
 | `app/config.py` | Paths, rate limiter, env vars |
 | `app/auth.py` | bcrypt + session tokens |
-| `app/cache.py` | mtime-based in-memory cache |
+| `app/cache.py` | Bounded, signature-based in-memory cache |
 | `app/news.py` | News aggregation |
 | `app/content_utils.py` | Section extraction, about parsing |
 | `app/markdown_utils.py` | Markdown + structured publication rendering |
@@ -98,7 +98,7 @@ The backend lives in `app/` and is organized as:
 │   ├── main.py                   # App entry + Jinja2Templates setup
 │   ├── config.py                 # Paths, rate limiter, env vars
 │   ├── auth.py                   # bcrypt + session tokens
-│   ├── cache.py                  # mtime-based in-memory cache
+│   ├── cache.py                  # bounded file-signature cache
 │   ├── news.py                   # News aggregation
 │   ├── content_utils.py          # Section extraction, about parsing
 │   ├── markdown_utils.py         # Markdown + publication renderer
@@ -198,6 +198,9 @@ HOMEPAGE_UPLOAD_PASS_HASH=<bcrypt hash>  # alternative to plain pass
 HOMEPAGE_CONTENT_DIR=/path/to/content    # optional override
 HOMEPAGE_UPLOAD_DIR=/path/to/uploads     # optional override
 HOMEPAGE_COOKIE_SECURE=true              # production HTTPS
+HOMEPAGE_DAILY_REMOTE_CACHE_SECONDS=900  # current Daily recommendations
+HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_SECONDS=3600
+HOMEPAGE_DAILY_FAVORITES_CACHE_SECONDS=7200
 ```
 
 ## Local development
