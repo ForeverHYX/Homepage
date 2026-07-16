@@ -17,6 +17,7 @@ from app.utils import (
 from app.markdown_utils import get_publications
 from app.content_utils import get_about_info, parse_and_merge_news, parse_education_timeline, get_raw_section_body
 from app.daily import (
+    MAX_FILTER_KEYWORDS,
     build_daily_payload,
     daily_payload_search_entries,
     load_daily_payload,
@@ -59,7 +60,17 @@ def _daily_url(keywords: Optional[list[str]] = None, item_type: Optional[str] = 
     if date and re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
         params["date"] = date
     if keywords:
-        params["keywords"] = ",".join(keywords)
+        canonical_keywords: dict[str, str] = {}
+        for keyword in keywords:
+            normalized_keyword = keyword.strip()
+            if normalized_keyword:
+                canonical_keywords.setdefault(normalized_keyword.casefold(), normalized_keyword)
+        ordered_keywords = sorted(
+            canonical_keywords.values(),
+            key=lambda keyword: (keyword.casefold(), keyword),
+        )[:MAX_FILTER_KEYWORDS]
+        if ordered_keywords:
+            params["keywords"] = ",".join(ordered_keywords)
     if item_type in {"paper", "repository"}:
         params["item_type"] = item_type
     if not params:
@@ -74,10 +85,11 @@ def _keywords_url(
     date: Optional[str] = None,
 ) -> str:
     """Build a Daily keyword toggle URL."""
+    toggle_key = toggle.casefold() if toggle else ""
     if not toggle:
         next_keywords = current_keywords
-    elif toggle in current_keywords:
-        next_keywords = [keyword for keyword in current_keywords if keyword != toggle]
+    elif any(keyword.casefold() == toggle_key for keyword in current_keywords):
+        next_keywords = [keyword for keyword in current_keywords if keyword.casefold() != toggle_key]
     else:
         next_keywords = [*current_keywords, toggle]
     return _daily_url(next_keywords, item_type, date)
@@ -477,6 +489,7 @@ def robots_txt():
     body = "\n".join([
         "User-agent: *",
         "Allow: /",
+        "Disallow: /daily?",
         "",
         f"Sitemap: {SITE_URL}/sitemap.xml",
         "",
@@ -546,6 +559,8 @@ def daily_page(request: Request, keywords: Optional[str] = None, item_type: Opti
     payload = _build_daily_payload(keywords, item_type, date)
     is_upload_authenticated = get_current_user(request)
     filter_date = payload["selected_date"] if date else None
+    has_filter_query = "keywords" in request.query_params or "item_type" in request.query_params
+    canonical_path = _daily_url(date=date)
     return templates.TemplateResponse(request, "pages/daily.html", {
         "items": payload["items"],
         "run_date": payload["run_date"],
@@ -567,6 +582,8 @@ def daily_page(request: Request, keywords: Optional[str] = None, item_type: Opti
         ),
         "type_url": lambda active_type=None: _daily_type_url(active_type, filter_date),
         "target_paper_id": paper_id or "",
+        "daily_canonical_url": f"{SITE_URL}{canonical_path}",
+        "daily_robots_noindex": has_filter_query,
     })
 
 

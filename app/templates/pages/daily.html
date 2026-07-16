@@ -3,6 +3,10 @@
 {% block title %}Daily | Yixun Hong{% endblock %}
 {% block meta %}
 <meta name="description" content="Daily AI-curated papers and repositories for agentic computer architecture, co-design, simulators, and HPC systems.">
+<link rel="canonical" href="{{ daily_canonical_url }}">
+{% if daily_robots_noindex %}
+<meta name="robots" content="noindex,follow">
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -24,10 +28,10 @@
                         <span class="article-filter-label">
                             Filtered by:
                             {% for keyword in filter_keywords %}
-                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip is-active" style="cursor:pointer;text-decoration:none;margin-right:6px">{{ keyword }} &times;</a>
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip is-active" style="cursor:pointer;text-decoration:none;margin-right:6px">{{ keyword }} &times;</a>
                             {% endfor %}
                         </span>
-                        <a href="{{ type_url(active_item_type) }}" class="article-card-link" style="margin-top:0">Clear all</a>
+                        <a href="{{ type_url(active_item_type) }}" rel="nofollow" class="article-card-link" style="margin-top:0">Clear all</a>
                     </div>
                 </div>
                 {% endif %}
@@ -56,7 +60,7 @@
                                 {% endif %}
                                 <div class="chip-list daily-keyword-list">
                                     {% for keyword in item.keywords[:8] %}
-                                    <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip{% if keyword in filter_keywords %} is-active{% endif %}" style="cursor:pointer;text-decoration:none">{{ keyword }}{% if keyword in filter_keywords %} &times;{% endif %}</a>
+                                    <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip{% if keyword in filter_keywords %} is-active{% endif %}" style="cursor:pointer;text-decoration:none">{{ keyword }}{% if keyword in filter_keywords %} &times;{% endif %}</a>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -117,11 +121,11 @@
                         <div class="daily-sidebar-heading">
                             <h3 class="sidebar-card-title">AI Keywords</h3>
                             <div class="daily-type-toggle" aria-label="Filter daily recommendation type">
-                                <a href="{{ type_url('') }}" class="daily-type-button daily-type-all{% if not active_item_type %} is-active{% endif %}" title="All">All</a>
-                                <a href="{{ type_url('repository') }}" class="daily-type-button{% if active_item_type == 'repository' %} is-active{% endif %}" title="Repositories" aria-label="Repositories">
+                                <a href="{{ type_url('') }}" rel="nofollow" class="daily-type-button daily-type-all{% if not active_item_type %} is-active{% endif %}" title="All">All</a>
+                                <a href="{{ type_url('repository') }}" rel="nofollow" class="daily-type-button{% if active_item_type == 'repository' %} is-active{% endif %}" title="Repositories" aria-label="Repositories">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
                                 </a>
-                                <a href="{{ type_url('paper') }}" class="daily-type-button{% if active_item_type == 'paper' %} is-active{% endif %}" title="Papers" aria-label="Papers">
+                                <a href="{{ type_url('paper') }}" rel="nofollow" class="daily-type-button{% if active_item_type == 'paper' %} is-active{% endif %}" title="Papers" aria-label="Papers">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
                                 </a>
                             </div>
@@ -129,9 +133,9 @@
                         <div class="chip-list daily-filter-chips">
                             {% for keyword, count in sorted_keywords[:36] %}
                             {% if keyword in filter_keywords %}
-                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip is-active" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span> &times;</a>
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip is-active" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span> &times;</a>
                             {% else %}
-                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" class="chip" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span></a>
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span></a>
                             {% endif %}
                             {% endfor %}
                         </div>

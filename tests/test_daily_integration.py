@@ -1,5 +1,6 @@
 import unittest
 import json
+import os
 import tempfile
 import time
 from pathlib import Path
@@ -7,6 +8,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from app import daily as daily_module
 from app.main import app
 from app.daily import build_daily_payload, daily_payload_search_entries, daily_search_entries, fetch_daily_favorites_archive, load_daily_payload
 from app.daily_articles import daily_article_slug, ensure_daily_article_markdown, generate_daily_article_markdown
@@ -71,6 +73,18 @@ def sample_daily_page_payload():
 
 
 class DailyIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        with daily_module._JSON_CACHE_LOCK:
+            daily_module._JSON_CACHE.clear()
+        with daily_module._DERIVED_CACHE_LOCK:
+            daily_module._DERIVED_CACHE.clear()
+
+    def tearDown(self):
+        with daily_module._JSON_CACHE_LOCK:
+            daily_module._JSON_CACHE.clear()
+        with daily_module._DERIVED_CACHE_LOCK:
+            daily_module._DERIVED_CACHE.clear()
+
     def test_daily_page_hides_feedback_controls_when_upload_session_is_absent(self):
         with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
             response = TestClient(app).get("/daily")
@@ -130,6 +144,63 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn('href="/daily?date=2026-06-13&amp;item_type=repository"', html)
         self.assertIn('href="/daily?date=2026-06-13&amp;item_type=paper"', html)
 
+    def test_daily_filter_pages_are_noindex_with_date_only_canonical_and_nofollow_links(self):
+        payload = sample_daily_page_payload()
+        payload["run_date"] = "2026-06-13"
+        payload["selected_date"] = "2026-06-13"
+        payload["filter_keywords"] = ["Agent"]
+
+        with patch.object(pages, "_build_daily_payload", return_value=payload):
+            response = TestClient(app).get(
+                "/daily?date=2026-06-13&keywords=agent&item_type=paper"
+            )
+
+        self.assertEqual(response.status_code, 200)
+        html = response.text
+        self.assertIn('<meta name="robots" content="noindex,follow">', html)
+        self.assertIn(
+            '<link rel="canonical" href="https://foreverhyx.top/daily?date=2026-06-13">',
+            html,
+        )
+        self.assertIn(
+            'href="/daily?date=2026-06-13" rel="nofollow"',
+            html,
+        )
+        self.assertIn(
+            'href="/daily?date=2026-06-13&amp;keywords=Agent%2CGem5" rel="nofollow"',
+            html,
+        )
+        self.assertIn(
+            'href="/daily?date=2026-06-13&amp;item_type=repository" rel="nofollow"',
+            html,
+        )
+        self.assertIn(
+            'href="/daily?date=2026-06-13&amp;item_type=paper" rel="nofollow"',
+            html,
+        )
+
+    def test_daily_pages_apply_canonical_and_indexing_rules(self):
+        with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
+            bare_response = TestClient(app).get("/daily")
+            date_response = TestClient(app).get("/daily?date=2026-06-13")
+            filtered_response = TestClient(app).get("/daily?keywords=agent")
+
+        self.assertNotIn('<meta name="robots" content="noindex,follow">', bare_response.text)
+        self.assertIn(
+            '<link rel="canonical" href="https://foreverhyx.top/daily">',
+            bare_response.text,
+        )
+        self.assertNotIn('<meta name="robots" content="noindex,follow">', date_response.text)
+        self.assertIn(
+            '<link rel="canonical" href="https://foreverhyx.top/daily?date=2026-06-13">',
+            date_response.text,
+        )
+        self.assertIn('<meta name="robots" content="noindex,follow">', filtered_response.text)
+        self.assertIn(
+            '<link rel="canonical" href="https://foreverhyx.top/daily">',
+            filtered_response.text,
+        )
+
     def test_daily_archive_page_passes_current_run_date_to_calendar(self):
         payload = sample_daily_page_payload()
         payload["run_date"] = "2026-06-15"
@@ -184,6 +255,29 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("paper_links", item["feedback_payload"])
         self.assertIn(("Agent", 1), payload["sorted_keywords"])
         self.assertEqual(item["detail_url"], "/daily/articles/2026-06-14-2606-00001")
+
+    def test_daily_keyword_filters_are_canonical_valid_unique_ordered_and_bounded(self):
+        payload = build_daily_payload(
+            SAMPLE_RECOMMENDER_PAYLOAD,
+            keywords=" gem5,AGENT,gEm5,not-a-real-keyword ",
+        )
+
+        self.assertEqual(payload["filter_keywords"], ["Agent", "Gem5"])
+        self.assertEqual(len(payload["items"]), 1)
+
+        available = [
+            "Zulu", "Alpha", "Mike", "Beta", "Lima", "Gamma",
+            "Kilo", "Delta", "Juliet", "Echo", "India", "Foxtrot",
+        ]
+        requested = ",".join(reversed(available)) + ",alpha,INVALID"
+        self.assertEqual(
+            daily_module._parse_keywords(requested, available),
+            sorted(available, key=str.casefold)[:daily_module.MAX_FILTER_KEYWORDS],
+        )
+        self.assertEqual(
+            pages._daily_url(["GPU", "Agent", "Agent", "GPU"]),
+            "/daily?keywords=Agent%2CGPU",
+        )
 
     def test_daily_search_entries_include_title_and_keywords(self):
         entries = daily_search_entries(SAMPLE_RECOMMENDER_PAYLOAD)
@@ -489,6 +583,182 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertEqual(repo["repository_forks"], 678)
         self.assertEqual(repo["repository_homepage"], "https://runtime-cache.example")
         self.assertEqual(repo["repository_topics"][:3], ["runtime", "llm", "inference"])
+
+    def test_daily_json_cache_reuses_parse_until_file_signature_changes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache_path = Path(tmpdir) / "payload.json"
+            cache_path.write_text('{"run_date":"one"}', encoding="utf-8")
+            original_json_loads = json.loads
+
+            with patch.object(daily_module.json, "loads", wraps=original_json_loads) as loads_mock:
+                first = daily_module._read_cache(cache_path)
+                second = daily_module._read_cache(cache_path)
+                self.assertIs(first, second)
+                self.assertEqual(loads_mock.call_count, 1)
+
+                old_stat = cache_path.stat()
+                cache_path.write_text('{"run_date":"two"}', encoding="utf-8")
+                os.utime(
+                    cache_path,
+                    ns=(old_stat.st_atime_ns, max(old_stat.st_mtime_ns + 1, time.time_ns())),
+                )
+                refreshed = daily_module._read_cache(cache_path)
+
+            self.assertEqual(refreshed, {"run_date": "two"})
+            self.assertEqual(loads_mock.call_count, 2)
+
+    def test_daily_json_cache_is_bounded(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for index in range(daily_module._JSON_CACHE_MAX_ENTRIES + 5):
+                cache_path = Path(tmpdir) / f"payload-{index}.json"
+                cache_path.write_text(json.dumps({"index": index}), encoding="utf-8")
+                self.assertEqual(daily_module._read_cache(cache_path), {"index": index})
+
+        self.assertLessEqual(
+            len(daily_module._JSON_CACHE),
+            daily_module._JSON_CACHE_MAX_ENTRIES,
+        )
+
+    def test_daily_cache_writes_use_atomic_replace_and_invalidate_memory_cache(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache_path = Path(tmpdir) / "payload.json"
+            cache_path.write_text(json.dumps({"version": "old"}), encoding="utf-8")
+            self.assertEqual(daily_module._read_cache(cache_path), {"version": "old"})
+            real_replace = os.replace
+            observed_temporary_paths: list[Path] = []
+
+            def replace_and_observe(source, destination):
+                temporary_path = Path(source)
+                observed_temporary_paths.append(temporary_path)
+                self.assertEqual(Path(destination), cache_path)
+                self.assertEqual(temporary_path.parent, cache_path.parent)
+                self.assertEqual(
+                    json.loads(temporary_path.read_text(encoding="utf-8")),
+                    {"version": "new"},
+                )
+                self.assertEqual(
+                    json.loads(cache_path.read_text(encoding="utf-8")),
+                    {"version": "old"},
+                )
+                real_replace(source, destination)
+
+            with patch.object(daily_module.os, "replace", side_effect=replace_and_observe):
+                daily_module._write_cache(cache_path, {"version": "new"})
+
+            self.assertEqual(len(observed_temporary_paths), 1)
+            self.assertFalse(observed_temporary_paths[0].exists())
+            self.assertEqual(daily_module._read_cache(cache_path), {"version": "new"})
+
+    def test_daily_derived_cache_isolated_from_results_and_invalidated_by_source_write(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            cache_path = tmp_path / "recommendations.json"
+            favorites_path = tmp_path / "favorites.json"
+            config_path = tmp_path / "feedback-config.json"
+            cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
+            favorites_path.write_text(json.dumps({
+                "records": [{
+                    "paper_id": "2606.12000",
+                    "rating": "like",
+                    "title": "Archived GPU Cache Study",
+                    "abstract": "A GPU cache study for architecture simulation.",
+                    "created_at": "2026-06-13T12:00:00Z",
+                }],
+            }), encoding="utf-8")
+            config_path.write_text(json.dumps({
+                "supabase_url": "https://cached.supabase.co",
+            }), encoding="utf-8")
+
+            loader_options = {
+                "payload_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected payload fetch")),
+                "favorites_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected favorites fetch")),
+                "config_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected config fetch")),
+                "cache_path": cache_path,
+                "favorites_cache_path": favorites_path,
+                "config_cache_path": config_path,
+                "expected_run_date": "2026-06-14",
+                "refresh_stale_cache_in_background": False,
+            }
+            original_normalize_item = daily_module._normalize_item
+            with patch.object(
+                daily_module,
+                "_normalize_item",
+                wraps=original_normalize_item,
+            ) as normalize_mock:
+                first = load_daily_payload(**loader_options)
+                initial_normalize_calls = normalize_mock.call_count
+                self.assertGreater(initial_normalize_calls, 0)
+
+                first["items"][0]["title"] = "Caller mutation"
+                first["items"][0]["feedback_payload"]["authors"].append("Injected author")
+                first["archive_counts"]["2026-06-14"]["papers"] = 999
+                first["profile_radar"]["axes"][0]["label"] = "Injected profile"
+                first["feedback_config"]["supabase_url"] = "https://caller.invalid"
+
+                second = load_daily_payload(**loader_options)
+                self.assertEqual(normalize_mock.call_count, initial_normalize_calls)
+                self.assertEqual(
+                    second["items"][0]["title"],
+                    "Agentic AI-Driven Microarchitecture Exploration",
+                )
+                self.assertNotIn(
+                    "Injected author",
+                    second["items"][0]["feedback_payload"]["authors"],
+                )
+                self.assertEqual(second["archive_counts"]["2026-06-14"]["papers"], 1)
+                self.assertNotEqual(second["profile_radar"]["axes"][0]["label"], "Injected profile")
+                self.assertEqual(
+                    second["feedback_config"]["supabase_url"],
+                    "https://cached.supabase.co",
+                )
+
+                updated_payload = json.loads(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD))
+                updated_payload["recommendations"][0]["title"] = "Updated Cached Recommendation"
+                daily_module._write_cache(cache_path, updated_payload)
+                third = load_daily_payload(**loader_options)
+
+            self.assertGreater(normalize_mock.call_count, initial_normalize_calls)
+            self.assertEqual(third["items"][0]["title"], "Updated Cached Recommendation")
+
+    def test_daily_auxiliary_caches_use_longer_defaults_with_explicit_ttl_override(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            cache_path = tmp_path / "recommendations.json"
+            favorites_path = tmp_path / "favorites.json"
+            config_path = tmp_path / "feedback-config.json"
+            cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
+            favorites_path.write_text(json.dumps({"records": []}), encoding="utf-8")
+            config_path.write_text(json.dumps({
+                "supabase_url": "https://cached.supabase.co",
+            }), encoding="utf-8")
+            thirty_minutes_ago_ns = time.time_ns() - 1800 * 1_000_000_000
+            os.utime(favorites_path, ns=(thirty_minutes_ago_ns, thirty_minutes_ago_ns))
+            os.utime(config_path, ns=(thirty_minutes_ago_ns, thirty_minutes_ago_ns))
+            calls = {"favorites": 0, "config": 0}
+
+            def fetch_favorites():
+                calls["favorites"] += 1
+                return {"records": []}
+
+            def fetch_config():
+                calls["config"] += 1
+                return {"supabase_url": "https://fresh.supabase.co"}
+
+            common_options = {
+                "payload_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected payload fetch")),
+                "favorites_fetcher": fetch_favorites,
+                "config_fetcher": fetch_config,
+                "cache_path": cache_path,
+                "favorites_cache_path": favorites_path,
+                "config_cache_path": config_path,
+                "expected_run_date": "2026-06-14",
+                "refresh_stale_cache_in_background": False,
+            }
+            load_daily_payload(**common_options)
+            self.assertEqual(calls, {"favorites": 0, "config": 0})
+
+            load_daily_payload(remote_cache_ttl_seconds=60, **common_options)
+            self.assertEqual(calls, {"favorites": 1, "config": 1})
 
     def test_daily_loader_degrades_to_empty_payload_when_remote_fetch_fails(self):
         def failing_fetcher():
@@ -1006,7 +1276,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertIn('href="/daily"', base)
         self.assertIn("Daily", base)
-        self.assertIn('href="/static/css/styles.min.css?v=155"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=156"', base)
         self.assertIn("Paper", daily)
         self.assertIn("PDF", daily)
         self.assertIn("Code", daily)

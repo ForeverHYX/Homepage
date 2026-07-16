@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
 import re
+import tempfile
 import threading
 import time
-from collections import Counter
+from collections import Counter, OrderedDict
 from itertools import combinations
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional, TypeVar
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -19,9 +21,12 @@ from app.daily_articles import daily_article_slug
 DEFAULT_DAILY_BASE_URL = "https://foreverhyx.github.io/agentic-arch-paper-recommender"
 REQUEST_TIMEOUT = 12
 REMOTE_CACHE_TTL_SECONDS = int(os.getenv("HOMEPAGE_DAILY_REMOTE_CACHE_SECONDS", "900"))
+FEEDBACK_CONFIG_CACHE_TTL_SECONDS = int(os.getenv("HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_SECONDS", "3600"))
+FAVORITES_CACHE_TTL_SECONDS = int(os.getenv("HOMEPAGE_DAILY_FAVORITES_CACHE_SECONDS", "7200"))
 DAILY_RUN_READY_HOUR_UTC = int(os.getenv("HOMEPAGE_DAILY_RUN_READY_HOUR_UTC", "4"))
 DISPLAY_AUTHOR_LIMIT = 4
 DISPLAY_KEYWORD_LIMIT = 10
+MAX_FILTER_KEYWORDS = 10
 FILTER_KEYWORD_ROW_WIDTH = 252
 FILTER_KEYWORD_GAP = 8
 PROFILE_RADAR_CENTER = 100
@@ -134,6 +139,13 @@ DEFAULT_DAILY_FAVORITES_CACHE_PATH = Path(os.getenv(
 ))
 _REFRESHING_CACHE_PATHS: set[Path] = set()
 _REFRESH_LOCK = threading.Lock()
+_JSON_CACHE_MAX_ENTRIES = 32
+_JSON_CACHE: OrderedDict[tuple[Path, int, int], dict[str, Any]] = OrderedDict()
+_JSON_CACHE_LOCK = threading.RLock()
+_DERIVED_CACHE_MAX_ENTRIES = 32
+_DERIVED_CACHE: OrderedDict[tuple[Any, ...], Any] = OrderedDict()
+_DERIVED_CACHE_LOCK = threading.RLock()
+_DerivedValue = TypeVar("_DerivedValue")
 
 
 def fetch_daily_recommender_payload(base_url: str = DEFAULT_DAILY_BASE_URL) -> dict[str, Any]:
@@ -189,36 +201,49 @@ def load_daily_payload(
     config_cache_path: Path = DEFAULT_FEEDBACK_CONFIG_CACHE_PATH,
     favorites_cache_path: Path = DEFAULT_DAILY_FAVORITES_CACHE_PATH,
     archive_dir: Path = DEFAULT_DAILY_ARCHIVE_DIR,
-    remote_cache_ttl_seconds: int = REMOTE_CACHE_TTL_SECONDS,
+    remote_cache_ttl_seconds: Optional[int] = None,
     refresh_stale_cache_in_background: bool = True,
     expected_run_date: Optional[str] = None,
 ) -> dict[str, Any]:
+    daily_cache_ttl = (
+        REMOTE_CACHE_TTL_SECONDS if remote_cache_ttl_seconds is None else remote_cache_ttl_seconds
+    )
+    favorites_cache_ttl = (
+        FAVORITES_CACHE_TTL_SECONDS if remote_cache_ttl_seconds is None else remote_cache_ttl_seconds
+    )
+    config_cache_ttl = (
+        FEEDBACK_CONFIG_CACHE_TTL_SECONDS if remote_cache_ttl_seconds is None else remote_cache_ttl_seconds
+    )
     required_run_date = expected_run_date if expected_run_date is not None else _expected_daily_run_date()
     selected_date = _parse_archive_date(date)
     favorites_payload = _load_cache_first(
         fetcher=favorites_fetcher,
         cache_path=favorites_cache_path,
         fallback={"records": []},
-        remote_cache_ttl_seconds=remote_cache_ttl_seconds,
+        remote_cache_ttl_seconds=favorites_cache_ttl,
         refresh_stale_cache_in_background=refresh_stale_cache_in_background,
         write_empty=False,
         required_run_date=None,
     )
-    favorite_records = _favorite_records(favorites_payload)
-    favorite_dates = _favorite_dates(favorite_records)
-    archive_counts = _favorite_date_counts(favorite_records)
     current_payload = _load_cache_first(
         fetcher=payload_fetcher,
         cache_path=cache_path,
         fallback={"recommendations": [], "run_date": ""},
-        remote_cache_ttl_seconds=remote_cache_ttl_seconds,
+        remote_cache_ttl_seconds=daily_cache_ttl,
         refresh_stale_cache_in_background=refresh_stale_cache_in_background,
         write_empty=True,
         required_run_date=required_run_date,
     )
-    current_run_date = _parse_archive_date(str(current_payload.get("run_date") or ""))
+    source_snapshot = _daily_source_snapshot(current_payload, favorites_payload)
+    favorite_records = source_snapshot["favorite_records"]
+    favorite_dates = source_snapshot["favorite_dates"]
+    archive_counts = source_snapshot["archive_counts"]
+    current_run_date = source_snapshot["current_run_date"]
     if current_run_date:
-        archive_counts[current_run_date] = _recommendation_counts(current_payload.get("recommendations", []))
+        archive_counts = {
+            **archive_counts,
+            current_run_date: source_snapshot["current_counts"],
+        }
     if selected_date and selected_date != current_run_date:
         recommender_payload = _favorites_payload_for_date(favorite_records, selected_date)
     else:
@@ -228,7 +253,7 @@ def load_daily_payload(
         fetcher=config_fetcher,
         cache_path=config_cache_path,
         fallback={},
-        remote_cache_ttl_seconds=remote_cache_ttl_seconds,
+        remote_cache_ttl_seconds=config_cache_ttl,
         refresh_stale_cache_in_background=refresh_stale_cache_in_background,
         write_empty=False,
         required_run_date=None,
@@ -242,7 +267,7 @@ def load_daily_payload(
         archive_dates=favorite_dates,
         archive_counts=archive_counts,
         current_run_date=current_run_date,
-        profile_radar=_profile_radar_for_payload(current_payload, favorite_records),
+        profile_radar=source_snapshot["profile_radar"],
     )
 
 
@@ -354,9 +379,36 @@ def _favorite_date_counts(records: list[dict[str, Any]]) -> dict[str, dict[str, 
     return counts
 
 
+def _daily_source_snapshot(
+    current_payload: dict[str, Any],
+    favorites_payload: dict[str, Any],
+) -> dict[str, Any]:
+    current_signature = _json_object_signature(current_payload)
+    favorites_signature = _json_object_signature(favorites_payload)
+
+    def build_snapshot() -> dict[str, Any]:
+        favorite_records = _favorite_records(favorites_payload)
+        normalized_current = _normalized_payload_snapshot(current_payload, DEFAULT_DAILY_BASE_URL)
+        return {
+            "favorite_records": tuple(favorite_records),
+            "favorite_dates": tuple(_favorite_dates(favorite_records)),
+            "archive_counts": _favorite_date_counts(favorite_records),
+            "current_run_date": _parse_archive_date(str(current_payload.get("run_date") or "")),
+            "current_counts": dict(normalized_current["counts"]),
+            "profile_radar": _profile_radar_for_payload(current_payload, favorite_records),
+        }
+
+    if current_signature is None or favorites_signature is None:
+        return build_snapshot()
+    return _derived_cache_value(
+        ("daily-source", current_signature, favorites_signature),
+        build_snapshot,
+    )
+
+
 def _recommendation_counts(items: Any) -> dict[str, int]:
     counts = {"papers": 0, "code": 0}
-    if not isinstance(items, list):
+    if not isinstance(items, (list, tuple)):
         return counts
     for item in items:
         if not isinstance(item, dict):
@@ -455,41 +507,83 @@ def build_daily_payload(
     profile_radar: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     run_date = str(recommender_payload.get("run_date") or "")
-    all_items = [
-        _normalize_item(item, recommender_payload.get("section_labels") or {}, source_base_url, run_date)
-        for item in recommender_payload.get("recommendations", [])
-    ]
+    normalized_snapshot = _normalized_payload_snapshot(recommender_payload, source_base_url)
     active_item_type = _parse_item_type(item_type)
-    base_items = [item for item in all_items if not active_item_type or item["item_type"] == active_item_type]
+    base_items = normalized_snapshot["items_by_type"][active_item_type]
+    selected_keywords = _parse_keywords(
+        keywords,
+        normalized_snapshot["keywords_by_type"][active_item_type],
+    )
     items = base_items
-    selected_keywords = _parse_keywords(keywords)
     if selected_keywords:
         items = [item for item in items if _matches_keywords(item, selected_keywords)]
 
-    keyword_counts: Counter[str] = Counter()
-    for item in base_items:
-        keyword_counts.update(item["keywords"])
-
     counts = _normalize_archive_counts(archive_counts)
     if run_date:
-        counts.setdefault(run_date, _recommendation_counts(all_items))
+        counts.setdefault(run_date, dict(normalized_snapshot["counts"]))
 
-    resolved_profile_radar = _prepare_profile_radar(profile_radar or recommender_payload.get("profile_radar"))
+    raw_profile_radar = profile_radar or recommender_payload.get("profile_radar")
+    if _is_prepared_profile_radar(raw_profile_radar):
+        resolved_profile_radar = copy.deepcopy(raw_profile_radar)
+    else:
+        resolved_profile_radar = _prepare_profile_radar(raw_profile_radar)
 
     return {
         "run_date": recommender_payload.get("run_date", ""),
         "source_url": source_base_url.rstrip("/"),
-        "items": items,
+        "items": copy.deepcopy(list(items)) if normalized_snapshot["is_cached"] else list(items),
         "filter_keywords": selected_keywords,
         "active_item_type": active_item_type,
-        "sorted_keywords": _pack_keyword_counts(keyword_counts),
-        "feedback_config": feedback_config or {},
+        "sorted_keywords": list(normalized_snapshot["sorted_keywords_by_type"][active_item_type]),
+        "feedback_config": dict(feedback_config) if feedback_config else {},
         "selected_date": selected_date or run_date,
         "current_run_date": _parse_archive_date(current_run_date) or run_date,
-        "archive_dates": archive_dates or ([run_date] if run_date else []),
+        "archive_dates": list(archive_dates) if archive_dates else ([run_date] if run_date else []),
         "archive_counts": counts,
         "profile_radar": resolved_profile_radar,
     }
+
+
+def _normalized_payload_snapshot(
+    recommender_payload: dict[str, Any],
+    source_base_url: str,
+) -> dict[str, Any]:
+    signature = _json_object_signature(recommender_payload)
+
+    def build_snapshot() -> dict[str, Any]:
+        run_date = str(recommender_payload.get("run_date") or "")
+        section_labels = recommender_payload.get("section_labels") or {}
+        all_items = tuple(
+            _normalize_item(item, section_labels, source_base_url, run_date)
+            for item in recommender_payload.get("recommendations", [])
+        )
+        items_by_type = {
+            "": all_items,
+            "paper": tuple(item for item in all_items if item["item_type"] == "paper"),
+            "repository": tuple(item for item in all_items if item["item_type"] == "repository"),
+        }
+        keywords_by_type: dict[str, tuple[str, ...]] = {}
+        sorted_keywords_by_type: dict[str, tuple[tuple[str, int], ...]] = {}
+        for filter_type, filtered_items in items_by_type.items():
+            keyword_counts: Counter[str] = Counter()
+            for item in filtered_items:
+                keyword_counts.update(item["keywords"])
+            keywords_by_type[filter_type] = tuple(keyword_counts)
+            sorted_keywords_by_type[filter_type] = tuple(_pack_keyword_counts(keyword_counts))
+        return {
+            "items_by_type": items_by_type,
+            "keywords_by_type": keywords_by_type,
+            "sorted_keywords_by_type": sorted_keywords_by_type,
+            "counts": _recommendation_counts(all_items),
+            "is_cached": signature is not None,
+        }
+
+    if signature is None:
+        return build_snapshot()
+    return _derived_cache_value(
+        ("normalized-payload", signature, source_base_url.rstrip("/")),
+        build_snapshot,
+    )
 
 
 def _normalize_archive_counts(value: Optional[dict[str, dict[str, int]]]) -> dict[str, dict[str, int]]:
@@ -858,6 +952,16 @@ def _prepare_profile_radar(value: Any) -> dict[str, Any]:
     }
 
 
+def _is_prepared_profile_radar(value: Any) -> bool:
+    return bool(
+        isinstance(value, dict)
+        and isinstance(value.get("axes"), list)
+        and isinstance(value.get("rings"), list)
+        and value.get("polygon_points")
+        and value.get("view_box")
+    )
+
+
 def _profile_axis_label(value: Any) -> str:
     label = " ".join(str(value or "").split())
     if len(label) <= PROFILE_RADAR_LABEL_MAX_LENGTH:
@@ -968,14 +1072,36 @@ def _paper_links(item: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def _matches_keywords(item: dict[str, Any], selected_keywords: Iterable[str]) -> bool:
-    keywords = {keyword.lower() for keyword in item.get("keywords", [])}
-    return all(keyword.lower() in keywords for keyword in selected_keywords)
+    keywords = {keyword.casefold() for keyword in item.get("keywords", [])}
+    return all(keyword.casefold() in keywords for keyword in selected_keywords)
 
 
-def _parse_keywords(value: Optional[str]) -> list[str]:
+def _parse_keywords(value: Optional[str], available_keywords: Iterable[str] = ()) -> list[str]:
     if not value:
         return []
-    return [part.strip() for part in value.split(",") if part.strip()]
+    requested_by_key: dict[str, str] = {}
+    for part in value[:2048].split(","):
+        keyword = part.strip()
+        if keyword:
+            requested_by_key.setdefault(keyword.casefold(), keyword)
+    if not requested_by_key:
+        return []
+
+    canonical_keywords = {
+        keyword.casefold(): keyword
+        for keyword in available_keywords
+        if keyword
+    }
+    if canonical_keywords:
+        return sorted(
+            (canonical_keywords[key] for key in requested_by_key if key in canonical_keywords),
+            key=lambda keyword: (keyword.casefold(), keyword),
+        )[:MAX_FILTER_KEYWORDS]
+
+    return sorted(
+        requested_by_key.values(),
+        key=lambda keyword: (keyword.casefold(), keyword),
+    )[:MAX_FILTER_KEYWORDS]
 
 
 def _parse_item_type(value: Optional[str]) -> str:
@@ -1012,16 +1138,94 @@ def _extract_js_string(text: str, key: str) -> str:
     return match.group(1) if match else ""
 
 
+def _json_object_signature(value: dict[str, Any]) -> tuple[Path, int, int] | None:
+    with _JSON_CACHE_LOCK:
+        for cache_key, cached_value in _JSON_CACHE.items():
+            if cached_value is value:
+                return cache_key
+    return None
+
+
+def _derived_cache_value(
+    cache_key: tuple[Any, ...],
+    builder: Callable[[], _DerivedValue],
+) -> _DerivedValue:
+    with _DERIVED_CACHE_LOCK:
+        if cache_key in _DERIVED_CACHE:
+            _DERIVED_CACHE.move_to_end(cache_key)
+            return _DERIVED_CACHE[cache_key]
+
+        value = builder()
+        _DERIVED_CACHE[cache_key] = value
+        while len(_DERIVED_CACHE) > _DERIVED_CACHE_MAX_ENTRIES:
+            _DERIVED_CACHE.popitem(last=False)
+        return value
+
+
 def _read_cache(path: Path) -> dict[str, Any] | None:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        resolved_path = path.resolve()
+        for _ in range(2):
+            with _JSON_CACHE_LOCK:
+                stat = resolved_path.stat()
+                cache_key = (resolved_path, stat.st_mtime_ns, stat.st_size)
+                cached_value = _JSON_CACHE.get(cache_key)
+                if cached_value is not None:
+                    _JSON_CACHE.move_to_end(cache_key)
+                    return cached_value
+
+                value = json.loads(resolved_path.read_text(encoding="utf-8"))
+                if not isinstance(value, dict):
+                    return None
+
+                verified_stat = resolved_path.stat()
+                verified_key = (resolved_path, verified_stat.st_mtime_ns, verified_stat.st_size)
+                if verified_key != cache_key:
+                    continue
+
+                _invalidate_json_cache_locked(resolved_path)
+                _JSON_CACHE[cache_key] = value
+                while len(_JSON_CACHE) > _JSON_CACHE_MAX_ENTRIES:
+                    _JSON_CACHE.popitem(last=False)
+                return value
     except Exception:
-        return None
+        pass
+    return None
 
 
 def _write_cache(path: Path, payload: dict[str, Any]) -> None:
+    temporary_path: Path | None = None
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            json.dump(payload, temporary_file, ensure_ascii=False)
+            temporary_file.flush()
+            os.fsync(temporary_file.fileno())
+
+        resolved_path = path.resolve()
+        with _JSON_CACHE_LOCK:
+            os.replace(temporary_path, path)
+            temporary_path = None
+            _invalidate_json_cache_locked(resolved_path)
     except Exception:
         pass
+    finally:
+        if temporary_path is not None:
+            try:
+                temporary_path.unlink()
+            except OSError:
+                pass
+
+
+def _invalidate_json_cache_locked(resolved_path: Path) -> None:
+    stale_keys = [key for key in _JSON_CACHE if key[0] == resolved_path]
+    for key in stale_keys:
+        _JSON_CACHE.pop(key, None)
