@@ -62,6 +62,7 @@ tags: Architecture, AI
         self.assertIn("Publications | Yixun Hong", response.text)
         self.assertIn('class="article-grid publication-grid"', response.text)
         self.assertIn('class="card home-glass article-card publication-page-card"', response.text)
+        self.assertIn("layered-filter-card publication-keywords-card", response.text)
         self.assertIn("FlashGPU-sim: Enabling GPU Modeling", response.text)
         self.assertIn("Keywords", response.text)
         self.assertIn("GPU Modeling", response.text)
@@ -75,6 +76,25 @@ tags: Architecture, AI
         empty = client.get("/publications", params={"keywords": "Not Present"})
         self.assertEqual(empty.status_code, 200)
         self.assertIn("No publications found.", empty.text)
+
+    def test_publication_filter_material_keeps_layers_and_accessible_fallbacks(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        styles = (root / "static/css/styles.css").read_text(encoding="utf-8")
+
+        self.assertIn(".home-liquid-card.layered-filter-card", styles)
+        self.assertIn(".publication-page-card.home-glass", styles)
+        self.assertIn(".publication-page-card .publication-keyword:not(.is-active)", styles)
+        self.assertIn("background: linear-gradient(135deg, #2563eb, #1d4ed8);", styles)
+        active_material = styles.split(".layered-filter-card .chip.is-active,", 1)[1].split("}", 1)[0]
+        self.assertIn("backdrop-filter: none", active_material)
+        self.assertIn("-webkit-backdrop-filter: none", active_material)
+        self.assertIn(".publication-page-card .publication-badge", styles)
+        self.assertIn("@media (prefers-reduced-transparency: reduce)", styles)
+        self.assertIn("@media (prefers-contrast: more)", styles)
+        self.assertIn("@media (forced-colors: active)", styles)
+        forced_colors = styles.rsplit("@media (forced-colors: active)", 1)[1]
+        self.assertIn(".prose a.publication-keyword.is-active", forced_colors)
+        self.assertGreater(styles.rfind("@media (forced-colors: active)"), styles.rfind("@supports not"))
 
     def test_publication_filter_urls_toggle_encoded_multi_keywords(self) -> None:
         self.assertEqual(

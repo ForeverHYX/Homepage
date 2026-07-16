@@ -5600,3 +5600,428 @@ footer {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
+
+/* --- Layered filter and publication materials -----------------------------
+   These task-focused cards borrow the navigation's bright upper rim and
+   grounded lower edge, but use a denser, quieter face so text and filters stay
+   readable. The chips are intentionally rendered as solid frosted layers
+   rather than starting another backdrop-filter sample inside a glass card. */
+.home-liquid-card.layered-filter-card,
+.home-liquid-card.daily-archive-card {
+    background:
+        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.16) 32%, rgba(255, 255, 255, 0) 56%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(241, 245, 249, 0.18) 52%, rgba(219, 234, 254, 0.24));
+    border-color: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(26px) saturate(168%) contrast(1.05) brightness(1.02);
+    -webkit-backdrop-filter: blur(26px) saturate(168%) contrast(1.05) brightness(1.02);
+    box-shadow:
+        0 18px 42px rgba(73, 92, 138, 0.13),
+        0 4px 12px rgba(73, 92, 138, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.12),
+        inset 0 -14px 28px rgba(96, 165, 250, 0.06);
+}
+
+.home-liquid-card.layered-filter-card::after,
+.home-liquid-card.daily-archive-card::after {
+    opacity: 0.4;
+}
+
+.publication-page-card.home-glass {
+    --home-glass-blur: 28px;
+    --home-glass-face-top: rgba(255, 255, 255, 0.58);
+    --home-glass-face-sheen: rgba(255, 255, 255, 0.28);
+    --home-glass-face-mid: rgba(255, 255, 255, 0.19);
+    --home-glass-face-bottom: rgba(219, 234, 254, 0.31);
+    --home-glass-inner-top: rgba(255, 255, 255, 0.72);
+    --home-glass-inner-bottom: rgba(100, 116, 139, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(var(--home-glass-blur)) saturate(168%) contrast(1.05) brightness(1.015);
+    -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(168%) contrast(1.05) brightness(1.015);
+    box-shadow:
+        0 20px 48px rgba(55, 65, 95, 0.14),
+        0 5px 14px rgba(55, 65, 95, 0.055),
+        inset 0 1px 0 var(--home-glass-inner-top),
+        inset 0 -1px 0 rgba(71, 85, 105, 0.1),
+        inset 0 -18px 30px var(--home-glass-inner-bottom);
+}
+
+.layered-filter-card .chip:not(.is-active),
+.daily-card .daily-keyword-list .chip:not(.is-active),
+.publication-page-card .publication-keyword:not(.is-active) {
+    color: var(--text);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(226, 232, 240, 0.36));
+    border-color: rgba(255, 255, 255, 0.84);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow:
+        0 5px 12px rgba(71, 85, 105, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
+    font-weight: 600;
+}
+
+.layered-filter-card .chip.is-active,
+.daily-card .daily-keyword-list .chip.is-active,
+.publication-page-card .publication-keyword.is-active,
+.prose a.publication-keyword.is-active {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background-clip: border-box;
+    -webkit-background-clip: border-box;
+    -webkit-text-fill-color: currentColor;
+    border-color: rgba(30, 64, 175, 0.72);
+    box-shadow:
+        0 8px 18px rgba(30, 64, 175, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.32),
+        inset 0 -1px 0 rgba(15, 23, 42, 0.2);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    font-weight: 650;
+}
+
+.daily-keywords-card .daily-type-button:is(:hover, .is-active),
+.publication-page-card .publication-badge {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    border-color: rgba(30, 64, 175, 0.72);
+    -webkit-text-fill-color: currentColor;
+}
+
+.daily-archive-card .anniversary-grid-wrap {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(241, 245, 249, 0.46));
+    border-color: rgba(255, 255, 255, 0.78);
+    box-shadow:
+        0 8px 18px rgba(71, 85, 105, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
+}
+
+[data-theme="dark"] .home-liquid-card.layered-filter-card,
+[data-theme="dark"] .home-liquid-card.daily-archive-card {
+    background:
+        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 34%, rgba(255, 255, 255, 0) 58%),
+        linear-gradient(160deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.44) 55%, rgba(30, 64, 175, 0.18));
+    border-color: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(24px) saturate(154%) contrast(1.04) brightness(1.01);
+    -webkit-backdrop-filter: blur(24px) saturate(154%) contrast(1.04) brightness(1.01);
+    box-shadow:
+        0 20px 44px rgba(0, 0, 0, 0.32),
+        0 5px 14px rgba(0, 0, 0, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+        inset 0 -14px 28px rgba(37, 99, 235, 0.08);
+}
+
+[data-theme="dark"] .publication-page-card.home-glass {
+    --home-glass-face-top: rgba(30, 41, 59, 0.58);
+    --home-glass-face-sheen: rgba(30, 41, 59, 0.42);
+    --home-glass-face-mid: rgba(15, 23, 42, 0.4);
+    --home-glass-face-bottom: rgba(20, 28, 44, 0.54);
+    --home-glass-inner-top: rgba(255, 255, 255, 0.16);
+    --home-glass-inner-bottom: rgba(37, 99, 235, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(26px) saturate(150%) contrast(1.04) brightness(1.01);
+    -webkit-backdrop-filter: blur(26px) saturate(150%) contrast(1.04) brightness(1.01);
+    box-shadow:
+        0 22px 50px rgba(0, 0, 0, 0.36),
+        0 6px 16px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 var(--home-glass-inner-top),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.32),
+        inset 0 -18px 30px var(--home-glass-inner-bottom);
+}
+
+[data-theme="dark"] .layered-filter-card .chip:not(.is-active),
+[data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
+[data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active) {
+    color: var(--text);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(148, 163, 184, 0.075));
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow:
+        0 5px 14px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    -webkit-text-fill-color: currentColor;
+}
+
+[data-theme="dark"] .daily-archive-card .anniversary-grid-wrap {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(15, 23, 42, 0.24));
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .home-liquid-card.layered-filter-card:hover,
+    .home-liquid-card.daily-archive-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.84);
+        box-shadow:
+            0 24px 50px rgba(73, 92, 138, 0.16),
+            0 8px 18px rgba(73, 92, 138, 0.07),
+            inset 0 1px 0 rgba(255, 255, 255, 0.88),
+            inset 0 -1px 0 rgba(100, 116, 139, 0.13),
+            inset 0 -14px 28px rgba(96, 165, 250, 0.07);
+    }
+
+    .publication-page-card.home-glass:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255, 255, 255, 0.82);
+        box-shadow:
+            0 26px 58px rgba(55, 65, 95, 0.17),
+            0 8px 18px rgba(55, 65, 95, 0.07),
+            inset 0 1px 0 rgba(255, 255, 255, 0.78),
+            inset 0 -1px 0 rgba(71, 85, 105, 0.11);
+    }
+
+    .layered-filter-card .chip:not(.is-active):hover,
+    .daily-card .daily-keyword-list .chip:not(.is-active):hover,
+    .publication-page-card .publication-keyword:not(.is-active):hover {
+        color: var(--heading);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(219, 234, 254, 0.48));
+        border-color: rgba(96, 165, 250, 0.48);
+        transform: translateY(-1px);
+        filter: none;
+        text-decoration: none;
+        -webkit-text-fill-color: currentColor;
+    }
+
+    [data-theme="dark"] .layered-filter-card .chip:not(.is-active):hover,
+    [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active):hover,
+    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active):hover {
+        background: linear-gradient(180deg, rgba(96, 165, 250, 0.2), rgba(37, 99, 235, 0.12));
+        border-color: rgba(96, 165, 250, 0.46);
+    }
+
+    [data-theme="dark"] .home-liquid-card.layered-filter-card:hover,
+    [data-theme="dark"] .home-liquid-card.daily-archive-card:hover {
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow:
+            0 26px 56px rgba(0, 0, 0, 0.4),
+            0 8px 20px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.36);
+    }
+
+    [data-theme="dark"] .publication-page-card.home-glass:hover {
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow:
+            0 28px 60px rgba(0, 0, 0, 0.42),
+            0 8px 20px rgba(0, 0, 0, 0.22),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.34);
+    }
+}
+
+@media (max-width: 800px) {
+    .home-liquid-card.layered-filter-card,
+    .home-liquid-card.daily-archive-card {
+        background:
+            radial-gradient(120% 80% at 18% -16%, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 52%),
+            linear-gradient(160deg, rgba(255, 255, 255, 0.4), rgba(241, 245, 249, 0.22) 54%, rgba(219, 234, 254, 0.28));
+        backdrop-filter: blur(18px) saturate(158%);
+        -webkit-backdrop-filter: blur(18px) saturate(158%);
+        box-shadow:
+            0 15px 32px rgba(73, 92, 138, 0.12),
+            0 4px 10px rgba(73, 92, 138, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.84),
+            inset 0 -1px 0 rgba(100, 116, 139, 0.12);
+    }
+
+    .publication-page-card.home-glass {
+        --home-glass-blur: 18px;
+        --home-glass-face-top: rgba(255, 255, 255, 0.64);
+        --home-glass-face-sheen: rgba(255, 255, 255, 0.34);
+        --home-glass-face-mid: rgba(255, 255, 255, 0.24);
+        --home-glass-face-bottom: rgba(219, 234, 254, 0.36);
+        background: linear-gradient(180deg, var(--home-glass-face-top) 0%, var(--home-glass-face-sheen) 18%, var(--home-glass-face-mid) 48%, var(--home-glass-face-bottom) 100%);
+        backdrop-filter: blur(var(--home-glass-blur)) saturate(158%);
+        -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(158%);
+        box-shadow:
+            0 16px 36px rgba(55, 65, 95, 0.13),
+            0 4px 12px rgba(55, 65, 95, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.78),
+            inset 0 -1px 0 rgba(71, 85, 105, 0.1);
+    }
+
+    [data-theme="dark"] .home-liquid-card.layered-filter-card,
+    [data-theme="dark"] .home-liquid-card.daily-archive-card {
+        background:
+            radial-gradient(120% 80% at 18% -16%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 54%),
+            linear-gradient(160deg, rgba(30, 41, 59, 0.62), rgba(15, 23, 42, 0.5) 56%, rgba(30, 64, 175, 0.2));
+        box-shadow:
+            0 16px 36px rgba(0, 0, 0, 0.3),
+            0 4px 12px rgba(0, 0, 0, 0.16),
+            inset 0 1px 0 rgba(255, 255, 255, 0.17),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.32);
+    }
+
+    [data-theme="dark"] .publication-page-card.home-glass {
+        --home-glass-face-top: rgba(30, 41, 59, 0.64);
+        --home-glass-face-sheen: rgba(30, 41, 59, 0.46);
+        --home-glass-face-mid: rgba(15, 23, 42, 0.44);
+        --home-glass-face-bottom: rgba(20, 28, 44, 0.58);
+        box-shadow:
+            0 18px 40px rgba(0, 0, 0, 0.34),
+            0 5px 14px rgba(0, 0, 0, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.16),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.32);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-liquid-card.layered-filter-card:hover,
+    .home-liquid-card.daily-archive-card:hover,
+    .publication-page-card.home-glass:hover,
+    .layered-filter-card .chip:hover,
+    .daily-card .daily-keyword-list .chip:hover,
+    .publication-page-card .publication-keyword:hover {
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .home-liquid-card.layered-filter-card::before,
+    .home-liquid-card.layered-filter-card::after,
+    .home-liquid-card.layered-filter-card .home-liquid-warp,
+    .home-liquid-card.daily-archive-card::before,
+    .home-liquid-card.daily-archive-card::after,
+    .home-liquid-card.daily-archive-card .home-liquid-warp,
+    .publication-page-card.home-glass::before,
+    .publication-page-card.home-glass::after {
+        display: none !important;
+    }
+
+    .layered-filter-card .chip:not(.is-active),
+    .daily-card .daily-keyword-list .chip:not(.is-active),
+    .publication-page-card .publication-keyword:not(.is-active) {
+        background: #f8fafc !important;
+        border-color: rgba(71, 85, 105, 0.42);
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    [data-theme="dark"] .layered-filter-card .chip:not(.is-active),
+    [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
+    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active) {
+        background: #0f172a !important;
+        border-color: rgba(226, 232, 240, 0.34);
+    }
+}
+
+@media (prefers-contrast: more) {
+    .home-liquid-card.layered-filter-card,
+    .home-liquid-card.daily-archive-card,
+    .publication-page-card.home-glass {
+        background: rgba(248, 250, 252, 0.98);
+        border-color: rgba(15, 23, 42, 0.58);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .layered-filter-card .chip:not(.is-active),
+    .daily-card .daily-keyword-list .chip:not(.is-active),
+    .publication-page-card .publication-keyword:not(.is-active) {
+        background: #fff;
+        border-color: rgba(15, 23, 42, 0.68);
+    }
+
+    [data-theme="dark"] .home-liquid-card.layered-filter-card,
+    [data-theme="dark"] .home-liquid-card.daily-archive-card,
+    [data-theme="dark"] .publication-page-card.home-glass {
+        background: rgba(7, 18, 33, 0.98);
+        border-color: rgba(248, 250, 252, 0.62);
+    }
+
+    [data-theme="dark"] .layered-filter-card .chip:not(.is-active),
+    [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
+    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active) {
+        background: #0f172a;
+        border-color: rgba(248, 250, 252, 0.58);
+    }
+
+    .home-liquid-card.layered-filter-card::before,
+    .home-liquid-card.layered-filter-card::after,
+    .home-liquid-card.layered-filter-card .home-liquid-warp,
+    .home-liquid-card.daily-archive-card::before,
+    .home-liquid-card.daily-archive-card::after,
+    .home-liquid-card.daily-archive-card .home-liquid-warp,
+    .publication-page-card.home-glass::before,
+    .publication-page-card.home-glass::after {
+        display: none;
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .home-liquid-card.layered-filter-card,
+    .home-liquid-card.daily-archive-card,
+    .publication-page-card.home-glass {
+        background: rgba(248, 250, 252, 0.97);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    [data-theme="dark"] .home-liquid-card.layered-filter-card,
+    [data-theme="dark"] .home-liquid-card.daily-archive-card,
+    [data-theme="dark"] .publication-page-card.home-glass {
+        background: rgba(7, 18, 33, 0.97);
+    }
+
+    .home-liquid-card.layered-filter-card::before,
+    .home-liquid-card.layered-filter-card::after,
+    .home-liquid-card.layered-filter-card .home-liquid-warp,
+    .home-liquid-card.daily-archive-card::before,
+    .home-liquid-card.daily-archive-card::after,
+    .home-liquid-card.daily-archive-card .home-liquid-warp,
+    .publication-page-card.home-glass::before,
+    .publication-page-card.home-glass::after {
+        display: none;
+    }
+}
+
+/* Keep forced-colors last so it also wins when the browser combines this
+   preference with the no-backdrop-filter fallback above. */
+@media (forced-colors: active) {
+    .home-liquid-card.layered-filter-card,
+    .home-liquid-card.daily-archive-card,
+    .publication-page-card.home-glass,
+    .layered-filter-card .chip,
+    .daily-keywords-card .daily-type-button,
+    .daily-card .daily-keyword-list .chip,
+    .publication-page-card .publication-keyword,
+    .publication-page-card .publication-badge,
+    .daily-archive-card .anniversary-grid-wrap {
+        color: CanvasText;
+        background: Canvas;
+        border: 1px solid CanvasText;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        -webkit-text-fill-color: currentColor;
+    }
+
+    .layered-filter-card .chip.is-active,
+    .daily-keywords-card .daily-type-button:is(:hover, .is-active),
+    .daily-card .daily-keyword-list .chip.is-active,
+    .publication-page-card .publication-keyword.is-active,
+    .prose a.publication-keyword.is-active,
+    .publication-page-card .publication-badge {
+        color: HighlightText;
+        background: Highlight;
+        border-color: Highlight;
+        -webkit-text-fill-color: HighlightText;
+    }
+
+    .home-liquid-card.layered-filter-card::before,
+    .home-liquid-card.layered-filter-card::after,
+    .home-liquid-card.layered-filter-card .home-liquid-warp,
+    .home-liquid-card.daily-archive-card::before,
+    .home-liquid-card.daily-archive-card::after,
+    .home-liquid-card.daily-archive-card .home-liquid-warp,
+    .publication-page-card.home-glass::before,
+    .publication-page-card.home-glass::after {
+        display: none;
+    }
+}
