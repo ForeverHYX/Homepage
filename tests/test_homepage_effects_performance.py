@@ -506,6 +506,11 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("prefers-reduced-transparency: reduce", styles)
         self.assertIn("prefers-contrast: more", styles)
         self.assertIn("forced-colors: active", styles)
+        self.assertIn(
+            "@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))",
+            styles,
+        )
+        self.assertIn(".nav-mobile-panel .home-liquid-warp", styles)
         self.assertIn("(hover: hover) and (pointer: fine)", liquid_source)
 
     def test_floating_navigation_keeps_sticky_positioning(self) -> None:

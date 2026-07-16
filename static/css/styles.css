@@ -277,7 +277,6 @@ a { color: inherit; text-decoration: none; }
        hover state reads consistently with the rest of the material. */
     transform: none;
     border-color: rgba(255, 255, 255, 0.47);
-    background-color: rgba(255, 255, 255, 0.035);
     box-shadow:
         0 14px 34px rgba(55, 65, 95, 0.14),
         0 4px 10px rgba(55, 65, 95, 0.065),
@@ -4064,7 +4063,6 @@ a { color: inherit; text-decoration: none; }
 [data-theme="dark"] .nav-island.home-liquid-card:hover {
     transform: none;
     border-color: rgba(255, 255, 255, 0.25);
-    background-color: rgba(255, 255, 255, 0.025);
     box-shadow:
         0 16px 38px rgba(0, 0, 0, 0.34),
         0 4px 12px rgba(0, 0, 0, 0.22),
@@ -4990,11 +4988,19 @@ footer {
     .nav-island.home-liquid-card {
         background: rgba(248, 250, 252, 0.94);
         border-color: rgba(15, 23, 42, 0.52);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     [data-theme="dark"] .nav-island.home-liquid-card {
         background: rgba(7, 18, 33, 0.94);
         border-color: rgba(248, 250, 252, 0.56);
+    }
+
+    .nav-island.home-liquid-card::before,
+    .nav-island.home-liquid-card::after,
+    .nav-island .home-liquid-warp {
+        display: none;
     }
 }
 
@@ -5011,13 +5017,16 @@ footer {
 
     .nav-island.home-liquid-card::before,
     .nav-island.home-liquid-card::after,
-    .nav-island .home-liquid-warp {
+    .nav-island .home-liquid-warp,
+    .nav-mobile-panel::before,
+    .nav-mobile-panel::after,
+    .nav-mobile-panel .home-liquid-warp {
         display: none;
     }
 }
 
 /* --- Backdrop-filter Fallback --- */
-@supports not (backdrop-filter: blur(1px)) {
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     /* Browsers without backdrop-filter: replace the translucent well/panel
        tokens with near-opaque fallbacks so surfaces stay readable. */
     :root {
@@ -5035,6 +5044,20 @@ footer {
         --panel-bg: rgba(17, 17, 30, 0.97);
         --panel-border: rgba(255, 255, 255, 0.18);
         --panel-inner: rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-island.home-liquid-card {
+        background: rgba(248, 250, 252, 0.94);
+    }
+
+    [data-theme="dark"] .nav-island.home-liquid-card {
+        background: rgba(7, 18, 33, 0.94);
+    }
+
+    .nav-island.home-liquid-card::before,
+    .nav-island.home-liquid-card::after,
+    .nav-island .home-liquid-warp {
+        display: none;
     }
 }
 
