@@ -8,8 +8,6 @@ uploads/*
 # Content-related files
 content/**
 !content/.gitkeep
-!content/articles/
-!content/articles/.gitkeep
 
 # Local smoke/debug entrypoints
 smoke_test.py

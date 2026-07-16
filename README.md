@@ -42,10 +42,9 @@ The backend lives in `app/` and is organized as:
 | `app/config.py` | Paths, rate limiter, env vars |
 | `app/auth.py` | bcrypt + session tokens |
 | `app/cache.py` | mtime-based in-memory cache |
-| `app/articles.py` | Article parsing |
 | `app/news.py` | News aggregation |
 | `app/content_utils.py` | Section extraction, about parsing |
-| `app/markdown_utils.py` | Markdown renderer (with PDF embed extension) |
+| `app/markdown_utils.py` | Markdown + structured publication rendering |
 | `app/education.py` | Education timeline parser |
 | `app/file_utils.py` | Image conversion, safe path join |
 | `app/gallery_utils.py` | Gallery config management |
@@ -58,7 +57,7 @@ The backend lives in `app/` and is organized as:
 
 | Route group | Handler | Purpose |
 | --- | --- | --- |
-| `/`, `/articles`, `/articles/{slug}`, `/gallery`, `/resume` | FastAPI + Jinja2 | Public HTML pages |
+| `/`, `/publications`, `/daily`, `/gallery`, `/resume` | FastAPI + Jinja2 | Public HTML pages |
 | `/login`, `/upload` | FastAPI + Jinja2 | Admin pages (auth-gated) |
 | `/api/site/*`, `/api/search-index` | FastAPI JSON | Data for client-side JS fetches |
 | `/api/upload`, `/api/files*`, `/api/folder*`, `/api/gallery/toggle`, `/api/login` | FastAPI JSON | Admin operations (auth-gated) |
@@ -75,14 +74,13 @@ The backend lives in `app/` and is organized as:
   theme-adaptive)
 - Mobile fallback to standard frosted glass for better performance
 - Markdown-driven homepage sections
-- Markdown-driven article system with:
-  - tags
-  - summaries
-  - automatic TOC generation
-  - fenced code blocks
-  - inline PDF embedding (via a custom Python-Markdown `PdfExtension`)
+- Markdown-driven publication system with:
+  - conference/journal badges
+  - keyword filtering
+  - venue and author metadata
+  - optional Paper and Code links
 - Folder-based gallery publishing with metadata
-- Search across articles and albums
+- Search across publications, Daily entries, and albums
 - Dark/light theme via `data-theme` attribute + CSS custom properties
 - Secure upload dashboard for:
   - drag-and-drop uploads
@@ -101,10 +99,9 @@ The backend lives in `app/` and is organized as:
 │   ├── config.py                 # Paths, rate limiter, env vars
 │   ├── auth.py                   # bcrypt + session tokens
 │   ├── cache.py                  # mtime-based in-memory cache
-│   ├── articles.py               # Article parsing
 │   ├── news.py                   # News aggregation
 │   ├── content_utils.py          # Section extraction, about parsing
-│   ├── markdown_utils.py         # Markdown renderer (with PDF embed extension)
+│   ├── markdown_utils.py         # Markdown + publication renderer
 │   ├── education.py              # Education timeline parser
 │   ├── file_utils.py             # Image conversion, safe path join
 │   ├── gallery_utils.py          # Gallery config management
@@ -117,7 +114,7 @@ The backend lives in `app/` and is organized as:
 │       ├── base.html             # Layout: nav island, lightfield, footer, scripts
 │       └── pages/
 │           ├── home.html
-│           ├── articles.html
+│           ├── publications.html
 │           ├── article_detail.html
 │           ├── gallery.html
 │           ├── resume.html
@@ -141,9 +138,8 @@ The backend lives in `app/` and is organized as:
 │           └── anniversary-data.js
 ├── content/                      # Markdown content (the "database")
 │   ├── about.md                  # Profile info
-│   ├── content.md                # Homepage sections
-│   ├── news.md                   # Manual news entries
-│   └── articles/*.md             # One file per article
+│   ├── content.md                # Homepage sections + publication records
+│   └── news.md                   # Manual news entries
 ├── uploads/                      # Gallery albums, avatar, documents
 │   ├── <album>/                  # Images + meta.json per album
 │   ├── avatar.png
@@ -169,11 +165,11 @@ automatically whenever a file's mtime changes.
 - `content/news.md`
   - manual news entries
 
-### Articles
+### Publications
 
-- `content/articles/*.md`
-  - each markdown file becomes an article
-  - the parser extracts title, date, author, tags, abstract/summary
+- `content/content.md`
+  - `:::publication` blocks define title, venue, authors, keywords, and links
+  - the same structured records power the homepage and `/publications` filters
 
 ### Gallery
 

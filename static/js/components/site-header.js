@@ -36,7 +36,7 @@
    *
    * Reads window.location.pathname and sets data-active="true" on matching
    * .nav-link / .nav-mobile-link elements. Exact match for "/", prefix match
-   * for nested routes (e.g. /articles/some-slug matches /articles).
+   * for nested routes (e.g. /daily/articles/some-slug matches /daily).
    * ------------------------------------------------------------------------- */
   function initActiveRoutes() {
     var path = window.location.pathname || "/";

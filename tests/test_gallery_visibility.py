@@ -8,7 +8,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from app import articles, gallery_utils, news
+from app import gallery_utils, news
 from app.cache import _cache
 from app.main import app
 from app.routers import pages, upload
@@ -170,10 +170,8 @@ class GalleryVisibilityTests(TestCase):
         with TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             content_dir = root / "content"
-            articles_dir = content_dir / "articles"
             upload_dir = root / "uploads"
             content_dir.mkdir()
-            articles_dir.mkdir()
             upload_dir.mkdir()
             config_file = root / "gallery_config.json"
             album_dir = upload_dir / "Yixing"
@@ -192,9 +190,7 @@ class GalleryVisibilityTests(TestCase):
                 news, "UPLOAD_DIR", upload_dir
             ), patch.object(
                 news, "GALLERY_CONFIG_FILE", config_file
-            ), patch.object(articles, "ARTICLES_DIR", articles_dir), patch.object(
-                gallery_utils, "GALLERY_CONFIG_FILE", config_file
-            ):
+            ), patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file):
                 public_news = news.parse_and_merge_news(limit=6)
                 self.assertIn("Bamboo Sea", public_news)
 

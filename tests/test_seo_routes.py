@@ -38,6 +38,7 @@ class SeoRoutesTests(TestCase):
             "https://foreverhyx.top/resume",
         ]:
             self.assertIn(f"<loc>{url}</loc>", response.text)
+        self.assertNotIn("https://foreverhyx.top/articles", response.text)
 
     def test_indexnow_key_file_is_publicly_verifiable(self) -> None:
         indexnow_key = getattr(pages, "INDEXNOW_KEY", "")

@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from app import markdown_utils
+from app import markdown_utils, news
 from app.cache import _cache
 from app.main import app
 from app.routers import pages
@@ -101,6 +101,44 @@ tags: Architecture, AI
         publication = next(item for item in search_payload if item["type"] == "Publication")
         self.assertIn("FlashGPU-sim", publication["title"])
         self.assertTrue(publication["url"].startswith("/publications#"))
+        self.assertFalse(any(item["type"] == "Article" for item in search_payload))
+        self.assertFalse(any(item["url"].startswith("/articles") for item in search_payload))
+
+    def test_legacy_articles_pages_and_apis_are_removed(self) -> None:
+        client = TestClient(app)
+
+        for path in (
+            "/articles",
+            "/articles/Homepage-Architecture",
+            "/api/site/articles",
+            "/api/site/articles/Homepage-Architecture",
+        ):
+            response = client.get(path, follow_redirects=False)
+            self.assertEqual(response.status_code, 404, path)
+            self.assertNotIn("location", response.headers)
+
+        publications = client.get("/publications")
+        self.assertIn('href="/publications"', publications.text)
+        self.assertNotIn('href="/articles"', publications.text)
+        self.assertNotIn(">Articles</a>", publications.text)
+
+    def test_news_no_longer_injects_article_or_blog_entries(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            content_dir = Path(temp_dir)
+            (content_dir / "news.md").write_text(
+                "- **2026-07**: Publication accepted.\n",
+                encoding="utf-8",
+            )
+            gallery_config = content_dir / "gallery_config.json"
+            _cache.clear()
+            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
+                news, "GALLERY_CONFIG_FILE", gallery_config
+            ), patch.object(news, "get_gallery_folders", return_value=[]):
+                rendered = news.parse_and_merge_news(limit=100)
+
+        self.assertIn("Publication accepted.", rendered)
+        self.assertNotIn("New blog post", rendered)
+        self.assertNotIn("/articles", rendered)
 
     def test_homepage_uses_selected_publication_heading_and_accent(self) -> None:
         response = TestClient(app).get("/")

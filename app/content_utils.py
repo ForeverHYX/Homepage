@@ -5,8 +5,6 @@ from pathlib import Path
 from app.config import CONTENT_DIR
 from app.cache import cache_by_mtime
 
-# Re-exports for backward compatibility
-from app.articles import get_all_articles
 from app.news import parse_and_merge_news
 from app.education import parse_education_timeline
 

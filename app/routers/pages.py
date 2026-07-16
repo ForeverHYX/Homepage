@@ -6,19 +6,16 @@ import re
 import markdown
 
 from fastapi import APIRouter, Request, Form, status, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from app.config import (
-    UPLOAD_DIR, ARTICLES_DIR,
-    limiter,
-)
+from app.config import UPLOAD_DIR, limiter
 from app.utils import (
     parse_markdown_sections, render_markdown_file, get_gallery_folders, 
     safe_join, get_folder_meta, PdfExtension
 )
 from app.markdown_utils import get_publications
-from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles, parse_education_timeline, get_raw_section_body
+from app.content_utils import get_about_info, parse_and_merge_news, parse_education_timeline, get_raw_section_body
 from app.daily import (
     build_daily_payload,
     daily_payload_search_entries,
@@ -42,19 +39,6 @@ SITEMAP_PATHS = (
     "/gallery",
     "/resume",
 )
-
-
-def _tags_url(current_tags: list[str], toggle: Optional[str] = None) -> str:
-    """Build a tag toggle URL for the articles filter."""
-    if not toggle:
-        next_tags = current_tags
-    elif toggle in current_tags:
-        next_tags = [t for t in current_tags if t != toggle]
-    else:
-        next_tags = [*current_tags, toggle]
-    if not next_tags:
-        return "/articles"
-    return f"/articles?tags={quote(','.join(next_tags))}"
 
 
 def _publication_keywords_url(current_keywords: list[str], toggle: Optional[str] = None) -> str:
@@ -180,30 +164,6 @@ def _build_home_payload(*, include_legacy_fields: bool = True) -> dict[str, Any]
         payload["sections_html"] = sections_html
         payload["all_news_html"] = parse_and_merge_news(limit=100)
     return payload
-
-
-def _build_articles_payload(tags: Optional[str] = None) -> dict[str, Any]:
-    articles = get_all_articles()
-    all_tags: dict[str, int] = {}
-    for article in articles:
-        for article_tag in article.get("tags", []):
-            if article_tag:
-                all_tags[article_tag] = all_tags.get(article_tag, 0) + 1
-
-    # Parse comma-separated tags
-    tag_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
-
-    filtered_articles = articles
-    if tag_list:
-        filtered_articles = [article for article in articles if all(t in article.get("tags", []) for t in tag_list)]
-
-    sorted_tags = sorted(all_tags.items(), key=lambda item: item[1], reverse=True)
-
-    return {
-        "articles": filtered_articles,
-        "filter_tags": tag_list,
-        "sorted_tags": sorted_tags,
-    }
 
 
 def _build_publications_payload(keywords: Optional[str] = None) -> dict[str, Any]:
@@ -338,15 +298,6 @@ def _gallery_cache_headers(include_private: bool) -> dict[str, str]:
     return {"Cache-Control": cache_control, "Vary": "Cookie"}
 
 
-def _build_article_detail_payload(slug: str) -> dict[str, Any]:
-    return _build_markdown_article_payload(
-        ARTICLES_DIR / f"{slug}.md",
-        slug,
-        back_url="/articles",
-        back_label="Back to Articles",
-    )
-
-
 def _build_markdown_article_payload(path: Path, slug: str, back_url: str, back_label: str) -> dict[str, Any]:
     if not path.exists():
         raise HTTPException(status_code=404, detail="Article not found")
@@ -468,12 +419,6 @@ def search_api():
             "date": "",
             "url": f"/publications#{publication['slug']}",
         })
-    for a in get_all_articles():
-        data.append({
-            "type": "Article", "title": a['title'], "desc": a['summary'],
-            "tags": a.get('tags', []), "date": a['date'],
-            "url": f"/articles/{a['slug']}"
-        })
     data.extend(daily_payload_search_entries(load_daily_payload()))
     for rel_path in get_gallery_folders():
         path = safe_join(UPLOAD_DIR, rel_path)
@@ -486,14 +431,6 @@ def search_api():
         })
     return JSONResponse(data)
 
-
-
-@router.get("/api/site/articles")
-def articles_api(tag: Optional[str] = None, tags: Optional[str] = None) -> Any:
-    # Support both old single-tag and new multi-tag param
-    effective_tags = tags if tags else tag
-    return JSONResponse(_build_articles_payload(effective_tags), headers={"Cache-Control": "public, max-age=60"})
-    return JSONResponse(_build_articles_payload(tag), headers={"Cache-Control": "public, max-age=60"})
 
 
 @router.get("/api/site/publications")
@@ -523,11 +460,6 @@ def gallery_api(request: Request, focus: Optional[str] = None) -> Any:
         headers=_gallery_cache_headers(include_private),
     )
 
-
-
-@router.get("/api/site/articles/{slug}")
-def article_detail_api(slug: str) -> Any:
-    return JSONResponse(_build_article_detail_payload(slug), headers={"Cache-Control": "public, max-age=300"})
 
 
 @router.post("/api/revalidate-gallery")
@@ -598,17 +530,6 @@ def home_page(request: Request):
     })
 
 
-@router.get("/articles", response_class=HTMLResponse)
-def articles_page(request: Request, tags: Optional[str] = None):
-    payload = _build_articles_payload(tags)
-    return templates.TemplateResponse(request, "pages/articles.html", {
-        "articles": payload["articles"],
-        "filter_tags": payload["filter_tags"],
-        "sorted_tags": payload["sorted_tags"],
-        "tags_url": _tags_url,
-    })
-
-
 @router.get("/publications", response_class=HTMLResponse)
 def publications_page(request: Request, keywords: Optional[str] = None):
     payload = _build_publications_payload(keywords)
@@ -655,17 +576,6 @@ def daily_article_detail_page(request: Request, slug: str):
         article = _build_daily_article_detail_payload(slug)
     except HTTPException:
         raise HTTPException(status_code=404, detail="Daily article not found")
-    return templates.TemplateResponse(request, "pages/article_detail.html", {
-        "article": article,
-    })
-
-
-@router.get("/articles/{slug}", response_class=HTMLResponse)
-def article_detail_page(request: Request, slug: str):
-    try:
-        article = _build_article_detail_payload(slug)
-    except HTTPException:
-        raise HTTPException(status_code=404, detail="Article not found")
     return templates.TemplateResponse(request, "pages/article_detail.html", {
         "article": article,
     })
