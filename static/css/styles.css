@@ -712,7 +712,6 @@ a { color: inherit; text-decoration: none; }
     z-index: 0;
     isolation: isolate;
     contain: paint;
-    transform: translateZ(0);
 }
 
 .home-lightfield::before,
@@ -764,12 +763,9 @@ a { color: inherit; text-decoration: none; }
     --liquid-inner-highlight: var(--home-material-inner-top);
     --liquid-inner-shadow: var(--home-material-inner-bottom);
     /* Functional sidebar cards draw from the same --home-material-* family as
-       the document card and now carry a real backdrop-filter blur so they frost
-       the background the same way the doc card does — the two cards read as one
-       frosted-liquid material, differing only modestly in alpha. All sheen
-       layers use fixed anchors / fixed opacities: the old mouse-following
-       radials / opacity calcs that tracked var(--liquid-light-x/y) and
-       var(--liquid-glow) are gone, so no highlight follows the pointer. */
+       the document card and carry a real backdrop-filter blur so they frost
+       the background the same way the doc card does. All sheen layers use
+       fixed anchors / fixed opacities, so no highlight follows the pointer. */
     --home-material-face-top: rgba(255, 255, 255, 0.28);
     --home-material-face-mid: rgba(255, 255, 255, 0.10);
     --home-material-face-bottom: rgba(255, 255, 255, 0.14);
@@ -856,9 +852,6 @@ a { color: inherit; text-decoration: none; }
         linear-gradient(180deg, rgba(248, 250, 252, 0.26) 0%, rgba(241, 245, 249, 0.11) 42%, rgba(255, 255, 255, 0.055) 100%);
     background-blend-mode: screen, overlay, normal;
     contain: paint;
-    transform: translateZ(0);
-    will-change: transform, opacity;
-    backface-visibility: hidden;
 }
 
 .home-liquid-warp::before,
@@ -984,14 +977,6 @@ a { color: inherit; text-decoration: none; }
 
 .home-glass {
     --home-glass-blur: 38px;
-    --home-lens-ring: 2.4px;
-    --home-well-inset: 8px;
-    --home-core-inset: 16px;
-    --home-well-radius: 26px;
-    --home-core-radius: 22px;
-    --home-transition-feather: 10px;
-    --home-plateau-inset: 18px;
-    --home-plateau-radius: 24px;
     --home-glass-face-top: rgba(255, 255, 255, 0.72);
     --home-glass-face-sheen: rgba(255, 255, 255, 0.38);
     --home-glass-face-mid: rgba(255, 255, 255, 0.24);
@@ -1081,14 +1066,6 @@ a { color: inherit; text-decoration: none; }
 .home-glass.profile-card,
 .home-glass.news-card {
     --home-glass-blur: 40px;
-    --home-lens-ring: 2.1px;
-    --home-well-inset: 7px;
-    --home-core-inset: 14px;
-    --home-well-radius: 24px;
-    --home-core-radius: 20px;
-    --home-transition-feather: 9px;
-    --home-plateau-inset: 14px;
-    --home-plateau-radius: 20px;
     --home-glass-face-top: rgba(255, 255, 255, 0.86);
     --home-glass-face-mid: rgba(255, 255, 255, 0.34);
     --home-glass-face-bottom: rgba(255, 255, 255, 0.52);
@@ -1104,101 +1081,6 @@ a { color: inherit; text-decoration: none; }
         0 2px 0 rgba(255, 255, 255, 0.26),
         inset 0 1px 0 rgba(255, 255, 255, 0.72),
         inset 0 -20px 30px rgba(191, 219, 254, 0.12);
-}
-
-.home-glass-gutter,
-.home-glass-core {
-    position: absolute;
-    pointer-events: none;
-    overflow: visible;
-}
-
-.home-glass-gutter {
-    inset: 0;
-    z-index: 2;
-    border-radius: inherit;
-    background:
-        radial-gradient(130% 110% at 50% 14%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 22%, rgba(255, 255, 255, 0.02) 46%, rgba(255, 255, 255, 0) 72%),
-        radial-gradient(120% 100% at 50% 68%, rgba(96, 165, 250, 0.04) 0%, rgba(96, 165, 250, 0.015) 34%, rgba(96, 165, 250, 0) 68%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 32%, rgba(255, 255, 255, 0.01) 100%);
-    box-shadow:
-        inset 0 14px 20px rgba(255, 255, 255, 0.12),
-        inset 0 -22px 32px rgba(87, 106, 152, 0.08),
-        inset 18px 0 24px rgba(255, 255, 255, 0.025),
-        inset -18px 0 26px rgba(87, 106, 152, 0.08);
-    opacity: 0.68;
-}
-
-.home-glass-gutter::before {
-    content: "";
-    position: absolute;
-    inset: var(--home-plateau-inset);
-    border-radius: var(--home-plateau-radius);
-    background:
-        radial-gradient(120% 100% at 50% 40%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 34%, rgba(255, 255, 255, 0.02) 58%, rgba(255, 255, 255, 0) 78%);
-    filter: blur(18px);
-    opacity: 0.82;
-}
-
-.home-glass-gutter::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: var(--home-lens-ring);
-    border-radius: inherit;
-    background:
-        radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.74) 0%, rgba(255, 255, 255, 0.16) 14%, rgba(255, 255, 255, 0) 30%),
-        radial-gradient(circle at 86% 14%, rgba(255, 255, 255, 0.56) 0%, rgba(186, 230, 253, 0.18) 18%, rgba(186, 230, 253, 0) 34%),
-        radial-gradient(circle at 84% 78%, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 16%, rgba(59, 130, 246, 0) 32%),
-        conic-gradient(from 210deg at 50% 50%, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.06), rgba(186, 230, 253, 0.16), rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.04), rgba(147, 197, 253, 0.22), rgba(255, 255, 255, 0.52));
-    box-shadow:
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
-        0 0 12px rgba(255, 255, 255, 0.08),
-        0 0 22px rgba(186, 230, 253, 0.06);
-    backdrop-filter: blur(10px) saturate(265%) contrast(1.34) brightness(1.12);
-    -webkit-backdrop-filter: blur(10px) saturate(265%) contrast(1.34) brightness(1.12);
-    mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    filter: saturate(132%) brightness(108%);
-    opacity: 0.94;
-}
-
-.home-glass-core {
-    inset: 0;
-    z-index: 3;
-    border-radius: inherit;
-    background:
-        radial-gradient(120% 92% at 50% 38%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 26%, rgba(255, 255, 255, 0.02) 52%, rgba(255, 255, 255, 0) 72%),
-        radial-gradient(110% 90% at 50% 66%, rgba(191, 219, 254, 0.08) 0%, rgba(191, 219, 254, 0.03) 34%, rgba(191, 219, 254, 0) 72%);
-    box-shadow: none;
-    opacity: 0.68;
-}
-
-.home-glass-core::before {
-    content: "";
-    position: absolute;
-    inset: calc(var(--home-plateau-inset) - 4px);
-    border-radius: calc(var(--home-plateau-radius) + 6px);
-    background:
-        radial-gradient(118% 94% at 50% 44%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.1) 28%, rgba(255, 255, 255, 0.03) 52%, rgba(255, 255, 255, 0) 76%);
-    filter: blur(22px);
-    opacity: 0.66;
-}
-
-.home-glass-core::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background:
-        radial-gradient(120% 90% at 50% 42%, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 38%, rgba(255, 255, 255, 0) 72%);
-    opacity: 0.72;
 }
 
 .home-glass-body {
@@ -1520,234 +1402,6 @@ a { color: inherit; text-decoration: none; }
         radial-gradient(circle at 76% 76%, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.02) 20%, rgba(37, 99, 235, 0) 36%),
         radial-gradient(circle at 50% 120%, rgba(37, 99, 235, 0.26) 0%, rgba(37, 99, 235, 0.04) 36%, rgba(37, 99, 235, 0) 52%),
         linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 36%, rgba(15, 23, 42, 0) 60%, rgba(96, 165, 250, 0.1) 100%);
-}
-
-[data-theme="dark"] .home-glass-gutter {
-    background:
-        radial-gradient(130% 110% at 50% 14%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 22%, rgba(255, 255, 255, 0.01) 46%, rgba(255, 255, 255, 0) 72%),
-        radial-gradient(120% 100% at 50% 68%, rgba(37, 99, 235, 0.04) 0%, rgba(37, 99, 235, 0.015) 34%, rgba(37, 99, 235, 0) 68%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.012) 34%, rgba(255, 255, 255, 0) 100%);
-    box-shadow:
-        inset 0 16px 24px rgba(255, 255, 255, 0.035),
-        inset 0 -24px 36px rgba(3, 7, 18, 0.2),
-        inset 18px 0 24px rgba(255, 255, 255, 0.012),
-        inset -18px 0 26px rgba(3, 7, 18, 0.18),
-        inset 0 0 34px rgba(255, 255, 255, 0.008);
-}
-
-[data-theme="dark"] .home-glass-gutter::before {
-    background:
-        radial-gradient(120% 100% at 50% 40%, rgba(255, 255, 255, 0.08) 0%, rgba(96, 165, 250, 0.06) 34%, rgba(255, 255, 255, 0.01) 58%, rgba(255, 255, 255, 0) 78%);
-    opacity: 0.62;
-}
-
-[data-theme="dark"] .home-glass-gutter::after {
-    background:
-        radial-gradient(circle at 12% 12%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 14%, rgba(255, 255, 255, 0) 30%),
-        radial-gradient(circle at 86% 14%, rgba(191, 219, 254, 0.2) 0%, rgba(96, 165, 250, 0.14) 18%, rgba(96, 165, 250, 0) 34%),
-        radial-gradient(circle at 84% 78%, rgba(37, 99, 235, 0.06) 0%, rgba(37, 99, 235, 0.02) 16%, rgba(37, 99, 235, 0) 32%),
-        conic-gradient(from 210deg at 50% 50%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.04), rgba(96, 165, 250, 0.14), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.03), rgba(147, 197, 253, 0.16), rgba(255, 255, 255, 0.24));
-    box-shadow:
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
-        0 0 12px rgba(255, 255, 255, 0.03),
-        0 0 24px rgba(37, 99, 235, 0.1);
-    backdrop-filter: blur(10px) saturate(255%) contrast(1.3) brightness(1.02);
-    -webkit-backdrop-filter: blur(10px) saturate(255%) contrast(1.3) brightness(1.02);
-    filter: saturate(132%) brightness(102%);
-    opacity: 0.86;
-}
-
-[data-theme="dark"] .home-glass-core {
-    background:
-        radial-gradient(120% 92% at 50% 38%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 26%, rgba(255, 255, 255, 0.01) 52%, rgba(255, 255, 255, 0) 72%),
-        radial-gradient(110% 90% at 50% 66%, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.03) 34%, rgba(37, 99, 235, 0) 72%);
-    box-shadow: none;
-    opacity: 0.58;
-}
-
-[data-theme="dark"] .home-glass-core::before {
-    background:
-        radial-gradient(118% 94% at 50% 44%, rgba(255, 255, 255, 0.08) 0%, rgba(96, 165, 250, 0.05) 28%, rgba(255, 255, 255, 0.015) 52%, rgba(255, 255, 255, 0) 76%);
-    opacity: 0.48;
-}
-
-[data-theme="dark"] .home-glass-core::after {
-    background:
-        radial-gradient(120% 90% at 50% 42%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 38%, rgba(255, 255, 255, 0) 72%);
-    opacity: 0.62;
-}
-
-/* --- JS Managed Homepage Optics --- */
-.home-glass.home-glass-managed {
-    --home-optic-edge-width: 18px;
-    --home-optic-intensity: 1;
-    --home-optic-refraction: 0.9;
-    --home-optic-dispersion: 1.6;
-    background:
-        linear-gradient(180deg, rgba(247, 251, 255, 0.18) 0%, rgba(231, 242, 255, 0.07) 42%, rgba(219, 234, 254, 0.16) 100%);
-    backdrop-filter: blur(calc(var(--home-glass-blur) + 8px)) saturate(220%) contrast(1.16) brightness(1.08);
-    -webkit-backdrop-filter: blur(calc(var(--home-glass-blur) + 8px)) saturate(220%) contrast(1.16) brightness(1.08);
-    box-shadow:
-        0 18px 42px rgba(73, 92, 138, 0.12),
-        0 8px 18px rgba(73, 92, 138, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.68),
-        inset 0 -18px 30px rgba(148, 163, 184, 0.08);
-    transform: translateZ(0);
-}
-
-.home-glass.profile-card.home-glass-managed,
-.home-glass.news-card.home-glass-managed {
-    --home-optic-edge-width: 14px;
-    --home-optic-intensity: 0.82;
-    --home-optic-refraction: 1.02;
-    --home-optic-dispersion: 1.08;
-    background:
-        radial-gradient(circle at 16% 12%, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.12) 18%, rgba(255, 255, 255, 0.03) 34%, rgba(255, 255, 255, 0) 48%),
-        radial-gradient(circle at 84% 16%, rgba(191, 219, 254, 0.34) 0%, rgba(147, 197, 253, 0.18) 20%, rgba(147, 197, 253, 0.05) 34%, rgba(147, 197, 253, 0) 48%),
-        linear-gradient(180deg, rgba(248, 252, 255, 0.22) 0%, rgba(231, 242, 255, 0.12) 42%, rgba(191, 219, 254, 0.22) 100%);
-    backdrop-filter: blur(16px) saturate(150%) brightness(1.06);
-    -webkit-backdrop-filter: blur(16px) saturate(150%) brightness(1.06);
-    box-shadow:
-        0 16px 34px rgba(73, 92, 138, 0.105),
-        0 7px 16px rgba(73, 92, 138, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.46),
-        inset 0 -18px 28px rgba(96, 165, 250, 0.1);
-}
-
-.home-glass.home-glass-managed::before,
-.home-glass.home-glass-managed::after {
-    content: "";
-}
-
-.home-glass.home-glass-managed .home-glass-gutter,
-.home-glass.home-glass-managed .home-glass-core {
-    display: block;
-}
-
-.home-glass.home-glass-managed::before {
-    opacity: 0.32;
-}
-
-.home-glass.home-glass-managed::after {
-    opacity: 0.2;
-}
-
-.home-glass.home-glass-managed .home-glass-gutter {
-    opacity: 0.32;
-}
-
-.home-glass.home-glass-managed .home-glass-core {
-    opacity: 0.24;
-}
-
-.home-glass-optics {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    width: 100%;
-    height: 100%;
-    display: block;
-    pointer-events: none;
-    border-radius: inherit;
-    mix-blend-mode: normal;
-    filter: none;
-    opacity: 0.88;
-    transform: translateZ(0);
-}
-
-.home-glass-optics-webgl {
-    image-rendering: auto;
-}
-
-.home-glass.profile-card.home-glass-managed .home-glass-optics,
-.home-glass.news-card.home-glass-managed .home-glass-optics {
-    opacity: 0.64;
-}
-
-.home-glass.profile-card.home-glass-managed::before,
-.home-glass.news-card.home-glass-managed::before {
-    background:
-        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.08) 16%, rgba(255, 255, 255, 0) 34%),
-        radial-gradient(circle at 84% 16%, rgba(191, 219, 254, 0.28) 0%, rgba(147, 197, 253, 0.12) 18%, rgba(147, 197, 253, 0) 38%),
-        radial-gradient(circle at 74% 82%, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 20%, rgba(59, 130, 246, 0) 38%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(219, 234, 254, 0.06) 40%, rgba(191, 219, 254, 0.02) 100%);
-    opacity: 0.24;
-}
-
-.home-glass.profile-card.home-glass-managed::after,
-.home-glass.news-card.home-glass-managed::after {
-    opacity: 0.26;
-}
-
-.home-glass.profile-card.home-glass-managed .home-glass-gutter,
-.home-glass.news-card.home-glass-managed .home-glass-gutter {
-    background:
-        radial-gradient(130% 110% at 50% 14%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 22%, rgba(255, 255, 255, 0.01) 46%, rgba(255, 255, 255, 0) 72%),
-        radial-gradient(120% 100% at 50% 68%, rgba(96, 165, 250, 0.08) 0%, rgba(96, 165, 250, 0.03) 34%, rgba(96, 165, 250, 0) 68%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(191, 219, 254, 0.02) 38%, rgba(255, 255, 255, 0) 100%);
-    box-shadow:
-        inset 0 12px 18px rgba(255, 255, 255, 0.08),
-        inset 0 -22px 30px rgba(59, 130, 246, 0.08),
-        inset 16px 0 20px rgba(255, 255, 255, 0.02),
-        inset -18px 0 24px rgba(59, 130, 246, 0.08);
-    opacity: 0.22;
-}
-
-.home-glass.profile-card.home-glass-managed .home-glass-core,
-.home-glass.news-card.home-glass-managed .home-glass-core {
-    background:
-        radial-gradient(120% 92% at 50% 38%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 26%, rgba(255, 255, 255, 0.01) 52%, rgba(255, 255, 255, 0) 72%),
-        radial-gradient(110% 90% at 50% 66%, rgba(191, 219, 254, 0.12) 0%, rgba(191, 219, 254, 0.05) 34%, rgba(191, 219, 254, 0) 72%);
-    opacity: 0.12;
-}
-
-.home-glass.profile-card.home-glass-managed .home-glass-gutter::after,
-.home-glass.news-card.home-glass-managed .home-glass-gutter::after {
-    background: none;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    opacity: 0;
-}
-
-.home-glass.home-glass-managed .home-glass-body {
-    z-index: 6;
-}
-
-[data-theme="dark"] .home-glass.home-glass-managed {
-    --home-optic-intensity: 0.96;
-    background:
-        linear-gradient(180deg, rgba(18, 28, 48, 0.26) 0%, rgba(11, 18, 32, 0.1) 42%, rgba(20, 28, 44, 0.18) 100%);
-    backdrop-filter: blur(calc(var(--home-glass-blur) + 8px)) saturate(230%) contrast(1.16) brightness(1.02);
-    -webkit-backdrop-filter: blur(calc(var(--home-glass-blur) + 8px)) saturate(230%) contrast(1.16) brightness(1.02);
-    box-shadow:
-        0 22px 52px rgba(0, 0, 0, 0.42),
-        0 10px 22px rgba(0, 0, 0, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        inset 0 -20px 28px rgba(37, 99, 235, 0.08);
-}
-
-[data-theme="dark"] .home-glass.profile-card.home-glass-managed,
-[data-theme="dark"] .home-glass.news-card.home-glass-managed {
-    background:
-        radial-gradient(circle at 16% 12%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 18%, rgba(255, 255, 255, 0.01) 34%, rgba(255, 255, 255, 0) 48%),
-        radial-gradient(circle at 84% 16%, rgba(96, 165, 250, 0.22) 0%, rgba(59, 130, 246, 0.14) 20%, rgba(37, 99, 235, 0.05) 34%, rgba(37, 99, 235, 0) 48%),
-        linear-gradient(180deg, rgba(18, 28, 48, 0.28) 0%, rgba(11, 18, 32, 0.14) 42%, rgba(20, 28, 44, 0.24) 100%);
-    backdrop-filter: blur(16px) saturate(160%) brightness(1.02);
-    -webkit-backdrop-filter: blur(16px) saturate(160%) brightness(1.02);
-    box-shadow:
-        0 18px 40px rgba(0, 0, 0, 0.36),
-        0 8px 20px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        inset 0 -18px 28px rgba(37, 99, 235, 0.08);
-}
-
-[data-theme="dark"] .home-content.home-glass-managed {
-    --home-optic-intensity: 1;
-}
-
-[data-theme="dark"] .home-glass-optics {
-    opacity: 0.94;
 }
 
 [data-theme="dark"] .home-glass:hover {
@@ -3065,7 +2719,7 @@ a { color: inherit; text-decoration: none; }
     0% { opacity: 0; transform: translateY(16px); }
     100% { opacity: 1; transform: translateY(0); }
 }
-.container.main-grid:not(.home-layout), .page-shell, .upload-grid { animation: pageLoad 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.container.main-grid:not(.home-layout), .page-shell, .upload-grid { animation: pageLoad 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -4968,11 +4622,7 @@ footer {
     .home-liquid-warp::before,
     .home-liquid-warp::after,
     .home-glass::before,
-    .home-glass::after,
-    .home-glass-gutter,
-    .home-glass-core,
-    .home-glass-optics,
-    .home-glass-optics-webgl {
+    .home-glass::after {
         display: none !important;
     }
     .home-liquid-card:hover,
@@ -4993,14 +4643,6 @@ footer {
     .home-glass {
         border-radius: calc(var(--radius) + 6px);
     }
-    .home-glass {
-        --home-well-inset: 6px;
-        --home-core-inset: 12px;
-        --home-well-radius: 20px;
-        --home-core-radius: 18px;
-        --home-plateau-inset: 12px;
-        --home-plateau-radius: 18px;
-    }
     .home-glass.profile-card .home-glass-body,
     .home-glass.news-card .home-glass-body,
     .home-content .home-glass-body {
@@ -5016,12 +4658,7 @@ footer {
     .home-content .cv-section + .cv-section {
         padding-top: 0;
     }
-    .home-glass.profile-card.home-glass-managed,
-    .home-glass.news-card.home-glass-managed {
-        --home-optic-edge-width: 11px;
-        --home-optic-intensity: 0.72;
-    }
-    }
+}
 
 /* --- Interaction fidelity -------------------------------------------------
    Keep compact circular controls visually unchanged while extending their

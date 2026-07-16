@@ -40,6 +40,67 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("transition:", spot_block.group("body"))
         self.assertIn("--spot-motion-duration", spot_block.group("body"))
 
+    def test_touch_lightfield_keeps_ambient_motion_without_pointer_parallax(self) -> None:
+        source = LIGHTFIELD_JS.read_text()
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn('const coarsePointer = window.matchMedia("(pointer: coarse)")', source)
+        self.assertIn(
+            "const parallax = coarsePointer.matches ? 0 : spot.config.parallax;",
+            source,
+        )
+        self.assertIn("const spots = spotsConfig.map((config) => {", source)
+        self.assertNotIn("spotsConfig.slice", source)
+        self.assertIn(
+            'if (reduceMotion.matches || document.visibilityState !== "visible")',
+            source,
+        )
+        self.assertIn("updateAmbientTargets();\n        scheduleAmbientUpdate();", source)
+        self.assertIn("if (reduceMotion.matches || coarsePointer.matches)", source)
+        self.assertNotIn("resourceConstrained", source)
+        self.assertNotIn("reduceData", source)
+        self.assertNotIn("is-static", source)
+        self.assertNotIn(".home-lightfield.is-static", styles)
+
+    def test_scrolling_layers_release_after_entry_animation(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        page_load = re.search(
+            r"\.container\.main-grid:not\(\.home-layout\), \.page-shell, \.upload-grid \{(?P<body>.*?)\}",
+            styles,
+            re.S,
+        )
+        self.assertIsNotNone(page_load)
+        self.assertIn("animation: pageLoad", page_load.group("body"))
+        self.assertNotIn("forwards", page_load.group("body"))
+        self.assertNotIn("content-visibility: auto", styles)
+
+        site_main = re.search(r"^\.site-main\s*\{(?P<body>.*?)\}", styles, re.S | re.M)
+        footer = re.search(r"^footer\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        self.assertIsNotNone(site_main)
+        self.assertIsNotNone(footer)
+        self.assertNotIn("position:", site_main.group("body"))
+        self.assertNotIn("z-index:", site_main.group("body"))
+        self.assertNotIn("position:", footer.group("body"))
+        self.assertNotIn("z-index:", footer.group("body"))
+        self.assertEqual(len(re.findall(r"^footer\s*\{", styles, re.M)), 1)
+
+        home_glass_hover = re.search(
+            r"^\.home-glass:hover\s*\{(?P<body>.*?)\n\}",
+            styles,
+            re.S | re.M,
+        )
+        self.assertIsNotNone(home_glass_hover)
+        self.assertIn("transform: translateY(-4px)", home_glass_hover.group("body"))
+
+        for unused_selector in (
+            ".home-glass-managed",
+            ".home-glass-gutter",
+            ".home-glass-core",
+            ".home-glass-optics",
+        ):
+            self.assertNotIn(unused_selector, styles)
+
     def test_lightfield_and_card_shadows_stay_subtle(self) -> None:
         styles = STYLES_CSS.read_text()
 
@@ -56,6 +117,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIsNotNone(card_block)
 
         self.assertIn("contain: paint", lightfield_block.group("body"))
+        self.assertNotIn("translateZ(0)", lightfield_block.group("body"))
         self.assertIn("filter: blur(108px)", lightfield_before.group("body"))
         self.assertIn("opacity: 0.82", lightfield_before.group("body"))
         lightfield_after = next((body for body in lightfield_after_blocks if "background:" in body), "")
@@ -110,14 +172,11 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("backdrop-filter: none", nav_warp.group("body"))
         self.assertIn("-webkit-backdrop-filter: none", nav_warp.group("body"))
 
-    def test_liquid_cards_frost_background_like_document_card(self) -> None:
-        """Both the functional sidebar card and the document card must carry a
-        real backdrop-filter blur so they read as one frosted-liquid material
-        (the sidebar card is no longer a flat, un-blurred transparent sliver).
-        The generic .card backdrop blur is overridden in favor of a card-type
-        specific blur."""
+    def test_glass_materials_retain_live_backdrop_blur(self) -> None:
+        """Performance work must not flatten the site's translucent hierarchy."""
         styles = STYLES_CSS.read_text()
 
+        glass_block = re.search(r"^\.home-glass\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
         card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
         mobile_card_block = re.search(
             r"\.home-liquid-card,\n\s*\.nav-mobile-panel\s*\{(?P<body>.*?)\n\s*\}",
@@ -126,9 +185,14 @@ class HomepageEffectsPerformanceTests(TestCase):
         )
         nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
 
+        self.assertIsNotNone(glass_block)
         self.assertIsNotNone(card_block)
         self.assertIsNotNone(mobile_card_block)
         self.assertIsNotNone(nav_block)
+
+        glass_body = glass_block.group("body")
+        self.assertIn("backdrop-filter: blur(var(--home-glass-blur))", glass_body)
+        self.assertIn("-webkit-backdrop-filter: blur(var(--home-glass-blur))", glass_body)
 
         card_body = card_block.group("body")
         self.assertIn("backdrop-filter: blur(30px)", card_body)
@@ -143,6 +207,8 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("backdrop-filter: blur(22px)", nav_body)
         self.assertIn("-webkit-backdrop-filter: blur(22px)", nav_body)
         self.assertIn("saturate(168%)", nav_body)
+        self.assertNotIn(".site-main .home-liquid-card", styles)
+        self.assertNotIn(".site-main .home-glass", styles)
 
     def test_liquid_card_hover_lifts_like_document_card(self) -> None:
         """The functional sidebar card must hover-lift the same way as the
@@ -208,12 +274,14 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.min.css?v=155\"", base)
+        self.assertIn("href=\"/static/css/styles.min.css?v=156\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
         self.assertIn("contain: paint", warp_body)
-        self.assertIn("will-change: transform, opacity", warp_body)
+        self.assertNotIn("will-change", warp_body)
+        self.assertNotIn("translateZ", warp_body)
+        self.assertNotIn("backface-visibility", warp_body)
 
         # Sheen layers now use fixed opacities (no var(--liquid-sheen-opacity)
         # / var(--liquid-rim-opacity)) so no highlight tracks the pointer.
@@ -379,7 +447,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         )
 
         # Cache-buster bumps when CSS material changes so clients refetch it.
-        self.assertIn('href="/static/css/styles.min.css?v=155"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=156"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -436,10 +504,15 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("<noscript>", base)
         self.assertEqual(
             base.count('rel="preload" as="style" href="https://fonts.googleapis.com'),
-            1,
+            2,
         )
         self.assertIn("Dancing+Script:wght@500", base)
         self.assertIn("JetBrains+Mono:wght@400;500", base)
+        self.assertIn(
+            "family=Zhi+Mang+Xing&text=%E6%B4%AA%E5%A5%95%E8%BF%85&display=swap",
+            base,
+        )
+        self.assertNotIn("family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Zhi+Mang+Xing", base)
         self.assertNotIn("Noto+Serif+SC", base)
         blocking_head = re.sub(r"<noscript>.*?</noscript>", "", base, flags=re.S)
         self.assertNotIn('rel="stylesheet" href="https://fonts.googleapis.com', blocking_head)
@@ -504,7 +577,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.min.css?v=155"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=156"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()

@@ -232,7 +232,10 @@ def _build_gallery_payload(focus: Optional[str] = None, include_private: bool = 
                     original_url = f"/uploads/{rel_file_path}"
                     full_images.append(original_url)
 
-                    if is_focused:
+                    # Focus mode preserves the original full-resolution visual.
+                    # Album-list GIFs also stay original because WebP thumbnail
+                    # generation would flatten their animation to one frame.
+                    if is_focused or file.suffix.lower() == ".gif":
                         images.append(original_url)
                         continue
 

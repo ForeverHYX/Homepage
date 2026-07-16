@@ -251,8 +251,8 @@ process.
 - **Cache-bust with `?v=N`.** Because assets are served directly, append a
   `?v=N` query param when iterating on CSS/JS during development.
 - **`static/css/styles.css` is the single source of truth for styling**;
-  `styles.min.css` only removes comments without reordering selectors or
-  declarations.
+  `styles.min.css` removes comments and formatting whitespace without
+  reordering selectors or declarations.
 - Sessions are stored in `.sessions.json`; this is plain
   `token_urlsafe(32)` plus bcrypt, intentionally
   simple — replace it with a real session store if you need more.

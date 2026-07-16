@@ -82,7 +82,7 @@ class UploadFileManagementTests(TestCase):
             album_dir.mkdir()
             original = album_dir / "old photo.webp"
             original.write_bytes(b"image")
-            thumbnail = upload_dir / "_thumbs" / "Album" / "old photo.webp"
+            thumbnail = upload_dir / "_thumbs" / "Album" / "old photo.webp.webp"
             thumbnail.parent.mkdir(parents=True)
             thumbnail.write_bytes(b"thumb")
 

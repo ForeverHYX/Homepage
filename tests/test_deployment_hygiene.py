@@ -47,15 +47,23 @@ class DeploymentHygieneTests(TestCase):
         self.assertNotIn("limit_req", static_location)
         self.assertNotIn("limit_req", uploads_location)
 
-    def test_production_css_is_reproducible_comment_stripped_source(self) -> None:
+    def test_production_css_is_reproducibly_minified_without_reordering(self) -> None:
         script = ROOT / "scripts" / "build_static_css.py"
         source = (ROOT / "static" / "css" / "styles.css").read_text(encoding="utf-8")
         production = (ROOT / "static" / "css" / "styles.min.css").read_text(encoding="utf-8")
-        strip_comments = runpy.run_path(str(script))["strip_css_comments"]
+        build_helpers = runpy.run_path(str(script))
+        minify_css = build_helpers["minify_css"]
+        strip_comments = build_helpers["strip_css_comments"]
 
-        self.assertEqual(production, strip_comments(source))
-        self.assertLess(len(production), len(source))
+        self.assertEqual(production, minify_css(source))
+        self.assertLess(len(production), len(strip_comments(source)))
         self.assertEqual(
             strip_comments('a::before { content: "/* visible */"; } /* remove */'),
             'a::before { content: "/* visible */"; } ',
         )
+        self.assertEqual(
+            minify_css('a::before {\n  content: "a  b /* visible */";\n}\n'),
+            'a::before { content: "a  b /* visible */"; }\n',
+        )
+        self.assertIn("calc(100% - 2px)", minify_css("a { width: calc(100% - 2px); }"))
+        self.assertIn("article a", minify_css("article\n  a { color: blue; }"))

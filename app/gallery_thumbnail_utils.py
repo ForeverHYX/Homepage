@@ -18,7 +18,10 @@ _THUMBNAIL_LOCKS = tuple(Lock() for _ in range(_THUMBNAIL_LOCK_COUNT))
 
 def get_gallery_thumbnail_path(upload_dir: Path, image_path: Path) -> Path:
     rel_path = image_path.relative_to(upload_dir)
-    return upload_dir / THUMBNAIL_DIR_NAME / rel_path.with_suffix(".webp")
+    # Preserve the source extension in the cache name so sibling files such
+    # as ``photo.jpg`` and ``photo.png`` cannot overwrite one another.
+    thumbnail_name = f"{rel_path.name}.webp"
+    return upload_dir / THUMBNAIL_DIR_NAME / rel_path.parent / thumbnail_name
 
 
 def _thumbnail_is_current(thumbnail_path: Path, image_path: Path) -> bool:
@@ -29,7 +32,7 @@ def _thumbnail_is_current(thumbnail_path: Path, image_path: Path) -> bool:
 
 
 def _thumbnail_lock(thumbnail_path: Path) -> Lock:
-    lock_index = hash(str(thumbnail_path.absolute())) % _THUMBNAIL_LOCK_COUNT
+    lock_index = hash(str(thumbnail_path.resolve())) % _THUMBNAIL_LOCK_COUNT
     return _THUMBNAIL_LOCKS[lock_index]
 
 
