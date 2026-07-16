@@ -90,7 +90,8 @@ def parse_education_timeline(raw_markdown: str) -> str:
         logos_html = ""
         if entry["logos"]:
             logo_imgs = "".join(
-                f'<img src="{logo["url"]}" alt="{logo["alt"]}" class="edu-logo">'
+                f'<img src="{logo["url"]}" alt="{logo["alt"]}" class="edu-logo" '
+                'width="52" height="52" decoding="async">'
                 for logo in entry["logos"]
             )
             logos_html = f'<div class="edu-logo-group">{logo_imgs}</div>'

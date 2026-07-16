@@ -10,6 +10,9 @@ LIQUID_GLASS_JS = ROOT / "static" / "js" / "effects" / "liquid-glass.js"
 SITE_HEADER_JS = ROOT / "static" / "js" / "components" / "site-header.js"
 STYLES_CSS = ROOT / "static" / "css" / "styles.css"
 BASE_HTML = ROOT / "app" / "templates" / "base.html"
+HOME_HTML = ROOT / "app" / "templates" / "pages" / "home.html"
+GALLERY_HTML = ROOT / "app" / "templates" / "pages" / "gallery.html"
+EDUCATION_PY = ROOT / "app" / "education.py"
 FAVICON_32 = ROOT / "static" / "images" / "site" / "favicon-32.png"
 FAVICON_64 = ROOT / "static" / "images" / "site" / "favicon-64.png"
 
@@ -443,6 +446,15 @@ class HomepageEffectsPerformanceTests(TestCase):
             data = path.read_bytes()
             self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
             self.assertEqual(struct.unpack(">II", data[16:24]), (expected_size, expected_size))
+
+    def test_page_images_reserve_layout_and_decode_asynchronously(self) -> None:
+        home = HOME_HTML.read_text()
+        gallery = GALLERY_HTML.read_text()
+        education = EDUCATION_PY.read_text()
+
+        self.assertIn('width="240" height="240" decoding="async"', home)
+        self.assertEqual(gallery.count('loading="lazy" decoding="async"'), 2)
+        self.assertIn('width="52" height="52" decoding="async"', education)
 
     def test_education_logo_overrides_generic_prose_image_style(self) -> None:
         styles = STYLES_CSS.read_text()
