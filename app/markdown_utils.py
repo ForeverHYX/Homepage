@@ -232,18 +232,11 @@ def get_publications(filename: str = "content.md") -> list[dict[str, object]]:
     path = CONTENT_DIR / filename
     if not path.exists():
         return []
-
-    from app.cache import _cache
-
-    cache_key = f"publications:{path.resolve()}"
-    mtime = path.stat().st_mtime
-    entry = _cache.get(cache_key)
-    if entry and entry.get("mtime") == mtime:
-        return entry["value"]
-
-    value = _parse_publications_raw(path)
-    _cache[cache_key] = {"mtime": mtime, "value": value}
-    return value
+    return cache_by_mtime(
+        path,
+        lambda: _parse_publications_raw(path),
+        namespace="publications",
+    )
 
 
 def _preprocess_publication_blocks(text: str) -> str:
@@ -306,7 +299,11 @@ def parse_markdown_sections(filename: str) -> List[Tuple[str, str]]:
     path = CONTENT_DIR / filename
     if not path.exists():
         return []
-    return cache_by_mtime(path, lambda: _parse_sections_raw(path))
+    return cache_by_mtime(
+        path,
+        lambda: _parse_sections_raw(path),
+        namespace="markdown_sections",
+    )
 
 def _render_markdown_raw(path: Path) -> str:
     text = _preprocess_publication_blocks(path.read_text(encoding="utf-8"))
@@ -316,4 +313,8 @@ def render_markdown_file(filename: str) -> str:
     path = CONTENT_DIR / filename
     if not path.exists():
         return ""
-    return cache_by_mtime(path, lambda: _render_markdown_raw(path))
+    return cache_by_mtime(
+        path,
+        lambda: _render_markdown_raw(path),
+        namespace="rendered_markdown",
+    )
