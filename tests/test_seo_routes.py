@@ -21,7 +21,7 @@ class SeoRoutesTests(TestCase):
         self.assertTrue(response.headers["content-type"].startswith("text/plain"))
         self.assertIn("User-agent: *", response.text)
         self.assertIn("Allow: /", response.text)
-        self.assertIn("Disallow: /daily?", response.text)
+        self.assertNotIn("Disallow: /daily?", response.text)
         self.assertIn("Sitemap: https://foreverhyx.top/sitemap.xml", response.text)
 
 

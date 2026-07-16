@@ -489,7 +489,6 @@ def robots_txt():
     body = "\n".join([
         "User-agent: *",
         "Allow: /",
-        "Disallow: /daily?",
         "",
         f"Sitemap: {SITE_URL}/sitemap.xml",
         "",
@@ -558,9 +557,16 @@ def publications_page(request: Request, keywords: Optional[str] = None):
 def daily_page(request: Request, keywords: Optional[str] = None, item_type: Optional[str] = None, paper_id: Optional[str] = None, date: Optional[str] = None):
     payload = _build_daily_payload(keywords, item_type, date)
     is_upload_authenticated = get_current_user(request)
-    filter_date = payload["selected_date"] if date else None
+    requested_date = str(date or "")
+    current_run_date = str(payload.get("current_run_date") or payload["run_date"])
+    available_dates = {str(value) for value in payload.get("archive_dates", [])}
+    date_is_indexable = bool(requested_date) and (
+        requested_date == current_run_date or requested_date in available_dates
+    )
+    filter_date = payload["selected_date"] if date_is_indexable else None
     has_filter_query = "keywords" in request.query_params or "item_type" in request.query_params
-    canonical_path = _daily_url(date=date)
+    has_invalid_date_query = "date" in request.query_params and not date_is_indexable
+    canonical_path = _daily_url(date=requested_date if date_is_indexable else None)
     return templates.TemplateResponse(request, "pages/daily.html", {
         "items": payload["items"],
         "run_date": payload["run_date"],
@@ -583,7 +589,7 @@ def daily_page(request: Request, keywords: Optional[str] = None, item_type: Opti
         "type_url": lambda active_type=None: _daily_type_url(active_type, filter_date),
         "target_paper_id": paper_id or "",
         "daily_canonical_url": f"{SITE_URL}{canonical_path}",
-        "daily_robots_noindex": has_filter_query,
+        "daily_robots_noindex": has_filter_query or has_invalid_date_query,
     })
 
 

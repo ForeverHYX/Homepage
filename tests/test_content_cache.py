@@ -7,7 +7,7 @@ from threading import Lock
 from unittest import TestCase
 from unittest.mock import patch
 
-from app import content_utils, news
+from app import content_utils, markdown_utils, news
 from app.cache import (
     CACHE_MAX_ENTRIES,
     _cache,
@@ -43,6 +43,21 @@ class UnifiedContentCacheTests(TestCase):
             self.assertIsInstance(sections, list)
             self.assertIsInstance(rendered, str)
             self.assertEqual(len(_cache), 2)
+
+    def test_markdown_sections_and_full_render_do_not_cross_contaminate(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            content_dir = Path(temp_dir)
+            (content_dir / "content.md").write_text(
+                "# Introduction\n**Hello**\n",
+                encoding="utf-8",
+            )
+            with patch.object(markdown_utils, "CONTENT_DIR", content_dir):
+                sections = markdown_utils.parse_markdown_sections("content.md")
+                rendered = markdown_utils.render_markdown_file("content.md")
+
+            self.assertIsInstance(sections, list)
+            self.assertIsInstance(rendered, str)
+            self.assertIn("<strong>Hello</strong>", rendered)
 
     def test_size_change_invalidates_even_when_mtime_is_preserved(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -209,3 +224,37 @@ class NewsCacheTests(TestCase):
 
             self.assertEqual(len(_cache), 1)
 
+    def test_direct_gallery_metadata_edits_invalidate_news(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            content_dir = root / "content"
+            content_dir.mkdir()
+            upload_dir = root / "uploads"
+            album_dir = upload_dir / "Album"
+            album_dir.mkdir(parents=True)
+            meta_path = album_dir / "meta.json"
+            meta_path.write_text(
+                '{"title":"Before","date":"2026-07-01"}',
+                encoding="utf-8",
+            )
+            config_file = root / "gallery_config.json"
+
+            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
+                news,
+                "UPLOAD_DIR",
+                upload_dir,
+            ), patch.object(
+                news,
+                "GALLERY_CONFIG_FILE",
+                config_file,
+            ), patch.object(news, "get_gallery_folders", return_value=["Album"]):
+                first = news.parse_and_merge_news()
+                meta_path.write_text(
+                    '{"title":"After external edit","date":"2026-07-01"}',
+                    encoding="utf-8",
+                )
+                second = news.parse_and_merge_news()
+
+            self.assertIn("Before", first)
+            self.assertIn("After external edit", second)
+            self.assertNotIn("Before", second)

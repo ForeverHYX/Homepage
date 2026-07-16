@@ -148,6 +148,7 @@ class DailyIntegrationTests(unittest.TestCase):
         payload = sample_daily_page_payload()
         payload["run_date"] = "2026-06-13"
         payload["selected_date"] = "2026-06-13"
+        payload["archive_dates"] = ["2026-06-13"]
         payload["filter_keywords"] = ["Agent"]
 
         with patch.object(pages, "_build_daily_payload", return_value=payload):
@@ -180,10 +181,13 @@ class DailyIntegrationTests(unittest.TestCase):
         )
 
     def test_daily_pages_apply_canonical_and_indexing_rules(self):
-        with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
+        payload = sample_daily_page_payload()
+        payload["archive_dates"] = ["2026-06-13"]
+        with patch.object(pages, "_build_daily_payload", return_value=payload):
             bare_response = TestClient(app).get("/daily")
             date_response = TestClient(app).get("/daily?date=2026-06-13")
             filtered_response = TestClient(app).get("/daily?keywords=agent")
+            missing_date_response = TestClient(app).get("/daily?date=2026-99-99")
 
         self.assertNotIn('<meta name="robots" content="noindex,follow">', bare_response.text)
         self.assertIn(
@@ -200,6 +204,15 @@ class DailyIntegrationTests(unittest.TestCase):
             '<link rel="canonical" href="https://foreverhyx.top/daily">',
             filtered_response.text,
         )
+        self.assertIn(
+            '<meta name="robots" content="noindex,follow">',
+            missing_date_response.text,
+        )
+        self.assertIn(
+            '<link rel="canonical" href="https://foreverhyx.top/daily">',
+            missing_date_response.text,
+        )
+        self.assertNotIn("date=2026-99-99", missing_date_response.text)
 
     def test_daily_archive_page_passes_current_run_date_to_calendar(self):
         payload = sample_daily_page_payload()

@@ -7,7 +7,7 @@ from typing import TypedDict
 
 import markdown
 
-from app.cache import cache_by_signature, file_signature
+from app.cache import FileSignature, cache_by_signature, file_signature
 from app.config import CONTENT_DIR, GALLERY_CONFIG_FILE, UPLOAD_DIR
 from app.utils import get_folder_meta, get_gallery_folders, safe_join
 
@@ -106,12 +106,25 @@ def _build_news_html(limit: int) -> str:
     return _render_news_html(_build_news_items(), limit)
 
 
+def _gallery_metadata_signatures() -> tuple[tuple[str, FileSignature], ...]:
+    """Track visible album metadata even when files change outside the app."""
+    signatures: list[tuple[str, FileSignature]] = []
+    for rel_path in get_gallery_folders():
+        try:
+            meta_path = safe_join(UPLOAD_DIR, rel_path) / "meta.json"
+        except Exception:
+            continue
+        signatures.append((str(meta_path.resolve()), file_signature(meta_path)))
+    return tuple(sorted(signatures))
+
+
 def parse_and_merge_news(limit: int = 6) -> str:
     """Render news while parsing all sources only once per input signature."""
     news_path = CONTENT_DIR / "news.md"
     signature = (
         (str(news_path.resolve()), file_signature(news_path)),
         (str(GALLERY_CONFIG_FILE.resolve()), file_signature(GALLERY_CONFIG_FILE)),
+        _gallery_metadata_signatures(),
     )
     items = cache_by_signature(
         NEWS_ITEMS_CACHE_KEY,
