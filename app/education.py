@@ -1,6 +1,31 @@
 from __future__ import annotations
 import re
 
+_RESPONSIVE_LOGOS = {
+    "/uploads/zju.png": {
+        "src": "/static/images/site/zju-logo-52.png?v=1",
+        "srcset": (
+            "/static/images/site/zju-logo-52.png?v=1 1x, "
+            "/static/images/site/zju-logo-104.png?v=1 2x, "
+            "/static/images/site/zju-logo-156.png?v=1 3x"
+        ),
+    }
+}
+
+
+def _render_education_logo(logo: dict[str, str]) -> str:
+    responsive = _RESPONSIVE_LOGOS.get(logo["url"])
+    if responsive:
+        source = responsive["src"]
+        srcset = f' srcset="{responsive["srcset"]}"'
+    else:
+        source = logo["url"]
+        srcset = ""
+    return (
+        f'<img{srcset} src="{source}" alt="{logo["alt"]}" class="edu-logo" '
+        'width="52" height="52" decoding="async">'
+    )
+
 def parse_education_timeline(raw_markdown: str) -> str:
     """
     Parses the Education section markdown into a timeline HTML.
@@ -89,11 +114,7 @@ def parse_education_timeline(raw_markdown: str) -> str:
         # Logos
         logos_html = ""
         if entry["logos"]:
-            logo_imgs = "".join(
-                f'<img src="{logo["url"]}" alt="{logo["alt"]}" class="edu-logo" '
-                'width="52" height="52" decoding="async">'
-                for logo in entry["logos"]
-            )
+            logo_imgs = "".join(_render_education_logo(logo) for logo in entry["logos"])
             logos_html = f'<div class="edu-logo-group">{logo_imgs}</div>'
         
         # Role (support markdown links in role text)

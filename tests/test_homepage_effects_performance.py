@@ -3,6 +3,8 @@ import struct
 from pathlib import Path
 from unittest import TestCase
 
+from app.education import parse_education_timeline
+
 
 ROOT = Path(__file__).resolve().parents[1]
 LIGHTFIELD_JS = ROOT / "static" / "js" / "effects" / "lightfield.js"
@@ -15,6 +17,9 @@ GALLERY_HTML = ROOT / "app" / "templates" / "pages" / "gallery.html"
 EDUCATION_PY = ROOT / "app" / "education.py"
 FAVICON_32 = ROOT / "static" / "images" / "site" / "favicon-32.png"
 FAVICON_64 = ROOT / "static" / "images" / "site" / "favicon-64.png"
+ZJU_LOGO_52 = ROOT / "static" / "images" / "site" / "zju-logo-52.png"
+ZJU_LOGO_104 = ROOT / "static" / "images" / "site" / "zju-logo-104.png"
+ZJU_LOGO_156 = ROOT / "static" / "images" / "site" / "zju-logo-156.png"
 
 
 class HomepageEffectsPerformanceTests(TestCase):
@@ -25,6 +30,10 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("LIGHTFIELD_UPDATE_INTERVAL", source)
         self.assertNotIn("nextChangeAt", source)
         self.assertNotIn("requestAnimationFrame(frame)", source)
+        self.assertIn("spot.renderedMotionDuration !== motionDuration", source)
+        self.assertIn("spot.renderedOpacity !== opacity", source)
+        self.assertIn("spot.renderedTransform !== transform", source)
+        self.assertIn('src="/static/js/effects/lightfield.js?v=99"', BASE_HTML.read_text())
 
         spot_block = re.search(r"\.home-lightspot\s*\{(?P<body>.*?)\n\}", styles, re.S)
         self.assertIsNotNone(spot_block)
@@ -455,6 +464,28 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn('width="240" height="240" decoding="async"', home)
         self.assertEqual(gallery.count('loading="lazy" decoding="async"'), 2)
         self.assertIn('width="52" height="52" decoding="async"', education)
+
+    def test_education_logo_uses_density_matched_static_assets(self) -> None:
+        html = parse_education_timeline(
+            "- **Zhejiang University** | 2023 - Present\n"
+            "  *Bachelor of Engineering*\n"
+            "  ![ZJU](/uploads/zju.png)"
+        )
+
+        self.assertIn('/static/images/site/zju-logo-52.png?v=1', html)
+        self.assertIn('/static/images/site/zju-logo-104.png?v=1 2x', html)
+        self.assertIn('/static/images/site/zju-logo-156.png?v=1 3x', html)
+        self.assertNotIn('src="/uploads/zju.png"', html)
+        self.assertLess(html.index(" srcset="), html.index(" src="))
+
+        for path, expected_size in (
+            (ZJU_LOGO_52, 52),
+            (ZJU_LOGO_104, 104),
+            (ZJU_LOGO_156, 156),
+        ):
+            data = path.read_bytes()
+            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack(">II", data[16:24]), (expected_size, expected_size))
 
     def test_education_logo_overrides_generic_prose_image_style(self) -> None:
         styles = STYLES_CSS.read_text()
