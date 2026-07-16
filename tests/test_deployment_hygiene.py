@@ -14,6 +14,7 @@ class DeploymentHygieneTests(TestCase):
         service = (ROOT / "deploy" / "foreverhyx-homepage.service").read_text(encoding="utf-8")
 
         self.assertIn("--workers 1", service)
+        self.assertIn("ExecReload=/bin/kill -s HUP $MAINPID", service)
         self.assertNotIn("--access-logfile", service)
         self.assertNotIn("homepage_access.log", service)
 
@@ -22,6 +23,29 @@ class DeploymentHygieneTests(TestCase):
 
         self.assertIn("client_max_body_size 100M;\n    access_log off;", nginx)
         self.assertNotIn("/_next/", nginx)
+
+    def test_saved_nginx_config_canonicalizes_https_www_with_permanent_redirect(self) -> None:
+        nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")
+
+        self.assertIn("server_name www.foreverhyx.top;", nginx)
+        self.assertIn("return 308 https://foreverhyx.top$request_uri;", nginx)
+        self.assertIn("server_name foreverhyx.top;", nginx)
+        self.assertEqual(nginx.count("server_name foreverhyx.top www.foreverhyx.top;"), 1)
+
+    def test_saved_nginx_config_rate_limits_only_proxied_requests(self) -> None:
+        nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")
+
+        self.assertIn(
+            "limit_req_zone $binary_remote_addr zone=homepage_html:10m rate=5r/s;",
+            nginx,
+        )
+        self.assertIn("limit_req zone=homepage_html burst=20 nodelay;", nginx)
+        self.assertGreaterEqual(nginx.count("limit_req_status 429;"), 2)
+
+        static_location = nginx.split("location /static/ {", 1)[1].split("}", 1)[0]
+        uploads_location = nginx.split("location /uploads/ {", 1)[1].split("}", 1)[0]
+        self.assertNotIn("limit_req", static_location)
+        self.assertNotIn("limit_req", uploads_location)
 
     def test_production_css_is_reproducible_comment_stripped_source(self) -> None:
         script = ROOT / "scripts" / "build_static_css.py"
