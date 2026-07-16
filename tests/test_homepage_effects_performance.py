@@ -208,7 +208,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=151\"", base)
+        self.assertIn("href=\"/static/css/styles.min.css?v=152\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -379,7 +379,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         )
 
         # Cache-buster bumps when CSS material changes so clients refetch it.
-        self.assertIn('href="/static/css/styles.css?v=151"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=152"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -407,7 +407,7 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         self.assertIn("Dancing+Script", base)
         self.assertNotIn("Allura", base)
-        self.assertRegex(base, r"/static/css/styles\.css\?v=\d+")
+        self.assertRegex(base, r"/static/css/styles\.min\.css\?v=\d+")
         self.assertIn("Zhi+Mang+Xing", base)
         self.assertIn("--font-hand-en", styles)
         self.assertIn("--font-hand-cn", styles)
@@ -504,7 +504,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=151"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=152"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()

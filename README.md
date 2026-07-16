@@ -68,8 +68,9 @@ The backend lives in `app/` and is organized as:
 ## Current feature set
 
 - Public academic homepage with a floating capsule-style navigation bar
-- Custom SVG `feDisplacementMap` liquid-glass effect (880-line vanilla JS
-  engine, no libraries)
+- CSS-only, single-backdrop Liquid Glass navigation material; the experimental
+  SVG displacement engine remains available for explicitly opted-in elements
+  but is not loaded by default
 - Custom lightfield animation engine (6 gradient light spots, mouse parallax,
   theme-adaptive)
 - Mobile fallback to standard frosted glass for better performance
@@ -124,7 +125,9 @@ The backend lives in `app/` and is organized as:
 │           ├── upload.html
 │           └── 404.html
 ├── static/
-│   ├── css/styles.css            # Single stylesheet (~3400 lines)
+│   ├── css/
+│   │   ├── styles.css            # Readable styling source of truth
+│   │   └── styles.min.css        # Reproducible comment-stripped production asset
 │   └── js/
 │       ├── effects/
 │       │   ├── liquid-glass.js   # SVG feDisplacementMap glass effect
@@ -203,8 +206,12 @@ HOMEPAGE_COOKIE_SECURE=true              # production HTTPS
 
 ## Local development
 
-There is **no frontend build step** — static JS is served directly. Edit
-static files and refresh.
+There is no bundler or transpiler; static JS is served directly. After editing
+`static/css/styles.css`, regenerate the checked-in production CSS asset:
+
+```bash
+python scripts/build_static_css.py
+```
 
 ```bash
 python -m venv .venv
@@ -220,7 +227,8 @@ Then open `http://127.0.0.1:8000`.
 
 ## Production deploy
 
-There is **no build step** — gunicorn runs the FastAPI app directly.
+There is no deploy-time frontend build step — the generated CSS asset is
+checked in, and gunicorn runs the FastAPI app directly.
 
 ```bash
 # Backend only — no build step
@@ -238,12 +246,14 @@ process.
 
 ## Notes for contributors
 
-- **No build step.** Edit static files and refresh the browser — there is no
-  bundler, no transpiler, no `npm run build`.
+- **No bundler.** Static assets are served directly. Run
+  `python scripts/build_static_css.py` after changing `styles.css`; tests verify
+  that the checked-in production asset is current.
 - **Cache-bust with `?v=N`.** Because assets are served directly, append a
   `?v=N` query param when iterating on CSS/JS during development.
-- **`static/css/styles.css` is the single source of truth for styling** —
-  one ~3400-line stylesheet powers the entire site.
+- **`static/css/styles.css` is the single source of truth for styling**;
+  `styles.min.css` only removes comments without reordering selectors or
+  declarations.
 - Sessions are stored in `.sessions.json`; this is plain
   `token_urlsafe(32)` plus bcrypt, intentionally
   simple — replace it with a real session store if you need more.

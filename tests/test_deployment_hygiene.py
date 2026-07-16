@@ -1,3 +1,4 @@
+import runpy
 from pathlib import Path
 from unittest import TestCase
 
@@ -21,3 +22,16 @@ class DeploymentHygieneTests(TestCase):
 
         self.assertIn("client_max_body_size 100M;\n    access_log off;", nginx)
         self.assertNotIn("/_next/", nginx)
+
+    def test_production_css_is_reproducible_comment_stripped_source(self) -> None:
+        script = ROOT / "scripts" / "build_static_css.py"
+        source = (ROOT / "static" / "css" / "styles.css").read_text(encoding="utf-8")
+        production = (ROOT / "static" / "css" / "styles.min.css").read_text(encoding="utf-8")
+        strip_comments = runpy.run_path(str(script))["strip_css_comments"]
+
+        self.assertEqual(production, strip_comments(source))
+        self.assertLess(len(production), len(source))
+        self.assertEqual(
+            strip_comments('a::before { content: "/* visible */"; } /* remove */'),
+            'a::before { content: "/* visible */"; } ',
+        )
