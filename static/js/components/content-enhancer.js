@@ -2,7 +2,7 @@
  * Content enhancer
  * ----------------
  * Runs on article detail pages that contain `.prose` blocks.
- * - Lazy-loads highlight.js (with theme-aware stylesheet) and decorates code blocks
+ * - Decorates code blocks and lazy-loads highlighting only for source code
  * - Converts GitHub repo links/URLs into rich repo cards
  */
 (function () {
@@ -66,6 +66,31 @@
         s.src = HLJS_SCRIPT;
         s.onload = cb;
         document.head.appendChild(s);
+    }
+
+    /**
+     * Plain-text blocks only need the local code-window decoration. Avoid
+     * downloading and parsing the highlighter for logs, terminal output, and
+     * prose snippets that explicitly opt out of highlighting.
+     */
+    function needsSyntaxHighlighting() {
+        return Array.prototype.some.call(
+            document.querySelectorAll(".prose pre code"),
+            function (code) {
+                if (code.classList.contains("nohighlight")) return false;
+
+                var language = "";
+                Array.prototype.some.call(code.classList, function (className) {
+                    var match = className.match(/^language-(.+)$/);
+                    if (!match) return false;
+                    language = match[1].toLowerCase();
+                    return true;
+                });
+
+                // Unlabelled blocks retain highlight.js auto-detection.
+                return !language || ["text", "plain", "plaintext"].indexOf(language) < 0;
+            }
+        );
     }
 
     /**
@@ -306,13 +331,12 @@
     /**
      * Watch the <html> element for theme changes and re-apply stylesheets + highlighting.
      */
-    function watchTheme() {
+    function watchHighlightTheme() {
         if (!("MutationObserver" in window)) return;
         var observer = new MutationObserver(function (mutations) {
             for (var i = 0; i < mutations.length; i++) {
                 if (mutations[i].attributeName === "data-theme") {
                     applyThemeStyles();
-                    if (window.hljs) window.hljs.highlightAll();
                     break;
                 }
             }
@@ -324,16 +348,15 @@
         var prose = document.querySelector(".prose");
         if (!prose) return;
 
-        ensureThemeLinks();
-        watchTheme();
+        decorateCodeBlocks();
+        enhanceGithubLinks();
 
-        // Load hljs, then (after a short delay for stylesheets) decorate + highlight
+        if (!needsSyntaxHighlighting()) return;
+
+        ensureThemeLinks();
+        watchHighlightTheme();
         loadHighlightScript(function () {
-            setTimeout(function () {
-                if (window.hljs) window.hljs.highlightAll();
-                decorateCodeBlocks();
-                enhanceGithubLinks();
-            }, 60);
+            if (window.hljs) window.hljs.highlightAll();
         });
     }
 
