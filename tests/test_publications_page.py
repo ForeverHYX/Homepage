@@ -84,6 +84,7 @@ tags: Architecture, AI
         self.assertIn(".home-liquid-card.layered-filter-card", styles)
         self.assertIn(".publication-page-card.home-glass", styles)
         self.assertIn(".publication-page-card .publication-keyword:not(.is-active)", styles)
+        self.assertIn(".home-content .section-selected-publication .publication-keyword:not(.is-active)", styles)
         self.assertIn("background: linear-gradient(135deg, #2563eb, #1d4ed8);", styles)
         active_material = styles.split(".layered-filter-card .chip.is-active,", 1)[1].split("}", 1)[0]
         self.assertIn("backdrop-filter: none", active_material)
@@ -166,4 +167,5 @@ tags: Architecture, AI
         self.assertEqual(response.status_code, 200)
         self.assertIn("Selected Publication", response.text)
         self.assertIn("section-selected-publication", response.text)
+        self.assertIn("publication-keyword", response.text)
         self.assertNotIn('class="section-title">Publications</h2>', response.text)

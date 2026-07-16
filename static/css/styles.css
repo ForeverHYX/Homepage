@@ -5648,7 +5648,8 @@ footer {
 
 .layered-filter-card .chip:not(.is-active),
 .daily-card .daily-keyword-list .chip:not(.is-active),
-.publication-page-card .publication-keyword:not(.is-active) {
+.publication-page-card .publication-keyword:not(.is-active),
+.home-content .section-selected-publication .publication-keyword:not(.is-active) {
     color: var(--text);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(226, 232, 240, 0.36));
     border-color: rgba(255, 255, 255, 0.84);
@@ -5733,7 +5734,8 @@ footer {
 
 [data-theme="dark"] .layered-filter-card .chip:not(.is-active),
 [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
-[data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active) {
+[data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active),
+[data-theme="dark"] .home-content .section-selected-publication .publication-keyword:not(.is-active) {
     color: var(--text);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(148, 163, 184, 0.075));
     border-color: rgba(255, 255, 255, 0.22);
@@ -5896,7 +5898,8 @@ footer {
 
     .layered-filter-card .chip:not(.is-active),
     .daily-card .daily-keyword-list .chip:not(.is-active),
-    .publication-page-card .publication-keyword:not(.is-active) {
+    .publication-page-card .publication-keyword:not(.is-active),
+    .home-content .section-selected-publication .publication-keyword:not(.is-active) {
         background: #f8fafc !important;
         border-color: rgba(71, 85, 105, 0.42);
         backdrop-filter: none !important;
@@ -5905,7 +5908,8 @@ footer {
 
     [data-theme="dark"] .layered-filter-card .chip:not(.is-active),
     [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
-    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active) {
+    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active),
+    [data-theme="dark"] .home-content .section-selected-publication .publication-keyword:not(.is-active) {
         background: #0f172a !important;
         border-color: rgba(226, 232, 240, 0.34);
     }
@@ -5923,7 +5927,8 @@ footer {
 
     .layered-filter-card .chip:not(.is-active),
     .daily-card .daily-keyword-list .chip:not(.is-active),
-    .publication-page-card .publication-keyword:not(.is-active) {
+    .publication-page-card .publication-keyword:not(.is-active),
+    .home-content .section-selected-publication .publication-keyword:not(.is-active) {
         background: #fff;
         border-color: rgba(15, 23, 42, 0.68);
     }
@@ -5937,7 +5942,8 @@ footer {
 
     [data-theme="dark"] .layered-filter-card .chip:not(.is-active),
     [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
-    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active) {
+    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active),
+    [data-theme="dark"] .home-content .section-selected-publication .publication-keyword:not(.is-active) {
         background: #0f172a;
         border-color: rgba(248, 250, 252, 0.58);
     }
@@ -5991,6 +5997,7 @@ footer {
     .daily-keywords-card .daily-type-button,
     .daily-card .daily-keyword-list .chip,
     .publication-page-card .publication-keyword,
+    .home-content .section-selected-publication .publication-keyword,
     .publication-page-card .publication-badge,
     .daily-archive-card .anniversary-grid-wrap {
         color: CanvasText;
