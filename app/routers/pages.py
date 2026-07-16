@@ -17,6 +17,7 @@ from app.utils import (
     parse_markdown_sections, render_markdown_file, get_gallery_folders, 
     safe_join, get_folder_meta, PdfExtension
 )
+from app.markdown_utils import get_publications
 from app.content_utils import get_about_info, parse_and_merge_news, get_all_articles, parse_education_timeline, get_raw_section_body
 from app.daily import (
     build_daily_payload,
@@ -36,7 +37,7 @@ SITE_URL = "https://foreverhyx.top"
 INDEXNOW_KEY = "f3124866af9054b4f96d7cf251a01281"
 SITEMAP_PATHS = (
     "/",
-    "/articles",
+    "/publications",
     "/daily",
     "/gallery",
     "/resume",
@@ -54,6 +55,19 @@ def _tags_url(current_tags: list[str], toggle: Optional[str] = None) -> str:
     if not next_tags:
         return "/articles"
     return f"/articles?tags={quote(','.join(next_tags))}"
+
+
+def _publication_keywords_url(current_keywords: list[str], toggle: Optional[str] = None) -> str:
+    """Build a keyword toggle URL for the Publications filter."""
+    if not toggle:
+        next_keywords = current_keywords
+    elif toggle in current_keywords:
+        next_keywords = [keyword for keyword in current_keywords if keyword != toggle]
+    else:
+        next_keywords = [*current_keywords, toggle]
+    if not next_keywords:
+        return "/publications"
+    return f"/publications?keywords={quote(','.join(next_keywords))}"
 
 
 def _daily_url(keywords: Optional[list[str]] = None, item_type: Optional[str] = None, date: Optional[str] = None) -> str:
@@ -103,7 +117,7 @@ def _build_home_payload(*, include_legacy_fields: bool = True) -> dict[str, Any]
     section_accents = {
         "introduction": "#38bdf8",   # sky-400 — light/bright, welcoming
         "education":     "#3b82f6",  # blue-500 — core academic blue
-        "publications":  "#6366f1",  # indigo-500 — deeper, scholarly
+        "selected publication": "#6366f1",  # indigo-500 — deeper, scholarly
         "awards":        "#2563eb",  # blue-600 — distinction (royal blue)
         "teaching":      "#0ea5e9",  # sky-500 — cyan-blue, growth
         "projects":      "#6366f1",  # indigo
@@ -189,6 +203,30 @@ def _build_articles_payload(tags: Optional[str] = None) -> dict[str, Any]:
         "articles": filtered_articles,
         "filter_tags": tag_list,
         "sorted_tags": sorted_tags,
+    }
+
+
+def _build_publications_payload(keywords: Optional[str] = None) -> dict[str, Any]:
+    publications = get_publications()
+    all_keywords: dict[str, int] = {}
+    for publication in publications:
+        for keyword in publication.get("keywords", []):
+            if keyword:
+                all_keywords[str(keyword)] = all_keywords.get(str(keyword), 0) + 1
+
+    filter_keywords = [keyword.strip() for keyword in keywords.split(",") if keyword.strip()] if keywords else []
+    filtered_publications = publications
+    if filter_keywords:
+        filtered_publications = [
+            publication
+            for publication in publications
+            if all(keyword in publication.get("keywords", []) for keyword in filter_keywords)
+        ]
+
+    return {
+        "publications": filtered_publications,
+        "filter_keywords": filter_keywords,
+        "sorted_keywords": sorted(all_keywords.items(), key=lambda item: item[1], reverse=True),
     }
 
 
@@ -421,6 +459,15 @@ def news_api() -> Any:
 @router.get("/api/search-index")
 def search_api():
     data = []
+    for publication in get_publications():
+        data.append({
+            "type": "Publication",
+            "title": publication["title"],
+            "desc": publication["venue"] or publication["authors"],
+            "tags": publication["keywords"],
+            "date": "",
+            "url": f"/publications#{publication['slug']}",
+        })
     for a in get_all_articles():
         data.append({
             "type": "Article", "title": a['title'], "desc": a['summary'],
@@ -447,6 +494,15 @@ def articles_api(tag: Optional[str] = None, tags: Optional[str] = None) -> Any:
     effective_tags = tags if tags else tag
     return JSONResponse(_build_articles_payload(effective_tags), headers={"Cache-Control": "public, max-age=60"})
     return JSONResponse(_build_articles_payload(tag), headers={"Cache-Control": "public, max-age=60"})
+
+
+@router.get("/api/site/publications")
+def publications_api(keyword: Optional[str] = None, keywords: Optional[str] = None) -> Any:
+    effective_keywords = keywords if keywords else keyword
+    return JSONResponse(
+        _build_publications_payload(effective_keywords),
+        headers={"Cache-Control": "public, max-age=60"},
+    )
 
 
 @router.get("/api/site/daily")
@@ -550,6 +606,17 @@ def articles_page(request: Request, tags: Optional[str] = None):
         "filter_tags": payload["filter_tags"],
         "sorted_tags": payload["sorted_tags"],
         "tags_url": _tags_url,
+    })
+
+
+@router.get("/publications", response_class=HTMLResponse)
+def publications_page(request: Request, keywords: Optional[str] = None):
+    payload = _build_publications_payload(keywords)
+    return templates.TemplateResponse(request, "pages/publications.html", {
+        "publications": payload["publications"],
+        "filter_keywords": payload["filter_keywords"],
+        "sorted_keywords": payload["sorted_keywords"],
+        "keywords_url": _publication_keywords_url,
     })
 
 

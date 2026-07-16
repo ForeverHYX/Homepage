@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Publications | Yixun Hong{% endblock %}
+{% block meta %}
+<meta name="description" content="Selected publications by Yixun Hong on computer architecture, GPU modeling, simulation, and AI workloads.">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-shell">
+        <div class="article-grid publication-grid">
+            <div class="page-stack">
+                {% if filter_keywords %}
+                <div class="card home-glass article-card publication-filter-card">
+                    <div class="home-glass-body article-filter-bar">
+                        <span class="article-filter-label">
+                            Filtered by:
+                            {% for keyword in filter_keywords %}
+                            <a href="{{ keywords_url(filter_keywords, keyword) }}" class="chip is-active">{{ keyword }} &times;</a>
+                            {% endfor %}
+                        </span>
+                        <a href="/publications" class="article-card-link publication-clear-link">Clear all</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if publications %}
+                    {% for publication in publications %}
+                    <div id="{{ publication.slug }}" class="card home-glass article-card publication-page-card">
+                        <div class="home-glass-body publication-page-card-body prose">
+                            <article class="publication-entry">
+                                <div class="publication-heading">
+                                    <div class="publication-badges">
+                                        <span class="publication-badge publication-index publication-index-{{ publication.kind }}">{{ publication.index_label }}</span>
+                                        {% if publication.venue_label %}
+                                        <span class="publication-badge publication-venue-label">{{ publication.venue_label }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="publication-copy">
+                                        <div class="publication-title"><strong>{{ publication.title_html|safe }}</strong></div>
+                                        {% if publication.venue_html %}
+                                        <div class="publication-venue"><em>{{ publication.venue_html|safe }}</em></div>
+                                        {% endif %}
+                                        {% if publication.authors_html %}
+                                        <div class="publication-authors">{{ publication.authors_html|safe }}</div>
+                                        {% endif %}
+                                        {% if publication.keywords or publication.paper or publication.code %}
+                                        <div class="publication-footer">
+                                            {% if publication.keywords %}
+                                            <div class="publication-keywords">
+                                                {% for keyword in publication.keywords %}
+                                                <a href="{{ keywords_url(filter_keywords, keyword) }}" class="publication-keyword{% if keyword in filter_keywords %} is-active{% endif %}">{{ keyword }}{% if keyword in filter_keywords %} &times;{% endif %}</a>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            {% if publication.paper or publication.code %}
+                                            <div class="publication-links">
+                                                {% if publication.paper %}
+                                                <a class="publication-link publication-link-paper" href="{{ publication.paper }}" target="_blank" rel="noreferrer" title="Paper" aria-label="Paper">
+                                                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                                                    <span class="publication-link-label">Paper</span>
+                                                </a>
+                                                {% endif %}
+                                                {% if publication.code %}
+                                                <a class="publication-link publication-link-code" href="{{ publication.code }}" target="_blank" rel="noreferrer" title="Code" aria-label="Code">
+                                                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+                                                    <span class="publication-link-label">Code</span>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="card home-glass article-card publication-empty-card">
+                        <div class="home-glass-body publication-page-card-body">
+                            <p>No publications found.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <aside class="sidebar">
+                <div class="card home-liquid-card home-news-card">
+                    <span class="home-liquid-warp" aria-hidden="true"></span>
+                    <div class="home-liquid-body">
+                        <h3 class="sidebar-card-title">Keywords</h3>
+                        <div class="chip-list">
+                            <a href="/publications" class="chip{% if not filter_keywords %} is-active{% endif %}">All</a>
+                            {% for keyword, count in sorted_keywords %}
+                            <a href="{{ keywords_url(filter_keywords, keyword) }}" class="chip{% if keyword in filter_keywords %} is-active{% endif %}">
+                                {{ keyword }} <span>({{ count }})</span>{% if keyword in filter_keywords %} &times;{% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

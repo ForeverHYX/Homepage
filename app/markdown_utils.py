@@ -91,7 +91,22 @@ def _publication_venue_label(fields: dict[str, str], venue: str) -> str:
     return ""
 
 
-def _render_publication(fields: dict[str, str], counters: dict[str, int]) -> str:
+def _parse_publication_fields(lines: list[str]) -> dict[str, str]:
+    fields: dict[str, str] = {}
+    current_key = ""
+    for raw_line in lines:
+        line = raw_line.rstrip()
+        if not line.strip():
+            continue
+        if match := re.match(r"^([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*)$", line):
+            current_key = match.group(1).strip().lower().replace("-", "_")
+            fields[current_key] = match.group(2).strip()
+        elif current_key:
+            fields[current_key] = f"{fields[current_key]} {line.strip()}".strip()
+    return fields
+
+
+def _build_publication(fields: dict[str, str], counters: dict[str, int]) -> dict[str, object]:
     title = fields.get("title", "").strip()
     venue = fields.get("venue", "").strip()
     authors = fields.get("authors", "").strip()
@@ -100,9 +115,30 @@ def _render_publication(fields: dict[str, str], counters: dict[str, int]) -> str
     index_label = _publication_index_label(publication_kind, counters)
     venue_label = _publication_venue_label(fields, venue)
 
-    title_html = _render_inline_markdown(title) if title else ""
-    venue_html = _render_inline_markdown(venue) if venue else ""
-    authors_html = _render_inline_markdown(authors) if authors else ""
+    return {
+        "title": title,
+        "title_html": _render_inline_markdown(title) if title else "",
+        "venue": venue,
+        "venue_html": _render_inline_markdown(venue) if venue else "",
+        "authors": authors,
+        "authors_html": _render_inline_markdown(authors) if authors else "",
+        "keywords": keywords,
+        "kind": publication_kind,
+        "index_label": index_label,
+        "venue_label": venue_label,
+        "paper": fields.get("paper", "").strip(),
+        "code": fields.get("code", "").strip(),
+    }
+
+
+def _render_publication_data(publication: dict[str, object]) -> str:
+    title_html = str(publication["title_html"])
+    venue_html = str(publication["venue_html"])
+    authors_html = str(publication["authors_html"])
+    publication_kind = str(publication["kind"])
+    index_label = str(publication["index_label"])
+    venue_label = str(publication["venue_label"])
+    keywords = list(publication["keywords"])
 
     badge_html = f'<span class="publication-badge publication-index publication-index-{publication_kind}">{escape(index_label)}</span>'
     if venue_label:
@@ -116,7 +152,7 @@ def _render_publication(fields: dict[str, str], counters: dict[str, int]) -> str
 
     links = []
     for kind, label in (("paper", "Paper"), ("code", "Code")):
-        href = fields.get(kind, "").strip()
+        href = str(publication[kind])
         if href:
             safe_href = escape(href, quote=True)
             links.append(
@@ -142,19 +178,72 @@ def _render_publication(fields: dict[str, str], counters: dict[str, int]) -> str
     )
 
 
+def _render_publication(fields: dict[str, str], counters: dict[str, int]) -> str:
+    return _render_publication_data(_build_publication(fields, counters))
+
+
 def _parse_publication_block(lines: list[str], counters: dict[str, int]) -> str:
-    fields: dict[str, str] = {}
-    current_key = ""
-    for raw_line in lines:
-        line = raw_line.rstrip()
-        if not line.strip():
+    return _render_publication(_parse_publication_fields(lines), counters)
+
+
+def _publication_slug(title: str, fallback: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    return slug or fallback.lower()
+
+
+def _parse_publications_raw(path: Path) -> list[dict[str, object]]:
+    publications: list[dict[str, object]] = []
+    counters = {"conference": 0, "journal": 0}
+    slug_counts: dict[str, int] = {}
+    block: list[str] = []
+    in_publication = False
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped == ":::publication":
+            in_publication = True
+            block = []
             continue
-        if match := re.match(r"^([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*)$", line):
-            current_key = match.group(1).strip().lower().replace("-", "_")
-            fields[current_key] = match.group(2).strip()
-        elif current_key:
-            fields[current_key] = f"{fields[current_key]} {line.strip()}".strip()
-    return _render_publication(fields, counters)
+        if in_publication and stripped == ":::":
+            publication = _build_publication(_parse_publication_fields(block), counters)
+            base_slug = _publication_slug(
+                str(publication["title"]),
+                str(publication["index_label"]),
+            )
+            slug_counts[base_slug] = slug_counts.get(base_slug, 0) + 1
+            publication["slug"] = (
+                base_slug
+                if slug_counts[base_slug] == 1
+                else f"{base_slug}-{slug_counts[base_slug]}"
+            )
+            publication["html"] = _render_publication_data(publication)
+            publications.append(publication)
+            in_publication = False
+            block = []
+            continue
+        if in_publication:
+            block.append(line)
+
+    return publications
+
+
+def get_publications(filename: str = "content.md") -> list[dict[str, object]]:
+    """Return structured publication blocks with stable badges and anchors."""
+    path = CONTENT_DIR / filename
+    if not path.exists():
+        return []
+
+    from app.cache import _cache
+
+    cache_key = f"publications:{path.resolve()}"
+    mtime = path.stat().st_mtime
+    entry = _cache.get(cache_key)
+    if entry and entry.get("mtime") == mtime:
+        return entry["value"]
+
+    value = _parse_publications_raw(path)
+    _cache[cache_key] = {"mtime": mtime, "value": value}
+    return value
 
 
 def _preprocess_publication_blocks(text: str) -> str:

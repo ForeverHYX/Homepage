@@ -32,7 +32,7 @@ class SeoRoutesTests(TestCase):
         self.assertIn("<urlset", response.text)
         for url in [
             "https://foreverhyx.top/",
-            "https://foreverhyx.top/articles",
+            "https://foreverhyx.top/publications",
             "https://foreverhyx.top/daily",
             "https://foreverhyx.top/gallery",
             "https://foreverhyx.top/resume",

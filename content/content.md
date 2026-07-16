@@ -10,7 +10,7 @@ I go to the gym regularly and also enjoy cycling, badminton, hiking, and [photog
   *Bachelor of Engineering, Information Security*
   ![ZJU](/uploads/zju.png)
 
-# Publications
+# Selected Publication
 
 :::publication
 type: conference
