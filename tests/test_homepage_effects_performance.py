@@ -191,7 +191,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.css?v=148\"", base)
+        self.assertIn("href=\"/static/css/styles.css?v=149\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -362,7 +362,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         )
 
         # Cache-buster bumps when CSS material changes so clients refetch it.
-        self.assertIn('href="/static/css/styles.css?v=148"', base)
+        self.assertIn('href="/static/css/styles.css?v=149"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -437,7 +437,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.css?v=148"', base)
+        self.assertIn('href="/static/css/styles.css?v=149"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -485,6 +485,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         styles = STYLES_CSS.read_text()
 
         self.assertIn('link.setAttribute("aria-current", "page")', source)
+        self.assertIn('if (!intendedPath || intendedPath === "/upload")', source)
         self.assertIn("searchTrigger.inert = hidden", source)
         self.assertIn("navMobilePanel.inert = true", source)
         self.assertIn('window.matchMedia("(max-width: 820px)")', source)
@@ -492,6 +493,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("window.visualViewport", source)
         self.assertIn("touch-action: manipulation", styles)
         self.assertIn("transform: scale(0.97)", styles)
+        self.assertIn(".search-bar-container:focus-within", styles)
 
     def test_homepage_honors_apple_accessibility_preferences(self) -> None:
         source = SITE_HEADER_JS.read_text()

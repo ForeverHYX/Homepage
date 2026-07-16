@@ -5257,3 +5257,14 @@ footer {
 :where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
     outline: none;
 }
+
+/* The search field lives inside a pill-shaped control, so keyboard focus
+   follows that material rather than drawing a square around the text input. */
+.search-input:focus-visible {
+    outline: none;
+}
+
+.search-bar-container:focus-within {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}

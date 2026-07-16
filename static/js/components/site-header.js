@@ -42,7 +42,7 @@
     var path = window.location.pathname || "/";
     if (path === "/login") {
       var intendedPath = new URLSearchParams(window.location.search).get("next");
-      if (intendedPath === "/upload") path = intendedPath;
+      if (!intendedPath || intendedPath === "/upload") path = "/upload";
     }
     var links = document.querySelectorAll(
       ".nav-link[data-route], .nav-mobile-link[data-route]"
