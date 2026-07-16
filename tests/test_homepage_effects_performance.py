@@ -534,6 +534,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         source = SITE_HEADER_JS.read_text()
         styles = STYLES_CSS.read_text()
 
+        self.assertIn('fetch("/api/site/news"', source)
+        self.assertNotIn('fetch("/api/site/home"', source)
+        self.assertIn('src="/static/js/components/site-header.js?v=101"', BASE_HTML.read_text())
         self.assertIn('overlay.className = "news-modal-overlay"', source)
         self.assertIn('card.className = "news-modal-card"', source)
         self.assertIn('wrap.className = "home-news-modal-content"', source)

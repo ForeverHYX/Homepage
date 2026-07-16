@@ -568,7 +568,7 @@
    * Home page "all news" modal
    *
    * Only attached if #newsExpandBtn exists (home page). Creates a full-screen
-   * overlay with a dedicated news card, fetches /api/site/home and renders its
+   * overlay with a dedicated news card, fetches /api/site/news and renders its
    * all_news_html field. Closes on Escape / overlay click / close button click;
    * locks body scroll while open.
    * ------------------------------------------------------------------------- */
@@ -658,9 +658,9 @@
       document.addEventListener("keydown", onKeydown);
 
       // Fetch news HTML.
-      fetch("/api/site/home", { headers: { Accept: "application/json" } })
+      fetch("/api/site/news", { headers: { Accept: "application/json" } })
         .then(function (response) {
-          if (!response.ok) throw new Error("site/home failed");
+          if (!response.ok) throw new Error("site/news failed");
           return response.json();
         })
         .then(function (data) {

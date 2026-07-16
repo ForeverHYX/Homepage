@@ -91,7 +91,7 @@ def _daily_type_url(item_type: Optional[str] = None, date: Optional[str] = None)
 
 
 
-def _build_home_payload() -> dict[str, Any]:
+def _build_home_payload(*, include_legacy_fields: bool = True) -> dict[str, Any]:
     about = get_about_info()
     avatar_url = "/uploads/avatar.png"
     raw_sections = parse_markdown_sections("content.md")
@@ -139,34 +139,33 @@ def _build_home_payload() -> dict[str, Any]:
             "accent_class": "section-default",
         })
 
-    sections_html = ""
-    for section in sections:
-        title_html = ""
-        if section["title"]:
-            title_html = (
-                f'<h2 class="section-title" style="border-left-color: {section["accent_color"]}">'
-                f'{section["title"]}</h2>'
-            )
-        sections_html += f"""
-        <section class="cv-section">
-            {title_html}
-            <div class="prose">
-                {section["body_html"]}
-            </div>
-        </section>
-        """
-
     news_html = parse_and_merge_news(limit=6)
-    all_news_html = parse_and_merge_news(limit=100)
-
-    return {
+    payload = {
         "about": about,
         "avatar_url": avatar_url,
         "sections": sections,
-        "sections_html": sections_html,
         "news_html": news_html,
-        "all_news_html": all_news_html,
     }
+    if include_legacy_fields:
+        sections_html = ""
+        for section in sections:
+            title_html = ""
+            if section["title"]:
+                title_html = (
+                    f'<h2 class="section-title" style="border-left-color: {section["accent_color"]}">'
+                    f'{section["title"]}</h2>'
+                )
+            sections_html += f"""
+            <section class="cv-section">
+                {title_html}
+                <div class="prose">
+                    {section["body_html"]}
+                </div>
+            </section>
+            """
+        payload["sections_html"] = sections_html
+        payload["all_news_html"] = parse_and_merge_news(limit=100)
+    return payload
 
 
 def _build_articles_payload(tags: Optional[str] = None) -> dict[str, Any]:
@@ -411,6 +410,14 @@ def home_api() -> Any:
     return JSONResponse(payload, headers={"Cache-Control": "public, max-age=60"})
 
 
+@router.get("/api/site/news")
+def news_api() -> Any:
+    return JSONResponse(
+        {"all_news_html": parse_and_merge_news(limit=100)},
+        headers={"Cache-Control": "public, max-age=60"},
+    )
+
+
 @router.get("/api/search-index")
 def search_api():
     data = []
@@ -526,13 +533,12 @@ def indexnow_key_file():
 
 @router.get("/", response_class=HTMLResponse)
 def home_page(request: Request):
-    payload = _build_home_payload()
+    payload = _build_home_payload(include_legacy_fields=False)
     return templates.TemplateResponse(request, "pages/home.html", {
         "about": payload["about"],
         "avatar_url": payload["avatar_url"],
         "sections": payload["sections"],
         "news_html": payload["news_html"],
-        "all_news_html": payload["all_news_html"],
     })
 
 
