@@ -419,6 +419,13 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn('as="style"', base)
         self.assertIn("this.rel='stylesheet'", base)
         self.assertIn("<noscript>", base)
+        self.assertEqual(
+            base.count('rel="preload" as="style" href="https://fonts.googleapis.com'),
+            1,
+        )
+        self.assertIn("Dancing+Script:wght@500", base)
+        self.assertIn("JetBrains+Mono:wght@400;500", base)
+        self.assertNotIn("Noto+Serif+SC", base)
         blocking_head = re.sub(r"<noscript>.*?</noscript>", "", base, flags=re.S)
         self.assertNotIn('rel="stylesheet" href="https://fonts.googleapis.com', blocking_head)
 
