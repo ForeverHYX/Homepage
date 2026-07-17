@@ -282,9 +282,16 @@ def _load_cache_first(
 ) -> dict[str, Any]:
     cached_value = _read_cache(cache_path)
     cached_has_required_run = _matches_required_run_date(cached_value, required_run_date)
-    if cached_value and cached_has_required_run and _cache_age_seconds(cache_path) <= remote_cache_ttl_seconds:
+    cache_is_fresh = _cache_age_seconds(cache_path) <= remote_cache_ttl_seconds
+    if cached_value and cache_is_fresh and (
+        cached_has_required_run or refresh_stale_cache_in_background
+    ):
         return cached_value
-    if cached_value and cached_has_required_run and refresh_stale_cache_in_background:
+    # A previous run is still a complete, useful page while today's remote
+    # payload is being published. Never make navigation wait on that remote
+    # edge when stale-while-revalidate is enabled: serve the cached run and
+    # refresh it once in the background instead.
+    if cached_value and refresh_stale_cache_in_background:
         _refresh_cache_in_background(fetcher, cache_path, write_empty=write_empty)
         return cached_value
     try:

@@ -4,7 +4,7 @@ import os
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from fastapi.testclient import TestClient
 
@@ -1165,13 +1165,16 @@ class DailyIntegrationTests(unittest.TestCase):
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            cache_path = Path(tmpdir) / "recommendations.json"
-            config_cache_path = Path(tmpdir) / "feedback-config.json"
+            tmp_path = Path(tmpdir)
+            cache_path = tmp_path / "recommendations.json"
+            config_cache_path = tmp_path / "feedback-config.json"
+            favorites_cache_path = tmp_path / "favorites.json"
             cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
             config_cache_path.write_text(json.dumps({
                 "supabase_url": "https://cached.supabase.co",
                 "supabase_anon_key": "cached-anon-key",
             }), encoding="utf-8")
+            favorites_cache_path.write_text('{"records": []}', encoding="utf-8")
 
             calls = {"payload": 0, "config": 0}
 
@@ -1185,11 +1188,16 @@ class DailyIntegrationTests(unittest.TestCase):
                 time.sleep(0.05)
                 return {"supabase_url": "https://remote.supabase.co", "supabase_anon_key": "remote-anon-key"}
 
+            def unexpected_favorites_fetcher():
+                raise AssertionError("fresh favorites cache must not fetch remotely")
+
             payload = load_daily_payload(
                 payload_fetcher=slow_payload_fetcher,
                 config_fetcher=slow_config_fetcher,
+                favorites_fetcher=unexpected_favorites_fetcher,
                 cache_path=cache_path,
                 config_cache_path=config_cache_path,
+                favorites_cache_path=favorites_cache_path,
                 remote_cache_ttl_seconds=300,
                 refresh_stale_cache_in_background=False,
                 expected_run_date="2026-06-14",
@@ -1214,10 +1222,13 @@ class DailyIntegrationTests(unittest.TestCase):
         }
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            cache_path = Path(tmpdir) / "recommendations.json"
-            config_cache_path = Path(tmpdir) / "feedback-config.json"
+            tmp_path = Path(tmpdir)
+            cache_path = tmp_path / "recommendations.json"
+            config_cache_path = tmp_path / "feedback-config.json"
+            favorites_cache_path = tmp_path / "favorites.json"
             cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
             config_cache_path.write_text("{}", encoding="utf-8")
+            favorites_cache_path.write_text('{"records": []}', encoding="utf-8")
             calls = {"payload": 0}
 
             def payload_fetcher():
@@ -1229,7 +1240,9 @@ class DailyIntegrationTests(unittest.TestCase):
                 config_fetcher=lambda: {},
                 cache_path=cache_path,
                 config_cache_path=config_cache_path,
+                favorites_cache_path=favorites_cache_path,
                 remote_cache_ttl_seconds=300,
+                refresh_stale_cache_in_background=False,
                 expected_run_date="2026-06-15",
             )
 
@@ -1239,6 +1252,61 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertEqual(payload["run_date"], "2026-06-15")
         self.assertEqual(payload["items"][0]["title"], "Fresh Daily Recommendations")
         self.assertEqual(cached_payload["run_date"], "2026-06-15")
+
+    def test_daily_loader_serves_previous_run_while_refreshing_stale_date_in_background(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            cache_path = tmp_path / "recommendations.json"
+            config_cache_path = tmp_path / "feedback-config.json"
+            favorites_cache_path = tmp_path / "favorites.json"
+            cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
+            config_cache_path.write_text("{}", encoding="utf-8")
+            favorites_cache_path.write_text('{"records": []}', encoding="utf-8")
+            expired = time.time() - 301
+            os.utime(cache_path, (expired, expired))
+            payload_fetcher = Mock(return_value={"run_date": "2026-06-15", "recommendations": []})
+
+            with patch.object(daily_module, "_refresh_cache_in_background") as refresh_mock:
+                payload = load_daily_payload(
+                    payload_fetcher=payload_fetcher,
+                    config_fetcher=lambda: {},
+                    cache_path=cache_path,
+                    config_cache_path=config_cache_path,
+                    favorites_cache_path=favorites_cache_path,
+                    remote_cache_ttl_seconds=300,
+                    expected_run_date="2026-06-15",
+                )
+
+        payload_fetcher.assert_not_called()
+        refresh_mock.assert_called_once_with(payload_fetcher, cache_path, write_empty=True)
+        self.assertEqual(payload["run_date"], "2026-06-14")
+        self.assertEqual(payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration")
+
+    def test_daily_loader_does_not_refetch_a_fresh_previous_run(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            cache_path = tmp_path / "recommendations.json"
+            config_cache_path = tmp_path / "feedback-config.json"
+            favorites_cache_path = tmp_path / "favorites.json"
+            cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
+            config_cache_path.write_text("{}", encoding="utf-8")
+            favorites_cache_path.write_text('{"records": []}', encoding="utf-8")
+            payload_fetcher = Mock(return_value={"run_date": "2026-06-15", "recommendations": []})
+
+            with patch.object(daily_module, "_refresh_cache_in_background") as refresh_mock:
+                payload = load_daily_payload(
+                    payload_fetcher=payload_fetcher,
+                    config_fetcher=lambda: {},
+                    cache_path=cache_path,
+                    config_cache_path=config_cache_path,
+                    favorites_cache_path=favorites_cache_path,
+                    remote_cache_ttl_seconds=300,
+                    expected_run_date="2026-06-15",
+                )
+
+        payload_fetcher.assert_not_called()
+        refresh_mock.assert_not_called()
+        self.assertEqual(payload["run_date"], "2026-06-14")
 
     def test_daily_loader_reuses_cached_feedback_config_when_config_fetch_fails(self):
         with tempfile.TemporaryDirectory() as tmpdir:
