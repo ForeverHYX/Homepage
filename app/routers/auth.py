@@ -6,11 +6,11 @@ from app.auth import verify_credentials, create_session, get_cookie_settings
 
 router = APIRouter()
 
+
 @router.post("/api/login")
 @limiter.limit("10/minute")
 def api_login(request: Request, username: str = Form(...), password: str = Form(...)) -> Any:
     username = username.strip()
-    password = password.strip()
     if verify_credentials(username, password):
         token = create_session()
         response = RedirectResponse(url="/upload", status_code=status.HTTP_303_SEE_OTHER)
@@ -26,5 +26,5 @@ def api_login(request: Request, username: str = Form(...), password: str = Form(
         return response
     return HTMLResponse(
         content="<script>alert('Invalid credentials'); history.back();</script>",
-        status_code=status.HTTP_401_UNAUTHORIZED
+        status_code=status.HTTP_401_UNAUTHORIZED,
     )

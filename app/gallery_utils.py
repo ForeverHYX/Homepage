@@ -124,13 +124,9 @@ def set_gallery_folder_visibility(
         else:
             states[folder_path] = visibility
 
-        public_folders = [
-            folder for folder, state in states.items() if state == "public"
-        ]
+        public_folders = [folder for folder, state in states.items() if state == "public"]
         stored_visibility = {
-            folder: state
-            for folder, state in states.items()
-            if state in VISIBLE_GALLERY_STATES
+            folder: state for folder, state in states.items() if state in VISIBLE_GALLERY_STATES
         }
         _atomic_write_json(
             GALLERY_CONFIG_FILE,

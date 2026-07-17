@@ -178,7 +178,7 @@
 
 {% block scripts %}
 {% if is_upload_authenticated %}
-<script src="/static/js/components/daily-feedback.js?v=5" defer></script>
+<script src="{{ asset_url('js/components/daily-feedback.min.js') }}" defer></script>
 {% endif %}
-<script src="/static/js/components/daily-archive-calendar.js?v=3" defer></script>
+<script src="{{ asset_url('js/components/daily-archive-calendar.min.js') }}" defer></script>
 {% endblock %}

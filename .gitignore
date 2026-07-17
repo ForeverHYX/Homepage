@@ -19,6 +19,9 @@ test_jsdom.js
 
 *.log
 *.txt
+!requirements-dev.txt
+!static/fonts/licenses/*.txt
 uvicorn.log
 
 .sessions.json
+artifacts/

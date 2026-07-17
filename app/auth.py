@@ -1,109 +1,136 @@
-import secrets
-import os
+"""Upload authentication and a small, single-worker session store."""
+
+from __future__ import annotations
+
 import json
+import os
+import secrets
+import tempfile
 import time
-from pathlib import Path
-from dotenv import load_dotenv
-from fastapi import Request, HTTPException, status
+from threading import RLock
+
+from fastapi import HTTPException, Request, status
 from passlib.context import CryptContext
 
-# Ensure .env is loaded (independent of config.py import order)
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env", override=True)
-
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Security Config
-UPLOAD_USERNAME = os.getenv("HOMEPAGE_UPLOAD_USER", "admin")
-UPLOAD_PASSWORD_HASH = os.getenv(
-    "HOMEPAGE_UPLOAD_PASS_HASH",
-    "$2b$12$QtEnDt2pD4JsZuYxe95EFOlzrvaM2qwxtAPwsbEf2gyQlorr3NWyi"  # default: 'Hyx20041224'
+from app.config import (
+    COOKIE_SECURE,
+    SESSION_FILE,
+    SESSION_TIMEOUT_SECONDS,
+    UPLOAD_PASSWORD_HASH,
+    UPLOAD_USERNAME,
 )
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SESSION_KEY = "session_token"
-SESSION_TIMEOUT = 86400  # 24 hours
-
-# Session storage file
-SESSION_FILE = BASE_DIR / ".sessions.json"
+_SESSION_LOCK = RLock()
 
 
-def _load_sessions() -> dict:
-    """Load sessions from disk and drop expired ones."""
-    if not SESSION_FILE.exists():
-        return {}
-    try:
-        data = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
+def _load_sessions() -> dict[str, float]:
+    """Load non-expired sessions; malformed state fails closed."""
+    with _SESSION_LOCK:
+        if not SESSION_FILE.exists():
+            return {}
+        try:
+            data = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, UnicodeError):
+            return {}
+        if not isinstance(data, dict):
+            return {}
         now = time.time()
-        valid = {k: v for k, v in data.items() if isinstance(v, (int, float)) and v > now}
-        return valid
-    except Exception:
-        return {}
+        return {
+            str(token): float(expiry)
+            for token, expiry in data.items()
+            if isinstance(expiry, (int, float)) and expiry > now
+        }
 
 
-def _save_sessions(sessions: dict) -> None:
-    """Persist sessions to disk atomically."""
-    try:
-        tmp = SESSION_FILE.with_suffix(".tmp")
-        tmp.write_text(json.dumps(sessions), encoding="utf-8")
-        tmp.replace(SESSION_FILE)
-    except Exception:
-        pass
+def _save_sessions(sessions: dict[str, float]) -> None:
+    """Atomically persist sessions with owner-only permissions."""
+    SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: str | None = None
+    with _SESSION_LOCK:
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=SESSION_FILE.parent,
+                prefix=f".{SESSION_FILE.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary_file:
+                temporary_path = temporary_file.name
+                json.dump(sessions, temporary_file, separators=(",", ":"))
+                temporary_file.flush()
+                os.fsync(temporary_file.fileno())
+            os.chmod(temporary_path, 0o600)
+            os.replace(temporary_path, SESSION_FILE)
+            temporary_path = None
+        finally:
+            if temporary_path is not None:
+                try:
+                    os.unlink(temporary_path)
+                except OSError:
+                    pass
 
 
 def get_current_user(request: Request) -> bool:
-    """Always read from disk so multi-worker setups stay consistent."""
     token = request.cookies.get(SESSION_KEY)
     if not token:
         return False
-    sessions = _load_sessions()
-    expiry = sessions.get(token)
-    if expiry and expiry > time.time():
-        return True
-    # Expired or missing — optionally clean up
-    if expiry is not None:
-        sessions.pop(token, None)
-        _save_sessions(sessions)
+    with _SESSION_LOCK:
+        sessions = _load_sessions()
+        expiry = sessions.get(token)
+        if expiry and expiry > time.time():
+            return True
+        if expiry is not None:
+            sessions.pop(token, None)
+            _save_sessions(sessions)
     return False
 
 
 def require_login(request: Request) -> None:
     if not get_current_user(request):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+        )
 
 
 def verify_credentials(username: str, password: str) -> bool:
-    """Constant-time username comparison + bcrypt password verification."""
+    """Verify configured credentials and fail closed when no hash exists."""
     user_ok = secrets.compare_digest(username, UPLOAD_USERNAME)
-    pass_ok = pwd_context.verify(password, UPLOAD_PASSWORD_HASH)
-    return user_ok and pass_ok
+    if not UPLOAD_PASSWORD_HASH:
+        return False
+    try:
+        password_ok = pwd_context.verify(password, UPLOAD_PASSWORD_HASH)
+    except (TypeError, ValueError):
+        return False
+    return user_ok and password_ok
 
 
 def create_session() -> str:
-    """Create a new session token, persist it, and return the token."""
-    sessions = _load_sessions()
-    token = secrets.token_urlsafe(32)
-    expiry = time.time() + SESSION_TIMEOUT
-    sessions[token] = expiry
-    _save_sessions(sessions)
+    with _SESSION_LOCK:
+        sessions = _load_sessions()
+        token = secrets.token_urlsafe(32)
+        sessions[token] = time.time() + SESSION_TIMEOUT_SECONDS
+        _save_sessions(sessions)
     return token
 
 
 def destroy_session(token: str) -> None:
-    """Remove a session token from storage."""
-    sessions = _load_sessions()
-    if token in sessions:
-        del sessions[token]
-        _save_sessions(sessions)
+    with _SESSION_LOCK:
+        sessions = _load_sessions()
+        if token in sessions:
+            del sessions[token]
+            _save_sessions(sessions)
 
 
 def get_cookie_settings() -> dict:
-    """Return recommended cookie flags for production."""
-    # When running behind an HTTPS-terminating proxy, assume HTTPS.
-    secure = os.getenv("HOMEPAGE_COOKIE_SECURE", "true").lower() in ("1", "true", "yes", "on")
     return {
         "key": SESSION_KEY,
         "httponly": True,
-        "secure": secure,
+        "secure": COOKIE_SECURE,
         "samesite": "lax",
-        "max_age": SESSION_TIMEOUT,
+        "max_age": SESSION_TIMEOUT_SECONDS,
     }

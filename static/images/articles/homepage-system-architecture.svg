@@ -51,7 +51,7 @@
 <rect class="accent-cyan" x="542" y="167" width="74" height="8" rx="4"/>
 <text class="label" x="542" y="210">Nginx</text>
 <text class="small" x="542" y="243">TLS termination on 443</text>
-<text class="small" x="542" y="268">gzip 6, HSTS, security headers</text>
+<text class="small" x="542" y="268">gzip_static, HSTS, security headers</text>
 <rect class="chip" x="560" y="280" width="142" height="31" rx="15.5"/>
 <text class="chip-text" x="576" y="301">/static/* direct</text>
 <rect class="chip" x="734" y="280" width="158" height="31" rx="15.5"/>
@@ -64,13 +64,13 @@
 <rect class="accent-green" x="102" y="452" width="74" height="8" rx="4"/>
 <text class="label" x="102" y="495">Static assets</text>
 <text class="small" x="102" y="528">CSS and JS from static/</text>
-<text class="small" x="102" y="553">7-day immutable cache</text>
+<text class="small" x="102" y="553">1-year cache for fingerprinted URLs</text>
 <text class="small" x="102" y="578">Never touches Python</text>
 <rect class="box" x="620" y="430" width="360" height="165" rx="26"/>
 <rect class="accent-amber" x="642" y="452" width="74" height="8" rx="4"/>
 <text class="label" x="642" y="495">Uploaded files</text>
 <text class="small" x="642" y="528">Gallery images and documents</text>
-<text class="small" x="642" y="553">7-day cache</text>
+<text class="small" x="642" y="553">1-hour mutable cache</text>
 <text class="small" x="642" y="578">Served by Nginx alias</text>
 <rect class="box" x="1100" y="405" width="380" height="190" rx="26"/>
 <rect class="accent-rose" x="1122" y="427" width="74" height="8" rx="4"/>
@@ -84,7 +84,7 @@
 <rect class="box" x="170" y="725" width="1260" height="255" rx="26"/>
 <rect class="accent-blue" x="202" y="758" width="92" height="8" rx="4"/>
 <text class="label" x="202" y="804">Single FastAPI process under systemd</text>
-<text class="small" x="202" y="839">gunicorn starts 1 uvicorn worker hosting app.main:app</text>
+<text class="small" x="202" y="839">gunicorn preloads app.main:app and starts 1 uvicorn worker</text>
 <text class="small" x="202" y="864">One runtime serves public pages, admin pages, JSON APIs, upload logic, and Markdown parsing</text>
 <path class="arrow" d="M1290 595 C1290 660 1150 690 1000 725"/>
 <rect class="box-soft" x="210" y="890" width="275" height="64" rx="18"/>
@@ -98,5 +98,5 @@
 <text class="tiny" x="824" y="941">Markdown is the database</text>
 <rect class="box-soft" x="1095" y="890" width="295" height="64" rx="18"/>
 <text class="mono" x="1119" y="917">cache + auth + uploads</text>
-<text class="tiny" x="1119" y="941">mtime cache, bcrypt, files</text>
+<text class="tiny" x="1119" y="941">signature cache, bcrypt, files</text>
 </svg>

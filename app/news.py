@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from pathlib import Path
 from typing import TypedDict
 
 import markdown
 
-from app.cache import FileSignature, cache_by_signature, file_signature
+from app.cache import FileSignature, cache_by_signature, cache_path, file_signature
 from app.config import CONTENT_DIR, GALLERY_CONFIG_FILE, UPLOAD_DIR
-from app.utils import get_folder_meta, get_gallery_folders, safe_join
+from app.file_utils import safe_join
+from app.gallery_utils import get_folder_meta, get_gallery_folders
 
 
 NEWS_CACHE_NAMESPACE = "news"
@@ -76,7 +76,7 @@ def _build_news_items() -> tuple[_NewsItem, ...]:
                 {
                     "date": parsed_date,
                     "html": (
-                        f'<strong>{date_str}:</strong> New album released: '
+                        f"<strong>{date_str}:</strong> New album released: "
                         f'<a href="/gallery?focus={rel_path}">{title}</a>.'
                     ),
                 }
@@ -94,9 +94,7 @@ def _render_news_html(items: tuple[_NewsItem, ...], limit: int) -> str:
         return '<ul class="news-list"><li class="news-item">No news yet.</li></ul>'
 
     html_parts = ['<ul class="news-list">']
-    html_parts.extend(
-        f'<li class="news-item">{item["html"]}</li>' for item in items[:limit]
-    )
+    html_parts.extend(f'<li class="news-item">{item["html"]}</li>' for item in items[:limit])
     html_parts.append("</ul>")
     return "".join(html_parts)
 
@@ -114,7 +112,7 @@ def _gallery_metadata_signatures() -> tuple[tuple[str, FileSignature], ...]:
             meta_path = safe_join(UPLOAD_DIR, rel_path) / "meta.json"
         except Exception:
             continue
-        signatures.append((str(meta_path.resolve()), file_signature(meta_path)))
+        signatures.append((str(cache_path(meta_path)), file_signature(meta_path)))
     return tuple(sorted(signatures))
 
 
@@ -122,8 +120,8 @@ def parse_and_merge_news(limit: int = 6) -> str:
     """Render news while parsing all sources only once per input signature."""
     news_path = CONTENT_DIR / "news.md"
     signature = (
-        (str(news_path.resolve()), file_signature(news_path)),
-        (str(GALLERY_CONFIG_FILE.resolve()), file_signature(GALLERY_CONFIG_FILE)),
+        (str(cache_path(news_path)), file_signature(news_path)),
+        (str(cache_path(GALLERY_CONFIG_FILE)), file_signature(GALLERY_CONFIG_FILE)),
         _gallery_metadata_signatures(),
     )
     items = cache_by_signature(

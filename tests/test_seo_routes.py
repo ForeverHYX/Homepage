@@ -24,7 +24,6 @@ class SeoRoutesTests(TestCase):
         self.assertNotIn("Disallow: /daily?", response.text)
         self.assertIn("Sitemap: https://foreverhyx.top/sitemap.xml", response.text)
 
-
     def test_sitemap_xml_lists_public_canonical_pages(self) -> None:
         response = TestClient(app).get("/sitemap.xml")
 

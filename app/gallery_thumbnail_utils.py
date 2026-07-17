@@ -18,9 +18,7 @@ THUMBNAIL_QUALITY = 72
 THUMBNAIL_FILE_MODE = 0o644
 THUMBNAIL_DIRECTORY_MODE = 0o755
 THUMBNAIL_CACHE_VERSION = 2
-GALLERY_THUMBNAIL_SOURCE_EXTENSIONS = frozenset(
-    {".jpg", ".jpeg", ".png", ".webp"}
-)
+GALLERY_THUMBNAIL_SOURCE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 GALLERY_IMAGE_EXTENSIONS = GALLERY_THUMBNAIL_SOURCE_EXTENSIONS | {".gif"}
 
 _THUMBNAIL_LOCK_COUNT = 32
@@ -29,6 +27,9 @@ _THUMBNAIL_WARM_STATE_LOCK = Lock()
 _THUMBNAIL_WARM_PENDING: set[tuple[Path, Path]] = set()
 _THUMBNAIL_WARM_DRAINING = False
 _GALLERY_SOURCE_MUTATION_LOCK = RLock()
+_THUMBNAIL_PERMISSION_LOCK = Lock()
+_VERIFIED_THUMBNAIL_DIRECTORIES: set[Path] = set()
+_VERIFIED_THUMBNAIL_DIRECTORY_LIMIT = 512
 
 
 @contextmanager
@@ -59,24 +60,8 @@ def get_gallery_thumbnail_cache_paths(
         get_gallery_thumbnail_path(upload_dir, image_path),
     }
     if cache_parent.is_dir():
-        paths.update(
-            cache_parent.glob(f"{escape_glob(rel_path.name)}.v*.webp")
-        )
+        paths.update(cache_parent.glob(f"{escape_glob(rel_path.name)}.v*.webp"))
     return paths
-
-
-def _thumbnail_is_current(thumbnail_path: Path, image_path: Path) -> bool:
-    try:
-        return thumbnail_path.stat().st_mtime_ns >= image_path.stat().st_mtime_ns
-    except FileNotFoundError:
-        return False
-
-
-def _ensure_thumbnail_permissions(thumbnail_path: Path) -> None:
-    """Keep generated assets readable by a separate static-file server user."""
-    current_mode = stat.S_IMODE(thumbnail_path.stat().st_mode)
-    if current_mode != THUMBNAIL_FILE_MODE:
-        os.chmod(thumbnail_path, THUMBNAIL_FILE_MODE)
 
 
 def _ensure_thumbnail_directory_permissions(
@@ -87,14 +72,20 @@ def _ensure_thumbnail_directory_permissions(
     thumbnail_path.parent.relative_to(thumbnail_root)
     thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
 
-    current = thumbnail_path.parent
-    while True:
-        current_mode = stat.S_IMODE(current.stat().st_mode)
-        if current_mode != THUMBNAIL_DIRECTORY_MODE:
-            os.chmod(current, THUMBNAIL_DIRECTORY_MODE)
-        if current == thumbnail_root:
-            break
-        current = current.parent
+    with _THUMBNAIL_PERMISSION_LOCK:
+        if thumbnail_path.parent in _VERIFIED_THUMBNAIL_DIRECTORIES:
+            return
+        current = thumbnail_path.parent
+        while True:
+            current_mode = stat.S_IMODE(current.stat().st_mode)
+            if current_mode != THUMBNAIL_DIRECTORY_MODE:
+                os.chmod(current, THUMBNAIL_DIRECTORY_MODE)
+            if current == thumbnail_root:
+                break
+            current = current.parent
+        if len(_VERIFIED_THUMBNAIL_DIRECTORIES) >= _VERIFIED_THUMBNAIL_DIRECTORY_LIMIT:
+            _VERIFIED_THUMBNAIL_DIRECTORIES.clear()
+        _VERIFIED_THUMBNAIL_DIRECTORIES.add(thumbnail_path.parent)
 
 
 def get_current_gallery_thumbnail(
@@ -104,10 +95,13 @@ def get_current_gallery_thumbnail(
     """Return a fresh, web-readable thumbnail without doing image work."""
     thumbnail_path = get_gallery_thumbnail_path(upload_dir, image_path)
     try:
-        if not _thumbnail_is_current(thumbnail_path, image_path):
+        thumbnail_stat = thumbnail_path.stat()
+        source_stat = image_path.stat()
+        if thumbnail_stat.st_mtime_ns < source_stat.st_mtime_ns:
             return None
         _ensure_thumbnail_directory_permissions(upload_dir, thumbnail_path)
-        _ensure_thumbnail_permissions(thumbnail_path)
+        if stat.S_IMODE(thumbnail_stat.st_mode) != THUMBNAIL_FILE_MODE:
+            os.chmod(thumbnail_path, THUMBNAIL_FILE_MODE)
         return thumbnail_path
     except OSError:
         return None
@@ -116,10 +110,7 @@ def get_current_gallery_thumbnail(
 def get_gallery_thumbnail_cache_token(image_path: Path) -> str:
     """Version thumbnail URLs when the source image or cache schema changes."""
     source_stat = image_path.stat()
-    return (
-        f"{THUMBNAIL_CACHE_VERSION}-"
-        f"{source_stat.st_mtime_ns:x}-{source_stat.st_size:x}"
-    )
+    return f"{THUMBNAIL_CACHE_VERSION}-{source_stat.st_mtime_ns:x}-{source_stat.st_size:x}"
 
 
 def _thumbnail_lock(thumbnail_path: Path) -> Lock:

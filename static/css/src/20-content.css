@@ -1,0 +1,149 @@
+/* --- Content Area Sections --- */
+.cv-section { animation: fadeIn 0.5s ease-out; }
+
+.section-title {
+    font-family: var(--font-body);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--heading);
+    margin: 0 0 1.5rem 0;
+    padding-left: 1rem;
+    border-left: 5px solid var(--primary);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    font-optical-sizing: auto;
+}
+
+/* --- Section accent design language -------------------------------------
+   Each fixed home section carries an --accent color via its .section-* class.
+   A coordinated BLUE gradient (sky -> blue -> indigo) so sections are distinct
+   yet clearly one family — no rainbow. The title gains a 5px accent bar plus a
+   very subtle tinted wash. Dark mode lifts each accent for visibility against
+   dark glass. */
+.cv-section.section-introduction { --accent: #38bdf8; }
+.cv-section.section-education     { --accent: #3b82f6; }
+.cv-section.section-selected-publication { --accent: #6366f1; }
+.cv-section.section-awards        { --accent: #2563eb; }
+.cv-section.section-teaching      { --accent: #0ea5e9; }
+.cv-section.section-projects      { --accent: #6366f1; }
+.cv-section.section-research      { --accent: #38bdf8; }
+.cv-section.section-experience    { --accent: #0ea5e9; }
+.cv-section.section-skills        { --accent: #3b82f6; }
+.cv-section.section-contact       { --accent: #60a5fa; }
+.cv-section.section-default       { --accent: #3b82f6; }
+
+.home-content .cv-section .section-title {
+    border-left-color: var(--accent, var(--primary));
+    background-image: linear-gradient(90deg, color-mix(in srgb, var(--accent, var(--primary)) 10%, transparent) 0%, transparent 38%);
+}
+
+/* Dark mode: lift each accent a step for visibility against dark glass. */
+[data-theme="dark"] .cv-section.section-introduction { --accent: #7dd3fc; }
+[data-theme="dark"] .cv-section.section-education     { --accent: #60a5fa; }
+[data-theme="dark"] .cv-section.section-selected-publication { --accent: #818cf8; }
+[data-theme="dark"] .cv-section.section-awards        { --accent: #3b82f6; }
+[data-theme="dark"] .cv-section.section-teaching      { --accent: #38bdf8; }
+[data-theme="dark"] .cv-section.section-projects      { --accent: #818cf8; }
+[data-theme="dark"] .cv-section.section-research      { --accent: #7dd3fc; }
+[data-theme="dark"] .cv-section.section-experience    { --accent: #38bdf8; }
+[data-theme="dark"] .cv-section.section-skills        { --accent: #60a5fa; }
+[data-theme="dark"] .cv-section.section-contact       { --accent: #93c5fd; }
+[data-theme="dark"] .cv-section.section-default       { --accent: #60a5fa; }
+[data-theme="dark"] .home-content .cv-section .section-title {
+    background-image: linear-gradient(90deg, color-mix(in srgb, var(--accent, var(--primary)) 16%, transparent) 0%, transparent 42%);
+}
+
+.page-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 8px 0 60px;
+}
+
+.page-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.page-lead {
+    color: var(--muted);
+    font-size: 1.1rem;
+    margin: -16px 0 0;
+    max-width: 680px;
+}
+
+.article-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+}
+
+.article-filter-label {
+    color: var(--text);
+    font-size: 14px;
+}
+
+.article-filter-bar .article-card-link {
+    margin-top: 0;
+}
+
+.article-card {
+    padding: 0;
+}
+
+/* .article-card now supplies layout only. The visual surface comes from the
+   shared .home-glass document role, so page-specific cards cannot drift. */
+
+.article-card-title {
+    margin: 0 0 12px 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+.article-card-title a {
+    background: var(--link-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+    transition: filter 0.3s ease;
+}
+
+.article-card-title a:hover {
+    filter: brightness(1.2);
+}
+
+.article-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.article-card-summary {
+    color: var(--text);
+    font-size: 15px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.article-card-link {
+    display: inline-flex;
+    margin-top: 16px;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.article-card-link:hover {
+    color: var(--primary-hover);
+}

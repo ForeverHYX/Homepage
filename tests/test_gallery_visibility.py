@@ -52,8 +52,9 @@ class GalleryVisibilityTests(TestCase):
                 _make_album(upload_dir, album)
             _write_gallery_config(config_file)
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                gallery_utils, "GALLERY_CONFIG_FILE", config_file
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file),
             ):
                 with patch("app.routers.pages.get_current_user", return_value=False):
                     response = TestClient(app).get("/api/site/gallery")
@@ -73,8 +74,7 @@ class GalleryVisibilityTests(TestCase):
                 )
                 self.assertTrue(
                     all(
-                        image_url.startswith("/uploads/_thumbs/")
-                        and "?v=2-" in image_url
+                        image_url.startswith("/uploads/_thumbs/") and "?v=2-" in image_url
                         for album in warm_response.json()["albums"]
                         for image_url in album["images"]
                     )
@@ -98,8 +98,9 @@ class GalleryVisibilityTests(TestCase):
             _make_album(upload_dir, "Private")
             _write_gallery_config(config_file)
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                gallery_utils, "GALLERY_CONFIG_FILE", config_file
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file),
             ):
                 with patch("app.routers.pages.get_current_user", return_value=False):
                     response = TestClient(app).get("/api/site/gallery?focus=Private")
@@ -108,7 +109,9 @@ class GalleryVisibilityTests(TestCase):
 
                 with patch("app.routers.pages.get_current_user", return_value=True):
                     response = TestClient(app).get("/api/site/gallery?focus=Private")
-                self.assertEqual([album["rel_path"] for album in response.json()["albums"]], ["Private"])
+                self.assertEqual(
+                    [album["rel_path"] for album in response.json()["albums"]], ["Private"]
+                )
                 self.assertTrue(response.json()["is_focused"])
 
     def test_upload_file_list_exposes_gallery_visibility(self) -> None:
@@ -121,9 +124,11 @@ class GalleryVisibilityTests(TestCase):
                 (upload_dir / album).mkdir()
             _write_gallery_config(config_file)
 
-            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
-                gallery_utils, "GALLERY_CONFIG_FILE", config_file
-            ), patch.object(upload, "require_login", return_value=None):
+            with (
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file),
+                patch.object(upload, "require_login", return_value=None),
+            ):
                 response = TestClient(app).get("/api/files")
 
             self.assertEqual(response.status_code, 200)
@@ -143,9 +148,11 @@ class GalleryVisibilityTests(TestCase):
             config_file = root / "gallery_config.json"
             (upload_dir / "Album").mkdir()
 
-            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
-                gallery_utils, "GALLERY_CONFIG_FILE", config_file
-            ), patch.object(upload, "require_login", return_value=None):
+            with (
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file),
+                patch.object(upload, "require_login", return_value=None),
+            ):
                 response = TestClient(app).post(
                     "/api/gallery/visibility",
                     data={"path": "Album", "visibility": "private"},
@@ -178,15 +185,18 @@ class GalleryVisibilityTests(TestCase):
             )
             original_reader = gallery_utils._read_json_object
 
-            with patch.object(
-                gallery_utils,
-                "GALLERY_CONFIG_FILE",
-                config_file,
-            ), patch.object(
-                gallery_utils,
-                "_read_json_object",
-                wraps=original_reader,
-            ) as read_mock:
+            with (
+                patch.object(
+                    gallery_utils,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(
+                    gallery_utils,
+                    "_read_json_object",
+                    wraps=original_reader,
+                ) as read_mock,
+            ):
                 first_visibility = gallery_utils.get_gallery_visibility_map()
                 first_visibility["Album"] = "hidden"
                 second_visibility = gallery_utils.get_gallery_visibility_map()
@@ -230,14 +240,17 @@ class GalleryVisibilityTests(TestCase):
                 json.loads(source_path.read_text(encoding="utf-8"))
                 real_replace(source, destination)
 
-            with patch.object(
-                gallery_utils,
-                "GALLERY_CONFIG_FILE",
-                config_file,
-            ), patch.object(
-                gallery_utils.os,
-                "replace",
-                side_effect=replace_and_observe,
+            with (
+                patch.object(
+                    gallery_utils,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(
+                    gallery_utils.os,
+                    "replace",
+                    side_effect=replace_and_observe,
+                ),
             ):
                 gallery_utils.set_gallery_folder_visibility("Album", "private")
                 gallery_utils.save_folder_meta(
@@ -269,15 +282,19 @@ class GalleryVisibilityTests(TestCase):
                 time.sleep(0.02)
                 original_writer(*args, **kwargs)
 
-            with patch.object(
-                gallery_utils,
-                "GALLERY_CONFIG_FILE",
-                config_file,
-            ), patch.object(
-                gallery_utils,
-                "_atomic_write_json",
-                side_effect=slow_writer,
-            ), ThreadPoolExecutor(max_workers=2) as executor:
+            with (
+                patch.object(
+                    gallery_utils,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(
+                    gallery_utils,
+                    "_atomic_write_json",
+                    side_effect=slow_writer,
+                ),
+                ThreadPoolExecutor(max_workers=2) as executor,
+            ):
                 futures = [
                     executor.submit(
                         gallery_utils.set_gallery_folder_visibility,
@@ -311,9 +328,11 @@ class GalleryVisibilityTests(TestCase):
                 encoding="utf-8",
             )
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                gallery_utils, "GALLERY_CONFIG_FILE", config_file
-            ), patch("app.routers.pages.get_current_user", return_value=False):
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file),
+                patch("app.routers.pages.get_current_user", return_value=False),
+            ):
                 response = TestClient(app).get("/gallery")
 
             self.assertEqual(response.status_code, 200)
@@ -348,11 +367,12 @@ class GalleryVisibilityTests(TestCase):
             )
 
             _cache.clear()
-            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
-                news, "UPLOAD_DIR", upload_dir
-            ), patch.object(
-                news, "GALLERY_CONFIG_FILE", config_file
-            ), patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file):
+            with (
+                patch.object(news, "CONTENT_DIR", content_dir),
+                patch.object(news, "UPLOAD_DIR", upload_dir),
+                patch.object(news, "GALLERY_CONFIG_FILE", config_file),
+                patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file),
+            ):
                 public_news = news.parse_and_merge_news(limit=6)
                 self.assertIn("Bamboo Sea", public_news)
 
@@ -385,18 +405,23 @@ class GalleryVisibilityTests(TestCase):
                 "2026-01-01",
             )
 
-            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
-                news,
-                "UPLOAD_DIR",
-                upload_dir,
-            ), patch.object(
-                news,
-                "GALLERY_CONFIG_FILE",
-                config_file,
-            ), patch.object(
-                gallery_utils,
-                "GALLERY_CONFIG_FILE",
-                config_file,
+            with (
+                patch.object(news, "CONTENT_DIR", content_dir),
+                patch.object(
+                    news,
+                    "UPLOAD_DIR",
+                    upload_dir,
+                ),
+                patch.object(
+                    news,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(
+                    gallery_utils,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
             ):
                 self.assertIn("Before", news.parse_and_merge_news())
                 gallery_utils.save_folder_meta(

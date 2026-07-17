@@ -1,0 +1,508 @@
+/* ============================================
+   iOS 26 LIQUID GLASS - Yixun Hong's Blog
+   Different transparency per card type
+   ============================================ */
+
+/* --- CSS Variables --- */
+:root {
+    /* --- Typography system --- */
+    --font-ui: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-body: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+    --font-code: 'JetBrains Mono', 'SF Mono', 'Fira Code', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-display: 'Marcellus', 'Cormorant Garamond', Georgia, serif;
+    --font-name-cn: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', SimSun, serif;
+    --font-hand-en: 'Dancing Script', 'Segoe Script', 'Snell Roundhand', cursive;
+    --font-hand-cn: 'Zhi Mang Xing', 'STXingkai', 'Xingkai SC', 'Kaiti SC', 'KaiTi', 'FZKai-Z03', 'Noto Serif SC', serif;
+
+    --bg: #e8f1fb;
+    --bg-gradient: none;
+    --text: #334155;
+    --heading: #0f172a;
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+    --link-gradient: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --danger: #ef4444;
+    --warning: #f97316;
+    --warning-strong: #ea580c;
+    --daily-action-blue-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    --muted: #475569;
+
+    /* Unified frosted-liquid material system.
+       Both the document card (.home-glass/.home-content) and the functional
+       sidebar cards (.home-liquid-card) draw from the same tokens; the only
+       difference is alpha/blur, mirroring an Apple Weather-style frosted
+       widget instead of carrying two unrelated material languages. */
+    --home-material-face-top: rgba(255, 255, 255, 0.72);
+    --home-material-face-mid: rgba(255, 255, 255, 0.10);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.44);
+    --home-material-tint: rgba(148, 163, 184, 0.14);
+    --home-material-edge: rgba(255, 255, 255, 0.82);
+    --home-material-edge-accent: rgba(148, 163, 184, 0.26);
+    --home-material-shadow: rgba(73, 92, 138, 0.18);
+    --home-material-shadow-soft: rgba(73, 92, 138, 0.09);
+    --home-material-inner-top: rgba(255, 255, 255, 0.62);
+    --home-material-inner-bottom: rgba(148, 163, 184, 0.1);
+    --home-material-blur: 38px;
+    --home-material-saturate: 184%;
+    --home-material-contrast: 1.1;
+    --home-material-brightness: 1.04;
+
+    /* Sub-surface tokens for non-card elements that still need a frosted
+       finish (chips, code blocks, TOC, table, drop-zone, lightbox, search
+       dropdown, carousel wrapper, timeline dots). These are deliberately
+       split into two tiers so secondary surfaces read as part of the same
+       frosted-liquid system without competing with the primary cards:
+         --well-*  — translucent well (chips, code, table, TOC, drop zone)
+         --panel-*  — denser panel (lightbox, search dropdown, carousel) */
+    --well-bg: rgba(255, 255, 255, 0.18);
+    --well-border: rgba(255, 255, 255, 0.7);
+    --well-inner: rgba(255, 255, 255, 0.25);
+    --well-shine: rgba(255, 255, 255, 0.12);
+    --panel-bg: rgba(255, 255, 255, 0.55);
+    --panel-border: rgba(255, 255, 255, 0.85);
+    --panel-inner: rgba(255, 255, 255, 0.4);
+    --panel-shine: rgba(255, 255, 255, 0.08);
+
+    /* Card roles. The site intentionally exposes exactly three material
+       families: navigation chrome, functional/tool cards, and document cards.
+       Navigation keeps its dedicated optical variables below; these tokens
+       keep every other card role identical across pages. */
+    --functional-card-background:
+        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.16) 32%, rgba(255, 255, 255, 0) 56%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(241, 245, 249, 0.18) 52%, rgba(219, 234, 254, 0.24));
+    --functional-card-border: rgba(255, 255, 255, 0.72);
+    --functional-card-shadow:
+        0 18px 42px rgba(73, 92, 138, 0.13),
+        0 4px 12px rgba(73, 92, 138, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.12),
+        inset 0 -14px 28px rgba(96, 165, 250, 0.06);
+    --functional-card-hover-border: rgba(255, 255, 255, 0.84);
+    --functional-card-hover-shadow:
+        0 24px 50px rgba(73, 92, 138, 0.16),
+        0 8px 18px rgba(73, 92, 138, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.88),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.13),
+        inset 0 -14px 28px rgba(96, 165, 250, 0.07);
+    --functional-card-blur: 26px;
+    --functional-card-saturation: 168%;
+
+    --document-card-face-top: rgba(255, 255, 255, 0.5);
+    --document-card-face-sheen: rgba(255, 255, 255, 0.2);
+    --document-card-face-mid: rgba(255, 255, 255, 0.16);
+    --document-card-face-bottom: rgba(255, 255, 255, 0.28);
+    --document-card-shadow: rgba(73, 92, 138, 0.18);
+    --document-card-shadow-soft: rgba(73, 92, 138, 0.09);
+    --document-card-inner-top: rgba(255, 255, 255, 0.62);
+    --document-card-inner-bottom: rgba(148, 163, 184, 0.1);
+    --document-card-blur: 18px;
+
+    /* Pills are solid frosted sub-layers. They deliberately avoid a nested
+       backdrop sample, which keeps text crisp and prevents dozens of tiny
+       filters from repainting while a card moves. */
+    --pill-rest-color: var(--text);
+    --pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(226, 232, 240, 0.5));
+    --pill-rest-border: rgba(255, 255, 255, 0.92);
+    --pill-rest-shadow:
+        0 6px 16px rgba(71, 85, 105, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.94),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
+    --pill-lit-background: var(--daily-action-blue-gradient);
+    --pill-lit-border: rgba(37, 99, 235, 0.58);
+    --pill-lit-shadow:
+        0 8px 18px rgba(37, 99, 235, 0.24),
+        0 0 0 1px rgba(147, 197, 253, 0.72),
+        inset 0 1px 8px rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(30, 64, 175, 0.2);
+    --pill-warning-background:
+        linear-gradient(180deg, color-mix(in srgb, var(--warning) 10%, transparent), color-mix(in srgb, var(--warning) 22%, transparent)),
+        var(--pill-rest-background);
+    --pill-warning-border: color-mix(in srgb, var(--warning) 46%, var(--pill-rest-border));
+    --pill-warning-shadow:
+        0 6px 16px color-mix(in srgb, var(--warning) 14%, transparent),
+        var(--pill-rest-shadow);
+
+    /* Legacy aliases — repointed to the unified well/panel tokens so any
+       remaining consumer (upload-manager.js inline styles, search dropdown,
+       anniversary nav, etc.) automatically participates in dark mode. */
+    --surface: var(--panel-bg);
+    --surface-highlight: var(--well-bg);
+    --border: var(--panel-border);
+    --shadow: 0 10px 30px var(--home-material-shadow);
+    --header-bg: var(--panel-bg);
+
+    --radius: 20px;
+    --radius-sm: 14px;
+    --radius-xs: 10px;
+}
+
+[data-theme="dark"] {
+    --bg: #071221;
+    --bg-gradient: none;
+    --text: #cbd5e1;
+    --heading: #f1f5f9;
+    --primary: #60a5fa;
+    --primary-hover: #93c5fd;
+    --link-gradient: linear-gradient(135deg, #93c5fd, #60a5fa);
+    --danger: #f87171;
+    --warning: #fb923c;
+    --warning-strong: #fb923c;
+    --muted: #aebdce;
+
+    /* Dark variants belong to the dark theme. Keeping them here (instead of
+       redeclaring them later in :root) prevents the light palette from being
+       silently overwritten. */
+    --home-material-face-top: rgba(18, 28, 48, 0.82);
+    --home-material-face-mid: rgba(11, 18, 32, 0.2);
+    --home-material-face-bottom: rgba(20, 28, 44, 0.82);
+    --home-material-tint: rgba(37, 99, 235, 0.12);
+    --home-material-edge: rgba(255, 255, 255, 0.22);
+    --home-material-edge-accent: rgba(96, 165, 250, 0.2);
+    --home-material-shadow: rgba(0, 0, 0, 0.4);
+    --home-material-shadow-soft: rgba(0, 0, 0, 0.22);
+    --home-material-inner-top: rgba(255, 255, 255, 0.16);
+    --home-material-inner-bottom: rgba(148, 163, 184, 0.1);
+
+    --well-bg: rgba(255, 255, 255, 0.06);
+    --well-border: rgba(255, 255, 255, 0.12);
+    --well-inner: rgba(255, 255, 255, 0.08);
+    --well-shine: rgba(255, 255, 255, 0.04);
+    --panel-bg: rgba(255, 255, 255, 0.12);
+    --panel-border: rgba(255, 255, 255, 0.18);
+    --panel-inner: rgba(255, 255, 255, 0.1);
+    --panel-shine: rgba(255, 255, 255, 0.03);
+
+    --functional-card-background:
+        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 34%, rgba(255, 255, 255, 0) 58%),
+        linear-gradient(160deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.44) 55%, rgba(30, 64, 175, 0.18));
+    --functional-card-border: rgba(255, 255, 255, 0.16);
+    --functional-card-shadow:
+        0 20px 44px rgba(0, 0, 0, 0.32),
+        0 5px 14px rgba(0, 0, 0, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+        inset 0 -14px 28px rgba(37, 99, 235, 0.08);
+    --functional-card-hover-border: rgba(255, 255, 255, 0.22);
+    --functional-card-hover-shadow:
+        0 26px 56px rgba(0, 0, 0, 0.4),
+        0 8px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.36);
+    --functional-card-blur: 24px;
+    --functional-card-saturation: 154%;
+
+    --document-card-face-top: rgba(20, 29, 46, 0.5);
+    --document-card-face-sheen: rgba(30, 41, 59, 0.3);
+    --document-card-face-mid: rgba(11, 18, 32, 0.4);
+    --document-card-face-bottom: rgba(20, 28, 44, 0.52);
+    --document-card-shadow: rgba(0, 0, 0, 0.42);
+    --document-card-shadow-soft: rgba(0, 0, 0, 0.24);
+    --document-card-inner-top: rgba(255, 255, 255, 0.16);
+    --document-card-inner-bottom: rgba(148, 163, 184, 0.1);
+
+    --pill-rest-color: var(--text);
+    --pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(148, 163, 184, 0.08));
+    --pill-rest-border: rgba(255, 255, 255, 0.22);
+    --pill-rest-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.17),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+    --pill-lit-shadow:
+        0 9px 20px rgba(37, 99, 235, 0.3),
+        0 0 0 1px rgba(96, 165, 250, 0.58),
+        inset 0 1px 8px rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(15, 23, 42, 0.28);
+    --surface: var(--panel-bg);
+    --surface-highlight: var(--well-bg);
+    --border: var(--panel-border);
+    --shadow: 0 14px 36px var(--home-material-shadow);
+    --header-bg: var(--panel-bg);
+
+    color-scheme: dark;
+}
+
+/* --- Reset & Base --- */
+* { box-sizing: border-box; padding: 0; margin: 0; }
+html { scrollbar-gutter: stable; height: 100%; }
+
+html {
+    background-color: var(--bg);
+    background-image: var(--bg-gradient);
+}
+
+html, body { max-width: 100vw; overflow-x: hidden; }
+
+/* Unlike hidden, clip does not establish a scrolling ancestor, so the
+   floating navigation can remain sticky while still containing decorative
+   light-field overflow. Keep hidden above as the compatibility fallback. */
+@supports (overflow: clip) {
+    html, body { overflow-x: clip; }
+}
+
+body {
+    font-family: var(--font-ui);
+    font-optical-sizing: auto;
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+    margin: 0;
+    background: transparent;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+    transition: color 0.3s ease;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.site-main { flex: 1; }
+
+/* --- Search dropdown (portaled) --- */
+.search-dropdown a {
+    display: block;
+    text-decoration: none;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+
+.search-dropdown a:hover {
+    background: var(--surface-highlight);
+}
+
+.search-result-title {
+    color: var(--heading);
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-result-chip {
+    font-size: 11px;
+    background: var(--pill-rest-background);
+    color: var(--pill-rest-color);
+    padding: 2px 6px;
+    border: 1px solid var(--pill-rest-border);
+    border-radius: 999px;
+    box-shadow: var(--pill-rest-shadow);
+}
+
+/* --- Layout --- */
+.container { width: min(100%, 1080px); max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* --- Floating Island Header --- */
+.site-header {
+    position: sticky;
+    top: 16px;
+    z-index: 30;
+    margin: 18px 0 34px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    transition: transform 0.3s ease;
+}
+
+.nav-shell {
+    display: flex;
+    justify-content: center;
+}
+
+.nav-cluster {
+    position: relative;
+    width: 100%;
+}
+
+.nav-island.home-liquid-card {
+    /* A neutral, content-aware functional layer. The page's color should
+       travel through the glass; the material itself should not paint it blue. */
+    --liquid-content-tint: rgba(255, 255, 255, 0.035);
+    --liquid-inner-highlight: rgba(255, 255, 255, 0.52);
+    --liquid-inner-shadow: rgba(71, 85, 105, 0.07);
+    --liquid-clear-layer: rgba(255, 255, 255, 0.44);
+    --liquid-blur: 22px;
+    --liquid-saturation: 168%;
+    --liquid-brightness: 1.035;
+    --liquid-displacement-scale: 21;
+    --liquid-aberration: 1.2;
+    --liquid-nav-idle-glow: 0.56;
+    --liquid-nav-hover-glow: 0.6;
+    --liquid-nav-caustic-opacity: 0.26;
+    --liquid-nav-refraction: 0.52;
+    --nav-idle-blur: 16px;
+    --nav-idle-saturation: 158%;
+    --nav-idle-brightness: 1.006;
+    /* Apple-style Liquid Glass on the web is an approximation: one narrow
+       backdrop sample, a low-alpha neutral carrier, and optical highlights at
+       the rim. No nested backdrop filters or animated blur are used. */
+    --home-material-face-top: rgba(255, 255, 255, 0.24);
+    --home-material-face-mid: rgba(255, 255, 255, 0.105);
+    --home-material-face-bottom: rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    overflow: hidden;
+    padding: 10px 14px 10px 18px;
+    border-color: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(22px) saturate(168%) contrast(1.025) brightness(1.035);
+    -webkit-backdrop-filter: blur(22px) saturate(168%) contrast(1.025) brightness(1.035);
+    background:
+        radial-gradient(130% 150% at 18% -80%, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.08) 44%, transparent 68%),
+        linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 48%, var(--home-material-face-bottom) 100%),
+        var(--liquid-content-tint);
+    background-blend-mode: screen, normal, normal;
+    box-shadow:
+        0 12px 32px rgba(55, 65, 95, 0.12),
+        0 3px 8px rgba(55, 65, 95, 0.055),
+        inset 0 1px 0 var(--liquid-inner-highlight),
+        inset 0 -1px 0 rgba(51, 65, 85, 0.14),
+        inset 0 -12px 24px var(--liquid-inner-shadow);
+}
+
+.nav-island.home-liquid-card:hover {
+    /* The nav pill does not lift (it is the persistent top bar, not a content
+       card), but it still shifts to a cleaner, slightly stronger shadow so the
+       hover state reads consistently with the rest of the material. */
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.47);
+    box-shadow:
+        0 14px 34px rgba(55, 65, 95, 0.14),
+        0 4px 10px rgba(55, 65, 95, 0.065),
+        inset 0 1px 0 rgba(255, 255, 255, 0.58),
+        inset 0 -1px 0 rgba(51, 65, 85, 0.16),
+        inset 0 -12px 24px rgba(71, 85, 105, 0.075);
+}
+
+.nav-island.home-liquid-card::before {
+    background:
+        radial-gradient(34% 145% at 17% -42%, rgba(255, 255, 255, 0.76) 0%, rgba(255, 255, 255, 0.2) 36%, rgba(255, 255, 255, 0) 68%),
+        radial-gradient(26% 120% at 89% 132%, rgba(191, 219, 254, 0.2) 0%, rgba(191, 219, 254, 0.05) 42%, rgba(191, 219, 254, 0) 72%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 46%, rgba(71, 85, 105, 0.045));
+    opacity: 0.7;
+}
+
+.nav-island.home-liquid-card::after {
+    padding: 1px;
+    background:
+        linear-gradient(112deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.58) 12%, rgba(226, 232, 240, 0.28) 33%, rgba(100, 116, 139, 0.13) 62%, rgba(255, 255, 255, 0.36) 86%, rgba(255, 255, 255, 0.1) 100%);
+    opacity: 0.82;
+}
+
+.nav-island .nav-island-warp {
+    background:
+        radial-gradient(72% 190% at 22% -78%, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.1) 42%, rgba(255, 255, 255, 0) 72%),
+        linear-gradient(180deg, rgba(248, 250, 252, 0.11) 0%, rgba(241, 245, 249, 0.025) 48%, rgba(100, 116, 139, 0.055) 100%);
+    background-blend-mode: screen, normal;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.nav-island .home-liquid-warp::before {
+    background:
+        radial-gradient(30% 175% at 16% -42%, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0.16) 34%, rgba(255, 255, 255, 0) 68%),
+        linear-gradient(104deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.015) 36%, rgba(148, 163, 184, 0.035) 66%, rgba(255, 255, 255, 0.08) 100%);
+    opacity: 0.42;
+}
+
+.nav-island .home-liquid-warp::after {
+    background:
+        radial-gradient(110% 150% at 50% -82%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.025) 48%, rgba(255, 255, 255, 0) 70%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.02) 15%, rgba(255, 255, 255, 0) 50%, rgba(71, 85, 105, 0.055) 78%, rgba(255, 255, 255, 0.24) 100%),
+        linear-gradient(180deg, transparent 56%, rgba(51, 65, 85, 0.08) 100%);
+    opacity: 0.46;
+}
+
+.nav-island-body {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    min-height: 58px;
+}
+
+.brand {
+    font-weight: 700;
+    font-size: 18px;
+    text-decoration: none;
+    color: var(--heading);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-brand {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding-right: 6px;
+}
+
+.nav-brand-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.nav-brand-label {
+    white-space: nowrap;
+}
+
+.nav-brand-label-short {
+    display: none;
+}
+
+.nav-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* --- Grid Layouts --- */
+.main-grid {
+    display: grid;
+    gap: 48px;
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+@media (min-width: 800px) { .main-grid { grid-template-columns: 260px 1fr; } }
+
+.right-sidebar-grid {
+    display: grid;
+    gap: 48px;
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+@media (min-width: 800px) { .right-sidebar-grid { grid-template-columns: 1fr 280px; } }
+
+/* --- Sidebar --- */
+.sidebar {
+    /* Establish the same stacking context .home-sidebar uses so the
+       .home-liquid-card material composites against the .home-lightfield
+       backdrop identically on every page (home / publications / daily / detail).
+       position:sticky + z-index is valid and keeps the sidebar pinned while
+       lifting it above the fixed lightfield (z-index:0). */
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: sticky;
+    top: 100px;
+    z-index: 2;
+    isolation: isolate;
+}

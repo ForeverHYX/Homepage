@@ -1,0 +1,586 @@
+/* ============================================
+   Education Timeline
+   ============================================ */
+.edu-timeline {
+    position: relative;
+    padding: 4px 0;
+}
+
+.edu-timeline-item {
+    display: grid;
+    grid-template-columns: 150px 40px 1fr;
+    align-items: start;
+    position: relative;
+}
+
+.edu-timeline-item + .edu-timeline-item {
+    margin-top: 32px;
+}
+
+/* Vertical connector line between markers */
+.edu-timeline-item::after {
+    content: '';
+    position: absolute;
+    left: calc(150px + 19px);
+    top: 22px;
+    bottom: -32px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--primary) 0%, var(--panel-border) 100%);
+    opacity: 0.35;
+    z-index: 1;
+}
+
+.edu-timeline-item:last-child::after {
+    display: none;
+}
+
+.edu-timeline-date {
+    text-align: right;
+    padding-right: 16px;
+    padding-top: 2px;
+    font-size: 0.88rem;
+    color: var(--muted);
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+}
+
+.edu-timeline-marker {
+    display: flex;
+    justify-content: center;
+    padding-top: 5px;
+    position: relative;
+    z-index: 2;
+}
+
+.edu-timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2.5px solid var(--panel-border);
+    transition: all 0.3s ease;
+}
+
+.edu-timeline-item.is-active .edu-timeline-dot {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.edu-timeline-content {
+    padding-left: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.edu-timeline-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.edu-institution {
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: var(--heading);
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+}
+
+.edu-logo-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+    margin-top: -14px;
+}
+
+.edu-logo {
+    height: 52px;
+    width: auto;
+    object-fit: contain;
+    opacity: 0.85;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.06));
+}
+
+.edu-logo:hover {
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+.edu-role {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.65;
+    margin: 0;
+}
+
+.edu-role a {
+    background: var(--link-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+    font-weight: 500;
+    transition: filter 0.3s ease;
+}
+
+.edu-role a:hover {
+    filter: brightness(1.2);
+    text-decoration: underline;
+    text-decoration-color: #2563eb;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Dark mode timeline adjustments */
+[data-theme="dark"] .edu-timeline-item::after {
+    background: linear-gradient(180deg, var(--primary) 0%, rgba(255, 255, 255, 0.08) 100%);
+    opacity: 0.3;
+}
+
+[data-theme="dark"] .edu-timeline-dot {
+    background: var(--bg);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .edu-timeline-item.is-active .edu-timeline-dot {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
+}
+
+[data-theme="dark"] .edu-logo {
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3)) brightness(1.15);
+}
+
+
+@media (max-width: 800px) {
+    .carousel-slide { height: 300px; }
+    .carousel-wrapper.focused .carousel-slide { height: 200px; }
+    .page-shell { gap: 28px; padding-bottom: 40px; }
+    /* Timeline responsive */
+    .edu-timeline-item {
+        grid-template-columns: 28px 1fr;
+        gap: 0;
+    }
+    .edu-timeline-date {
+        grid-column: 2;
+        grid-row: 1;
+        text-align: left;
+        padding: 0 0 4px 12px;
+        font-size: 0.82rem;
+    }
+    .edu-timeline-marker {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        padding-top: 4px;
+    }
+    .edu-timeline-content {
+        grid-column: 2;
+        grid-row: 2;
+        padding-left: 12px;
+    }
+    .edu-timeline-item::after {
+        left: 13px;
+    }
+    .edu-timeline-item + .edu-timeline-item {
+        margin-top: 24px;
+    }
+    .edu-institution {
+        font-size: 1rem;
+    }
+    .edu-timeline-content {
+        gap: 12px;
+    }
+    .edu-logo {
+        height: 48px;
+    }
+    .prose .edu-logo {
+        height: 48px;
+    }
+
+    .home-layout {
+        gap: 28px;
+        padding-bottom: 48px;
+    }
+    .home-liquid-card,
+    .home-glass,
+    .home-content,
+    .nav-mobile-panel,
+    .lightbox-content {
+        border-radius: calc(var(--radius) + 6px);
+        background: var(--panel-bg);
+        backdrop-filter: blur(18px) saturate(165%);
+        -webkit-backdrop-filter: blur(18px) saturate(165%);
+        border: 1px solid var(--panel-border);
+        box-shadow:
+            0 12px 24px rgba(73, 92, 138, 0.075),
+            inset 0 1px 0 var(--panel-inner);
+    }
+    .home-liquid-card,
+    .nav-mobile-panel {
+        backdrop-filter: blur(18px) saturate(165%);
+        -webkit-backdrop-filter: blur(18px) saturate(165%);
+    }
+    .home-profile-card,
+    .home-news-card {
+        background: var(--well-bg);
+        border-color: var(--well-border);
+        box-shadow:
+            0 12px 22px rgba(73, 92, 138, 0.065),
+            inset 0 1px 0 var(--well-inner);
+    }
+    .home-liquid-card::before,
+    .home-liquid-card::after,
+    .home-liquid-warp,
+    .home-liquid-warp::before,
+    .home-liquid-warp::after,
+    .home-glass::before,
+    .home-glass::after {
+        display: none !important;
+    }
+    .home-liquid-card:hover,
+    .home-glass:hover,
+    .home-content:hover {
+        transform: none;
+        box-shadow:
+            0 12px 24px rgba(73, 92, 138, 0.075),
+            inset 0 1px 0 var(--panel-inner);
+    }
+    .home-liquid-card {
+        --liquid-radius: 26px;
+        --liquid-blur: 20px;
+        --liquid-displacement-scale: 21;
+        --liquid-aberration: 1.45;
+        border-radius: calc(var(--radius) + 6px);
+    }
+    .home-glass {
+        border-radius: calc(var(--radius) + 6px);
+    }
+    .home-glass.profile-card .home-glass-body,
+    .home-glass.news-card .home-glass-body,
+    .home-content .home-glass-body {
+        padding: 24px 20px;
+    }
+    .home-profile-card .home-liquid-body,
+    .home-news-card .home-liquid-body {
+        padding: 24px 20px;
+    }
+    .home-content .home-glass-body {
+        gap: 32px;
+    }
+    .home-content .cv-section + .cv-section {
+        padding-top: 0;
+    }
+}
+
+/* --- Interaction fidelity -------------------------------------------------
+   Keep compact circular controls visually unchanged while extending their
+   effective hit area to the 44px target recommended for touch interfaces. */
+@media (max-width: 820px) {
+    .nav-mobile-panel,
+    .search-dropdown {
+        background: rgba(248, 250, 252, 0.94);
+        backdrop-filter: blur(28px) saturate(165%);
+        -webkit-backdrop-filter: blur(28px) saturate(165%);
+    }
+
+    [data-theme="dark"] .nav-mobile-panel,
+    [data-theme="dark"] .search-dropdown {
+        background: rgba(7, 18, 33, 0.92);
+    }
+}
+
+.contact-icon::after,
+.news-expand-btn::after,
+.news-modal-close::after,
+.site-header .action-btn::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: inherit;
+}
+
+.site-header .action-btn::after {
+    inset: -1px;
+}
+
+:where(
+    .nav-brand,
+    .nav-links a,
+    .nav-mobile-link,
+    .site-header .action-btn,
+    .contact-icon,
+    .news-expand-btn,
+    .news-modal-close,
+    .search-close-btn,
+    .publication-link
+) {
+    touch-action: manipulation;
+}
+
+/* Touch devices should not retain mouse-only lift states after a tap. The
+   short :active response below still gives immediate, causal feedback. */
+@media (hover: none), (pointer: coarse) {
+    .nav-island.home-liquid-card:hover,
+    .home-liquid-card:hover,
+    .home-glass:hover,
+    .home-content:hover,
+    .home-profile-card .avatar:hover,
+    .contact-icon:hover,
+    .news-expand-btn:hover,
+    .news-modal-close:hover,
+    .nav-links a:hover,
+    .nav-mobile-link:hover,
+    .site-header .action-btn:hover,
+    .prose a.publication-link:hover,
+    .edu-logo:hover {
+        transform: none;
+    }
+
+    .site-header .action-btn {
+        width: 44px;
+        height: 44px;
+    }
+
+    .nav-links a {
+        min-height: 44px;
+    }
+}
+
+.nav-brand:active {
+    opacity: 0.72;
+    transform: scale(0.985);
+    transform-origin: left center;
+    transition-duration: 80ms;
+}
+
+.nav-links a:active,
+.nav-mobile-link:active,
+.site-header .action-btn:active,
+.home-liquid-card .contact-icon:active,
+.home-liquid-card .news-expand-btn:active,
+.news-modal-close:active,
+.search-close-btn:active,
+.prose a.publication-link:active {
+    transform: scale(0.97);
+    transition-duration: 80ms;
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .nav-island.home-liquid-card:hover,
+    .home-liquid-card:hover,
+    .home-glass:hover,
+    .home-content:hover,
+    .avatar:hover,
+    .contact-icon:hover,
+    .news-expand-btn:hover,
+    .news-modal-close:hover,
+    .nav-links a:hover,
+    .nav-mobile-link:hover,
+    .site-header .action-btn:hover,
+    .prose a.publication-link:hover,
+    .edu-logo:hover {
+        transform: none !important;
+    }
+
+    .search-dropdown,
+    .nav-mobile-panel,
+    .news-modal-overlay,
+    .lightbox-overlay,
+    .toast {
+        transform: none !important;
+        transition-property: opacity !important;
+        transition-duration: 160ms !important;
+        transition-timing-function: ease-out !important;
+    }
+
+    .news-modal-overlay,
+    .nav-mobile-panel:not(.open) {
+        transition:
+            opacity 160ms ease-out,
+            visibility 0s linear 160ms !important;
+    }
+
+    .news-modal-overlay.is-active,
+    .nav-mobile-panel.open {
+        transition:
+            opacity 160ms ease-out,
+            visibility 0s linear 0s !important;
+    }
+
+    .news-modal-card,
+    .lightbox-content {
+        transform: none !important;
+    }
+}
+
+/* Safari/macOS accessibility preferences. These only alter the material for
+   people who explicitly request less transparency or more contrast. */
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --accessibility-surface: rgba(248, 250, 252, 0.97);
+        --well-bg: rgba(248, 250, 252, 0.96);
+        --panel-bg: rgba(248, 250, 252, 0.98);
+        --well-border: rgba(100, 116, 139, 0.28);
+        --panel-border: rgba(100, 116, 139, 0.34);
+    }
+
+    [data-theme="dark"] {
+        --accessibility-surface: rgba(7, 18, 33, 0.97);
+        --well-bg: rgba(7, 18, 33, 0.96);
+        --panel-bg: rgba(7, 18, 33, 0.98);
+        --well-border: rgba(203, 213, 225, 0.24);
+        --panel-border: rgba(203, 213, 225, 0.3);
+    }
+
+    .nav-island.home-liquid-card,
+    .home-liquid-card,
+    .home-glass,
+    .home-content,
+    .search-dropdown,
+    .nav-mobile-panel,
+    .news-modal-card,
+    .news-modal-header,
+    .lightbox-content,
+    .toast {
+        background: var(--accessibility-surface) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    .news-modal-overlay,
+    .lightbox-overlay {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    .home-lightfield {
+        opacity: 0.28;
+    }
+
+    .home-liquid-warp,
+    .home-liquid-warp::before,
+    .home-liquid-warp::after {
+        display: none !important;
+    }
+}
+
+@media (prefers-contrast: more) {
+    :root {
+        --text: #1e293b;
+        --muted: #334155;
+        --well-border: rgba(15, 23, 42, 0.38);
+        --panel-border: rgba(15, 23, 42, 0.46);
+    }
+
+    [data-theme="dark"] {
+        --text: #f1f5f9;
+        --muted: #e2e8f0;
+        --well-border: rgba(248, 250, 252, 0.42);
+        --panel-border: rgba(248, 250, 252, 0.52);
+    }
+
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline-width: 3px !important;
+    }
+
+    .nav-island.home-liquid-card {
+        background: rgba(248, 250, 252, 0.94);
+        border-color: rgba(15, 23, 42, 0.52);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    [data-theme="dark"] .nav-island.home-liquid-card {
+        background: rgba(7, 18, 33, 0.94);
+        border-color: rgba(248, 250, 252, 0.56);
+    }
+
+    .nav-island.home-liquid-card::before,
+    .nav-island.home-liquid-card::after,
+    .nav-island .home-liquid-warp {
+        display: none;
+    }
+}
+
+@media (forced-colors: active) {
+    .nav-island.home-liquid-card,
+    .nav-mobile-panel {
+        color: ButtonText;
+        background: Canvas;
+        border: 1px solid ButtonText;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .nav-island.home-liquid-card::before,
+    .nav-island.home-liquid-card::after,
+    .nav-island .home-liquid-warp,
+    .nav-mobile-panel::before,
+    .nav-mobile-panel::after,
+    .nav-mobile-panel .home-liquid-warp {
+        display: none;
+    }
+}
+
+/* --- Backdrop-filter Fallback --- */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    /* Browsers without backdrop-filter: replace the translucent well/panel
+       tokens with near-opaque fallbacks so surfaces stay readable. */
+    :root {
+        --well-bg: rgba(255, 255, 255, 0.92);
+        --well-border: rgba(255, 255, 255, 0.95);
+        --well-inner: rgba(255, 255, 255, 0.4);
+        --panel-bg: rgba(255, 255, 255, 0.97);
+        --panel-border: rgba(255, 255, 255, 0.95);
+        --panel-inner: rgba(255, 255, 255, 0.4);
+    }
+    [data-theme="dark"] {
+        --well-bg: rgba(17, 17, 30, 0.92);
+        --well-border: rgba(255, 255, 255, 0.14);
+        --well-inner: rgba(255, 255, 255, 0.06);
+        --panel-bg: rgba(17, 17, 30, 0.97);
+        --panel-border: rgba(255, 255, 255, 0.18);
+        --panel-inner: rgba(255, 255, 255, 0.06);
+    }
+
+    .nav-island.home-liquid-card {
+        background: rgba(248, 250, 252, 0.94);
+    }
+
+    [data-theme="dark"] .nav-island.home-liquid-card {
+        background: rgba(7, 18, 33, 0.94);
+    }
+
+    .nav-island.home-liquid-card::before,
+    .nav-island.home-liquid-card::after,
+    .nav-island .home-liquid-warp {
+        display: none;
+    }
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--well-border); border-radius: 4px; transition: background 0.3s; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+* { scrollbar-width: thin; scrollbar-color: var(--well-border) transparent; }

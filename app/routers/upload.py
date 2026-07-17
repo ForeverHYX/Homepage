@@ -19,11 +19,10 @@ from app.config import (
     UPLOAD_DIR,
     limiter,
 )
-from app.utils import (
+from app.file_utils import process_uploaded_image, safe_join
+from app.gallery_utils import (
     get_folder_meta,
     get_gallery_visibility_map,
-    process_uploaded_image,
-    safe_join,
     save_folder_meta,
     set_gallery_folder_visibility,
     toggle_gallery_folder,
@@ -42,10 +41,37 @@ router = APIRouter()
 # Upload security constants
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 BLOCKED_EXTENSIONS = {
-    ".exe", ".dll", ".bat", ".cmd", ".sh", ".php", ".jsp", ".asp", ".aspx",
-    ".py", ".pyc", ".rb", ".pl", ".cgi", ".wsf", ".vbs", ".js", ".jar",
-    ".apk", ".ipa", ".deb", ".rpm", ".msi", ".com", ".scr", ".hta",
-    ".html", ".htm", ".xml", ".svg", ".svgz",
+    ".exe",
+    ".dll",
+    ".bat",
+    ".cmd",
+    ".sh",
+    ".php",
+    ".jsp",
+    ".asp",
+    ".aspx",
+    ".py",
+    ".pyc",
+    ".rb",
+    ".pl",
+    ".cgi",
+    ".wsf",
+    ".vbs",
+    ".js",
+    ".jar",
+    ".apk",
+    ".ipa",
+    ".deb",
+    ".rpm",
+    ".msi",
+    ".com",
+    ".scr",
+    ".hta",
+    ".html",
+    ".htm",
+    ".xml",
+    ".svg",
+    ".svgz",
 }
 
 FILE_KIND_EXTENSIONS = {
@@ -57,7 +83,24 @@ FILE_KIND_EXTENSIONS = {
     "archive": {".7z", ".bz2", ".gz", ".rar", ".tar", ".tgz", ".xz", ".zip"},
     "audio": {".aac", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".wav"},
     "video": {".m4v", ".mov", ".mp4", ".mpeg", ".mpg", ".ogv", ".webm"},
-    "code": {".c", ".cpp", ".css", ".go", ".h", ".hpp", ".java", ".js", ".json", ".md", ".rs", ".sh", ".toml", ".ts", ".yaml", ".yml"},
+    "code": {
+        ".c",
+        ".cpp",
+        ".css",
+        ".go",
+        ".h",
+        ".hpp",
+        ".java",
+        ".js",
+        ".json",
+        ".md",
+        ".rs",
+        ".sh",
+        ".toml",
+        ".ts",
+        ".yaml",
+        ".yml",
+    },
     "text": {".log", ".tex", ".txt"},
 }
 
@@ -88,7 +131,9 @@ def _file_kind(path: Path) -> str:
 def _file_payload(path: Path) -> dict:
     relative_path = _relative_upload_path(path)
     kind = _file_kind(path)
-    is_previewable = kind in PREVIEWABLE_KINDS or path.suffix.lower() in PREVIEWABLE_SPREADSHEET_EXTENSIONS
+    is_previewable = (
+        kind in PREVIEWABLE_KINDS or path.suffix.lower() in PREVIEWABLE_SPREADSHEET_EXTENSIONS
+    )
     return {
         "name": path.name,
         "type": "file",
@@ -201,7 +246,7 @@ async def upload_file_api(
     if path:
         target_dir = safe_join(UPLOAD_DIR, path)
         if not target_dir.exists():
-             target_dir.mkdir(parents=True, exist_ok=True)
+            target_dir.mkdir(parents=True, exist_ok=True)
 
     safe_name = Path(file.filename).name
     target_path = safe_join(target_dir, safe_name)
@@ -238,41 +283,52 @@ async def upload_file_api(
 
 @router.post("/api/folder")
 @limiter.limit("20/minute")
-def create_folder_api(request: Request, name: str = Form(...), path: str = Form("")) -> JSONResponse:
+def create_folder_api(
+    request: Request, name: str = Form(...), path: str = Form("")
+) -> JSONResponse:
     require_login(request)
     target_dir = UPLOAD_DIR
     if path:
         target_dir = safe_join(UPLOAD_DIR, path)
-    
+
     final_path = safe_join(target_dir, name)
     try:
         final_path.mkdir(exist_ok=True)
     except Exception as e:
-         raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     return JSONResponse({"detail": "Created"})
 
 
 @router.post("/api/folder/meta")
 @limiter.limit("30/minute")
-def update_folder_meta(request: Request, path: str = Form(...), title: str = Form(...), description: str = Form(...), date: str = Form(""), author: str = Form("Yixun Hong")) -> JSONResponse:
+def update_folder_meta(
+    request: Request,
+    path: str = Form(...),
+    title: str = Form(...),
+    description: str = Form(...),
+    date: str = Form(""),
+    author: str = Form("Yixun Hong"),
+) -> JSONResponse:
     require_login(request)
     target = safe_join(UPLOAD_DIR, path)
     if not target.exists() or not target.is_dir():
-         raise HTTPException(status_code=404, detail="Folder not found")
-    
+        raise HTTPException(status_code=404, detail="Folder not found")
+
     save_folder_meta(target, title, description, date, author)
     return JSONResponse({"detail": "Updated"})
 
 
 @router.post("/api/gallery/toggle")
 @limiter.limit("30/minute")
-def toggle_gallery_api(request: Request, path: str = Form(...), enable: bool = Form(...)) -> JSONResponse:
+def toggle_gallery_api(
+    request: Request, path: str = Form(...), enable: bool = Form(...)
+) -> JSONResponse:
     require_login(request)
     # Validate path exists
     target = safe_join(UPLOAD_DIR, path)
     if not target.exists() or not target.is_dir():
-         raise HTTPException(status_code=404, detail="Folder not found")
-    
+        raise HTTPException(status_code=404, detail="Folder not found")
+
     # Store relative path by normalized string
     rel_path = _relative_upload_path(target)
     toggle_gallery_folder(rel_path, enable)
@@ -289,11 +345,11 @@ def update_gallery_visibility_api(
     require_login(request)
     target = safe_join(UPLOAD_DIR, path)
     if not target.exists() or not target.is_dir():
-         raise HTTPException(status_code=404, detail="Folder not found")
+        raise HTTPException(status_code=404, detail="Folder not found")
 
     normalized = visibility.lower()
     if normalized not in {"hidden", "public", "private"}:
-         raise HTTPException(status_code=400, detail="Invalid gallery visibility")
+        raise HTTPException(status_code=400, detail="Invalid gallery visibility")
 
     rel_path = _relative_upload_path(target)
     set_gallery_folder_visibility(rel_path, normalized)  # type: ignore[arg-type]
@@ -304,7 +360,7 @@ def update_gallery_visibility_api(
 @limiter.limit("60/minute")
 def list_files_api(request: Request, path: str = "") -> JSONResponse:
     require_login(request)
-    
+
     # Secure Path Handling
     if not path or path == "/" or path == ".":
         target_dir = UPLOAD_DIR
@@ -313,19 +369,19 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
         # Strip leading slashes to avoid absolute path issues
         clean_path = path.lstrip("/")
         target_dir = safe_join(UPLOAD_DIR, clean_path)
-    
+
     if not target_dir.exists():
-         # Fallback to root or return empty?
-         # Check if it was a file browse attempt?
-         raise HTTPException(status_code=404, detail="Path not found")
+        # Fallback to root or return empty?
+        # Check if it was a file browse attempt?
+        raise HTTPException(status_code=404, detail="Path not found")
 
     items: List[dict] = []
     gallery_visibility = get_gallery_visibility_map()
-    
+
     try:
         entries = list(target_dir.iterdir())
         entries.sort(key=lambda x: (not x.is_dir(), -x.stat().st_mtime))
-        
+
         for p in entries:
             if p.name == THUMBNAIL_DIR_NAME or p.name.startswith("."):
                 continue
@@ -337,24 +393,26 @@ def list_files_api(request: Request, path: str = "") -> JSONResponse:
             if p.is_dir():
                 meta = get_folder_meta(p)
                 visibility = gallery_visibility.get(rel_path, "hidden")
-                items.append({
-                    "name": p.name,
-                    "type": "dir",
-                    "is_gallery": visibility in {"public", "private"},
-                    "gallery_visibility": visibility,
-                    "path": rel_path,
-                    "title": meta.get("title", p.name),
-                    "description": meta.get("description", ""),
-                    "desc": meta.get("description", ""),
-                    "date": meta.get("date", ""),
-                    "author": meta.get("author", "Yixun Hong")
-                })
+                items.append(
+                    {
+                        "name": p.name,
+                        "type": "dir",
+                        "is_gallery": visibility in {"public", "private"},
+                        "gallery_visibility": visibility,
+                        "path": rel_path,
+                        "title": meta.get("title", p.name),
+                        "description": meta.get("description", ""),
+                        "desc": meta.get("description", ""),
+                        "date": meta.get("date", ""),
+                        "author": meta.get("author", "Yixun Hong"),
+                    }
+                )
             else:
                 items.append(_file_payload(p))
     except Exception as e:
-         print(f"Error listing files: {e}")
-         return JSONResponse({"files": [], "error": str(e)})
-            
+        print(f"Error listing files: {e}")
+        return JSONResponse({"files": [], "error": str(e)})
+
     return JSONResponse({"files": items, "current_path": path})
 
 
@@ -395,10 +453,9 @@ def rename_file_api(
         raise HTTPException(status_code=409, detail="A file with that name already exists")
 
     upload_dir = Path(UPLOAD_DIR).resolve()
-    thumbnail_paths = (
-        get_gallery_thumbnail_cache_paths(upload_dir, target)
-        | get_gallery_thumbnail_cache_paths(upload_dir, destination)
-    )
+    thumbnail_paths = get_gallery_thumbnail_cache_paths(
+        upload_dir, target
+    ) | get_gallery_thumbnail_cache_paths(upload_dir, destination)
     with gallery_thumbnail_source_mutation():
         target.rename(destination)
         for thumbnail_path in thumbnail_paths:

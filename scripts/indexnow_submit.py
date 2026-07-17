@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.routers.pages import INDEXNOW_KEY, SITE_URL
+from app.routers.pages import INDEXNOW_KEY, SITE_URL  # noqa: E402
 
 
 HOST = urllib.parse.urlparse(SITE_URL).netloc
@@ -51,7 +51,9 @@ def fetch_sitemap(url: str = f"{SITE_URL}/sitemap.xml") -> str:
         return response.read().decode("utf-8")
 
 
-def submit_payload(payload: dict[str, object], endpoint: str = INDEXNOW_ENDPOINT) -> tuple[int, str]:
+def submit_payload(
+    payload: dict[str, object], endpoint: str = INDEXNOW_ENDPOINT
+) -> tuple[int, str]:
     data = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
         endpoint,

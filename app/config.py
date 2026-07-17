@@ -20,3 +20,12 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 # Security
 
 UPLOAD_USERNAME = os.getenv("HOMEPAGE_UPLOAD_USER", "admin")
+UPLOAD_PASSWORD_HASH = os.getenv("HOMEPAGE_UPLOAD_PASS_HASH", "").strip()
+COOKIE_SECURE = os.getenv("HOMEPAGE_COOKIE_SECURE", "true").lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+SESSION_FILE = Path(os.getenv("HOMEPAGE_SESSION_FILE", BASE_DIR / ".sessions.json")).resolve()
+SESSION_TIMEOUT_SECONDS = int(os.getenv("HOMEPAGE_SESSION_TIMEOUT_SECONDS", "86400"))

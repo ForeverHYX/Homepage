@@ -11,8 +11,18 @@ from fastapi.testclient import TestClient
 
 from app import daily as daily_module
 from app.main import app
-from app.daily import build_daily_payload, daily_payload_search_entries, daily_search_entries, fetch_daily_favorites_archive, load_daily_payload
-from app.daily_articles import daily_article_slug, ensure_daily_article_markdown, generate_daily_article_markdown
+from app.daily import (
+    build_daily_payload,
+    daily_payload_search_entries,
+    daily_search_entries,
+    fetch_daily_favorites_archive,
+    load_daily_payload,
+)
+from app.daily_articles import (
+    daily_article_slug,
+    ensure_daily_article_markdown,
+    generate_daily_article_markdown,
+)
 from app.routers import pages
 
 
@@ -111,8 +121,14 @@ class DailyIntegrationTests(unittest.TestCase):
         html = response.text
         self.assertIn('href="/daily/articles/2026-06-14-2606-00001"', html)
         self.assertIn('href="/daily/articles/2026-06-14-repo-example-runtime-cache"', html)
-        self.assertNotIn('<a href="https://arxiv.org/abs/2606.00001" target="_blank" rel="noreferrer">Agentic AI-Driven Microarchitecture Exploration</a>', html)
-        self.assertNotIn('<a href="https://github.com/example/runtime-cache" target="_blank" rel="noreferrer">example/runtime-cache</a>', html)
+        self.assertNotIn(
+            '<a href="https://arxiv.org/abs/2606.00001" target="_blank" rel="noreferrer">Agentic AI-Driven Microarchitecture Exploration</a>',
+            html,
+        )
+        self.assertNotIn(
+            '<a href="https://github.com/example/runtime-cache" target="_blank" rel="noreferrer">example/runtime-cache</a>',
+            html,
+        )
 
     def test_daily_page_shows_feedback_controls_when_upload_session_is_active(self):
         with patch.object(pages, "_build_daily_payload", return_value=sample_daily_page_payload()):
@@ -153,9 +169,7 @@ class DailyIntegrationTests(unittest.TestCase):
         payload["filter_keywords"] = ["Agent"]
 
         with patch.object(pages, "_build_daily_payload", return_value=payload):
-            response = TestClient(app).get(
-                "/daily?date=2026-06-13&keywords=agent&item_type=paper"
-            )
+            response = TestClient(app).get("/daily?date=2026-06-13&keywords=agent&item_type=paper")
 
         self.assertEqual(response.status_code, 200)
         html = response.text
@@ -244,15 +258,22 @@ class DailyIntegrationTests(unittest.TestCase):
                 response = TestClient(app).get("/api/site/daily")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["feedback_config"]["supabase_url"], "https://example.supabase.co")
+        self.assertEqual(
+            response.json()["feedback_config"]["supabase_url"], "https://example.supabase.co"
+        )
         self.assertEqual(response.headers["cache-control"], "private, max-age=60")
 
     def test_daily_payload_exposes_author_and_ai_keywords_without_affiliations(self):
         payload = build_daily_payload(SAMPLE_RECOMMENDER_PAYLOAD)
 
         item = payload["items"][0]
-        self.assertEqual(item["authors"], ["A. Architect", "B. Builder", "C. Compiler", "D. Designer", "E. Evaluator"])
-        self.assertEqual(item["display_authors"], ["A. Architect", "B. Builder", "C. Compiler", "D. Designer"])
+        self.assertEqual(
+            item["authors"],
+            ["A. Architect", "B. Builder", "C. Compiler", "D. Designer", "E. Evaluator"],
+        )
+        self.assertEqual(
+            item["display_authors"], ["A. Architect", "B. Builder", "C. Compiler", "D. Designer"]
+        )
         self.assertNotIn("...", ", ".join(item["display_authors"]))
         self.assertNotIn("…", ", ".join(item["display_authors"]))
         self.assertIn("Agent", item["keywords"])
@@ -280,13 +301,23 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertEqual(len(payload["items"]), 1)
 
         available = [
-            "Zulu", "Alpha", "Mike", "Beta", "Lima", "Gamma",
-            "Kilo", "Delta", "Juliet", "Echo", "India", "Foxtrot",
+            "Zulu",
+            "Alpha",
+            "Mike",
+            "Beta",
+            "Lima",
+            "Gamma",
+            "Kilo",
+            "Delta",
+            "Juliet",
+            "Echo",
+            "India",
+            "Foxtrot",
         ]
         requested = ",".join(reversed(available)) + ",alpha,INVALID"
         self.assertEqual(
             daily_module._parse_keywords(requested, available),
-            sorted(available, key=str.casefold)[:daily_module.MAX_FILTER_KEYWORDS],
+            sorted(available, key=str.casefold)[: daily_module.MAX_FILTER_KEYWORDS],
         )
         self.assertEqual(
             pages._daily_url(["GPU", "Agent", "Agent", "GPU"]),
@@ -308,7 +339,9 @@ class DailyIntegrationTests(unittest.TestCase):
         repo = sample_daily_page_payload()["items"][1]
 
         self.assertEqual(daily_article_slug(paper, "2026-06-14"), "2026-06-14-2606-00001")
-        self.assertEqual(daily_article_slug(repo, "2026-06-14"), "2026-06-14-repo-example-runtime-cache")
+        self.assertEqual(
+            daily_article_slug(repo, "2026-06-14"), "2026-06-14-repo-example-runtime-cache"
+        )
 
     def test_daily_article_markdown_uses_blog_frontmatter_and_readable_sections(self):
         item = build_daily_payload(SAMPLE_RECOMMENDER_PAYLOAD)["items"][0]
@@ -345,7 +378,9 @@ class DailyIntegrationTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            generated_path = ensure_daily_article_markdown(item, "2026-06-14", output_dir=article_dir)
+            generated_path = ensure_daily_article_markdown(
+                item, "2026-06-14", output_dir=article_dir
+            )
             markdown = generated_path.read_text(encoding="utf-8")
 
         self.assertEqual(generated_path, path)
@@ -391,20 +426,22 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("Agent", entries[0]["tags"])
 
     def test_daily_keywords_fallback_to_english_title_terms_without_arxiv_tags(self):
-        payload = build_daily_payload({
-            "run_date": "2026-06-14",
-            "recommendations": [
-                {
-                    "paper_id": "2606.00003",
-                    "title": "Arbor: Tree Search as a Cognition Layer for Autonomous Agents",
-                    "abstract": "Autonomous agents use tree search and cognition layers.",
-                    "authors": ["A. Author"],
-                    "categories": ["cs.AI", "cs.LG"],
-                    "sections": ["exploratory"],
-                    "url": "https://arxiv.org/abs/2606.00003",
-                }
-            ],
-        })
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-14",
+                "recommendations": [
+                    {
+                        "paper_id": "2606.00003",
+                        "title": "Arbor: Tree Search as a Cognition Layer for Autonomous Agents",
+                        "abstract": "Autonomous agents use tree search and cognition layers.",
+                        "authors": ["A. Author"],
+                        "categories": ["cs.AI", "cs.LG"],
+                        "sections": ["exploratory"],
+                        "url": "https://arxiv.org/abs/2606.00003",
+                    }
+                ],
+            }
+        )
 
         keywords = payload["items"][0]["keywords"]
         self.assertIn("Search", keywords)
@@ -416,62 +453,71 @@ class DailyIntegrationTests(unittest.TestCase):
             self.assertRegex(keyword, r"^[A-Z][A-Za-z0-9]*$")
 
     def test_daily_sidebar_keywords_are_packed_before_lower_fit_rows(self):
-        payload = build_daily_payload({
-            "run_date": "2026-06-14",
-            "recommendations": [
-                {
-                    "paper_id": "2606.10001",
-                    "title": "Paper One",
-                    "abstract": "GPU cache search.",
-                    "authors": ["A. Author"],
-                    "positive_matches": ["microarchitecture_simulators:microarchitecture", "hpc_cross_over:gpu", "agentic_architecture:ai"],
-                    "sections": [],
-                    "url": "https://arxiv.org/abs/2606.10001",
-                },
-                {
-                    "paper_id": "2606.10002",
-                    "title": "Paper Two",
-                    "abstract": "Accelerator cache search.",
-                    "authors": ["B. Author"],
-                    "positive_matches": ["hpc_cross_over:accelerator"],
-                    "sections": [],
-                    "url": "https://arxiv.org/abs/2606.10002",
-                },
-            ],
-        })
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-14",
+                "recommendations": [
+                    {
+                        "paper_id": "2606.10001",
+                        "title": "Paper One",
+                        "abstract": "GPU cache search.",
+                        "authors": ["A. Author"],
+                        "positive_matches": [
+                            "microarchitecture_simulators:microarchitecture",
+                            "hpc_cross_over:gpu",
+                            "agentic_architecture:ai",
+                        ],
+                        "sections": [],
+                        "url": "https://arxiv.org/abs/2606.10001",
+                    },
+                    {
+                        "paper_id": "2606.10002",
+                        "title": "Paper Two",
+                        "abstract": "Accelerator cache search.",
+                        "authors": ["B. Author"],
+                        "positive_matches": ["hpc_cross_over:accelerator"],
+                        "sections": [],
+                        "url": "https://arxiv.org/abs/2606.10002",
+                    },
+                ],
+            }
+        )
 
         ordered = [keyword for keyword, _count in payload["sorted_keywords"][:4]]
         self.assertEqual(ordered[:3], ["Microarchitecture", "GPU", "AI"])
         self.assertEqual(ordered[3], "Accelerator")
 
     def test_daily_item_type_filter_recomputes_sidebar_keywords(self):
-        payload = build_daily_payload({
-            "run_date": "2026-06-14",
-            "recommendations": [
-                {
-                    "rank": 1,
-                    "paper_id": "2606.20001",
-                    "title": "GPU Cache Simulation",
-                    "abstract": "GPU cache simulation.",
-                    "authors": ["A. Author"],
-                    "positive_matches": ["microarchitecture_simulators:gpu cache simulation"],
-                    "sections": [],
-                    "url": "https://arxiv.org/abs/2606.20001",
-                },
-                {
-                    "rank": 2,
-                    "item_type": "repository",
-                    "repository_full_name": "example/runtime-cache",
-                    "title": "example/runtime-cache",
-                    "abstract": "Runtime cache for LLM serving.",
-                    "authors": ["Repo Owner"],
-                    "repository_url": "https://github.com/example/runtime-cache",
-                    "repository_topics": ["runtime", "llm", "inference"],
-                    "categories": ["github", "Python", "runtime", "llm", "inference"],
-                    "sections": [],
-                },
-            ],
-        }, item_type="repository")
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-14",
+                "recommendations": [
+                    {
+                        "rank": 1,
+                        "paper_id": "2606.20001",
+                        "title": "GPU Cache Simulation",
+                        "abstract": "GPU cache simulation.",
+                        "authors": ["A. Author"],
+                        "positive_matches": ["microarchitecture_simulators:gpu cache simulation"],
+                        "sections": [],
+                        "url": "https://arxiv.org/abs/2606.20001",
+                    },
+                    {
+                        "rank": 2,
+                        "item_type": "repository",
+                        "repository_full_name": "example/runtime-cache",
+                        "title": "example/runtime-cache",
+                        "abstract": "Runtime cache for LLM serving.",
+                        "authors": ["Repo Owner"],
+                        "repository_url": "https://github.com/example/runtime-cache",
+                        "repository_topics": ["runtime", "llm", "inference"],
+                        "categories": ["github", "Python", "runtime", "llm", "inference"],
+                        "sections": [],
+                    },
+                ],
+            },
+            item_type="repository",
+        )
 
         self.assertEqual(payload["active_item_type"], "repository")
         self.assertEqual([item["item_type"] for item in payload["items"]], ["repository"])
@@ -482,21 +528,23 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertNotIn("Simulation", sidebar_keywords)
 
     def test_daily_keywords_prefer_research_nouns_over_title_adjectives(self):
-        payload = build_daily_payload({
-            "run_date": "2026-06-14",
-            "recommendations": [
-                {
-                    "paper_id": "2606.00004",
-                    "title": "Accurate Aging-Aware GPU Cache Simulation for Neural Accelerators",
-                    "abstract": "The paper studies GPU cache simulation for neural accelerators.",
-                    "authors": ["A. Author"],
-                    "categories": ["cs.AR", "cs.LG"],
-                    "positive_matches": ["microarchitecture_simulators:GPU cache simulation"],
-                    "sections": ["microarchitecture_simulators"],
-                    "url": "https://arxiv.org/abs/2606.00004",
-                }
-            ],
-        })
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-14",
+                "recommendations": [
+                    {
+                        "paper_id": "2606.00004",
+                        "title": "Accurate Aging-Aware GPU Cache Simulation for Neural Accelerators",
+                        "abstract": "The paper studies GPU cache simulation for neural accelerators.",
+                        "authors": ["A. Author"],
+                        "categories": ["cs.AR", "cs.LG"],
+                        "positive_matches": ["microarchitecture_simulators:GPU cache simulation"],
+                        "sections": ["microarchitecture_simulators"],
+                        "url": "https://arxiv.org/abs/2606.00004",
+                    }
+                ],
+            }
+        )
 
         keywords = payload["items"][0]["keywords"]
         self.assertIn("GPU", keywords)
@@ -508,51 +556,58 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertNotIn("Aware", keywords)
 
     def test_daily_english_tldr_fallback_uses_concise_abstract_summary(self):
-        abstract = (
-            "Agentic simulator feedback improves architecture search. "
-            + " ".join(["Extra evaluation detail should stay out of the card summary"] * 40)
+        abstract = "Agentic simulator feedback improves architecture search. " + " ".join(
+            ["Extra evaluation detail should stay out of the card summary"] * 40
         )
-        payload = build_daily_payload({
-            "run_date": "2026-06-14",
-            "recommendations": [
-                {
-                    "paper_id": "2606.00002",
-                    "title": "Long Architecture Summary",
-                    "abstract": abstract,
-                    "authors": ["A. Author"],
-                    "tldr": "中文摘要会被英文 abstract 替换。",
-                    "url": "https://arxiv.org/abs/2606.00002",
-                }
-            ],
-        })
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-14",
+                "recommendations": [
+                    {
+                        "paper_id": "2606.00002",
+                        "title": "Long Architecture Summary",
+                        "abstract": abstract,
+                        "authors": ["A. Author"],
+                        "tldr": "中文摘要会被英文 abstract 替换。",
+                        "url": "https://arxiv.org/abs/2606.00002",
+                    }
+                ],
+            }
+        )
 
-        self.assertEqual(payload["items"][0]["tldr"], "Agentic simulator feedback improves architecture search.")
+        self.assertEqual(
+            payload["items"][0]["tldr"], "Agentic simulator feedback improves architecture search."
+        )
         self.assertLess(len(payload["items"][0]["tldr"]), len(abstract))
         self.assertNotIn("Extra evaluation detail", payload["items"][0]["tldr"])
         self.assertNotIn("...", payload["items"][0]["tldr"])
         self.assertNotIn("…", payload["items"][0]["tldr"])
 
     def test_daily_repository_tldr_fallback_summarizes_metadata_not_readme(self):
-        readme_excerpt = "Runtime cache for LLM serving. Install with pip and follow the README examples."
-        payload = build_daily_payload({
-            "run_date": "2026-06-14",
-            "recommendations": [
-                {
-                    "rank": 2,
-                    "item_type": "repository",
-                    "repository_full_name": "example/runtime-cache",
-                    "title": "example/runtime-cache",
-                    "abstract": readme_excerpt,
-                    "authors": ["Repo Owner"],
-                    "repository_url": "https://github.com/example/runtime-cache",
-                    "repository_topics": ["runtime", "llm", "inference"],
-                    "categories": ["github", "Python", "runtime", "llm", "inference"],
-                    "repository_language": "Python",
-                    "repository_stars_today": 9,
-                    "sections": [],
-                }
-            ],
-        })
+        readme_excerpt = (
+            "Runtime cache for LLM serving. Install with pip and follow the README examples."
+        )
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-14",
+                "recommendations": [
+                    {
+                        "rank": 2,
+                        "item_type": "repository",
+                        "repository_full_name": "example/runtime-cache",
+                        "title": "example/runtime-cache",
+                        "abstract": readme_excerpt,
+                        "authors": ["Repo Owner"],
+                        "repository_url": "https://github.com/example/runtime-cache",
+                        "repository_topics": ["runtime", "llm", "inference"],
+                        "categories": ["github", "Python", "runtime", "llm", "inference"],
+                        "repository_language": "Python",
+                        "repository_stars_today": 9,
+                        "sections": [],
+                    }
+                ],
+            }
+        )
 
         tldr = payload["items"][0]["tldr"]
         self.assertEqual(tldr, "Runtime cache for LLM serving.")
@@ -566,28 +621,30 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertNotIn("…", tldr)
 
     def test_daily_repository_payload_exposes_github_source_card_fields(self):
-        payload = build_daily_payload({
-            "run_date": "2026-06-14",
-            "recommendations": [
-                {
-                    "rank": 2,
-                    "item_type": "repository",
-                    "repository_full_name": "example/runtime-cache",
-                    "title": "example/runtime-cache",
-                    "abstract": "Runtime cache for LLM serving.",
-                    "authors": ["Repo Owner"],
-                    "repository_url": "https://github.com/example/runtime-cache",
-                    "repository_homepage": "https://runtime-cache.example",
-                    "repository_topics": ["runtime", "llm", "inference"],
-                    "categories": ["github", "Python", "runtime", "llm", "inference"],
-                    "repository_language": "Python",
-                    "repository_stars": 12345,
-                    "repository_forks": 678,
-                    "repository_stars_today": 9,
-                    "sections": [],
-                }
-            ],
-        })
+        payload = build_daily_payload(
+            {
+                "run_date": "2026-06-14",
+                "recommendations": [
+                    {
+                        "rank": 2,
+                        "item_type": "repository",
+                        "repository_full_name": "example/runtime-cache",
+                        "title": "example/runtime-cache",
+                        "abstract": "Runtime cache for LLM serving.",
+                        "authors": ["Repo Owner"],
+                        "repository_url": "https://github.com/example/runtime-cache",
+                        "repository_homepage": "https://runtime-cache.example",
+                        "repository_topics": ["runtime", "llm", "inference"],
+                        "categories": ["github", "Python", "runtime", "llm", "inference"],
+                        "repository_language": "Python",
+                        "repository_stars": 12345,
+                        "repository_forks": 678,
+                        "repository_stars_today": 9,
+                        "sections": [],
+                    }
+                ],
+            }
+        )
 
         repo = payload["items"][0]
         self.assertEqual(repo["repository_full_name"], "example/runtime-cache")
@@ -670,23 +727,41 @@ class DailyIntegrationTests(unittest.TestCase):
             favorites_path = tmp_path / "favorites.json"
             config_path = tmp_path / "feedback-config.json"
             cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
-            favorites_path.write_text(json.dumps({
-                "records": [{
-                    "paper_id": "2606.12000",
-                    "rating": "like",
-                    "title": "Archived GPU Cache Study",
-                    "abstract": "A GPU cache study for architecture simulation.",
-                    "created_at": "2026-06-13T12:00:00Z",
-                }],
-            }), encoding="utf-8")
-            config_path.write_text(json.dumps({
-                "supabase_url": "https://cached.supabase.co",
-            }), encoding="utf-8")
+            favorites_path.write_text(
+                json.dumps(
+                    {
+                        "records": [
+                            {
+                                "paper_id": "2606.12000",
+                                "rating": "like",
+                                "title": "Archived GPU Cache Study",
+                                "abstract": "A GPU cache study for architecture simulation.",
+                                "created_at": "2026-06-13T12:00:00Z",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "supabase_url": "https://cached.supabase.co",
+                    }
+                ),
+                encoding="utf-8",
+            )
 
             loader_options = {
-                "payload_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected payload fetch")),
-                "favorites_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected favorites fetch")),
-                "config_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected config fetch")),
+                "payload_fetcher": lambda: (_ for _ in ()).throw(
+                    AssertionError("unexpected payload fetch")
+                ),
+                "favorites_fetcher": lambda: (_ for _ in ()).throw(
+                    AssertionError("unexpected favorites fetch")
+                ),
+                "config_fetcher": lambda: (_ for _ in ()).throw(
+                    AssertionError("unexpected config fetch")
+                ),
                 "cache_path": cache_path,
                 "favorites_cache_path": favorites_path,
                 "config_cache_path": config_path,
@@ -742,9 +817,14 @@ class DailyIntegrationTests(unittest.TestCase):
             config_path = tmp_path / "feedback-config.json"
             cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
             favorites_path.write_text(json.dumps({"records": []}), encoding="utf-8")
-            config_path.write_text(json.dumps({
-                "supabase_url": "https://cached.supabase.co",
-            }), encoding="utf-8")
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "supabase_url": "https://cached.supabase.co",
+                    }
+                ),
+                encoding="utf-8",
+            )
             thirty_minutes_ago_ns = time.time_ns() - 1800 * 1_000_000_000
             os.utime(favorites_path, ns=(thirty_minutes_ago_ns, thirty_minutes_ago_ns))
             os.utime(config_path, ns=(thirty_minutes_ago_ns, thirty_minutes_ago_ns))
@@ -759,7 +839,9 @@ class DailyIntegrationTests(unittest.TestCase):
                 return {"supabase_url": "https://fresh.supabase.co"}
 
             common_options = {
-                "payload_fetcher": lambda: (_ for _ in ()).throw(AssertionError("unexpected payload fetch")),
+                "payload_fetcher": lambda: (_ for _ in ()).throw(
+                    AssertionError("unexpected payload fetch")
+                ),
                 "favorites_fetcher": fetch_favorites,
                 "config_fetcher": fetch_config,
                 "cache_path": cache_path,
@@ -798,10 +880,14 @@ class DailyIntegrationTests(unittest.TestCase):
             cache_path = Path(tmpdir) / "recommendations.json"
             cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
 
-            payload = load_daily_payload(payload_fetcher=failing_fetcher, config_fetcher=lambda: {}, cache_path=cache_path)
+            payload = load_daily_payload(
+                payload_fetcher=failing_fetcher, config_fetcher=lambda: {}, cache_path=cache_path
+            )
 
         self.assertEqual(len(payload["items"]), 1)
-        self.assertEqual(payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration")
+        self.assertEqual(
+            payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration"
+        )
 
     def test_daily_loader_uses_favorites_archive_dates_for_calendar(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -959,7 +1045,10 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertEqual(payload["selected_date"], "2026-06-14")
         self.assertEqual(payload["run_date"], "2026-06-14")
-        self.assertEqual([item["title"] for item in payload["items"]], ["Agentic AI-Driven Microarchitecture Exploration"])
+        self.assertEqual(
+            [item["title"] for item in payload["items"]],
+            ["Agentic AI-Driven Microarchitecture Exploration"],
+        )
         self.assertEqual(payload["archive_dates"], ["2026-06-13"])
         self.assertEqual(payload["archive_counts"]["2026-06-14"], {"papers": 1, "code": 0})
 
@@ -1052,7 +1141,9 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertEqual(values["HPC"], 3)
         self.assertNotIn("Runtime", values)
         self.assertIn("polygon_points", payload["profile_radar"])
-        self.assertEqual([item["title"] for item in payload["items"]], ["Current Runtime LLM Paper"])
+        self.assertEqual(
+            [item["title"] for item in payload["items"]], ["Current Runtime LLM Paper"]
+        )
 
     def test_daily_profile_radar_side_labels_anchor_inward_to_avoid_card_overflow(self):
         payload = build_daily_payload(
@@ -1097,17 +1188,21 @@ class DailyIntegrationTests(unittest.TestCase):
         def fake_urlopen(request, timeout):
             requested_urls.append(request.full_url)
             if request.full_url == "https://api.example/tree":
-                return FakeResponse({
-                    "tree": [
-                        {"type": "blob", "path": "2026-06/exploration/2606.12563.json"},
-                        {"type": "blob", "path": "README.md"},
-                    ]
-                })
-            return FakeResponse({
-                "paper_id": "2606.12563",
-                "rating": "like",
-                "created_at": "2026-06-14T06:53:27Z",
-            })
+                return FakeResponse(
+                    {
+                        "tree": [
+                            {"type": "blob", "path": "2026-06/exploration/2606.12563.json"},
+                            {"type": "blob", "path": "README.md"},
+                        ]
+                    }
+                )
+            return FakeResponse(
+                {
+                    "paper_id": "2606.12563",
+                    "rating": "like",
+                    "created_at": "2026-06-14T06:53:27Z",
+                }
+            )
 
         with patch("app.daily.urlopen", side_effect=fake_urlopen):
             payload = fetch_daily_favorites_archive(
@@ -1116,8 +1211,12 @@ class DailyIntegrationTests(unittest.TestCase):
             )
 
         self.assertEqual(len(payload["records"]), 1)
-        self.assertIn("https://raw.example/main/2026-06/exploration/2606.12563.json", requested_urls)
-        self.assertNotIn("https://raw.example/main/2026-06%2Fexploration%2F2606.12563.json", requested_urls)
+        self.assertIn(
+            "https://raw.example/main/2026-06/exploration/2606.12563.json", requested_urls
+        )
+        self.assertNotIn(
+            "https://raw.example/main/2026-06%2Fexploration%2F2606.12563.json", requested_urls
+        )
 
     def test_daily_loader_uses_cached_favorites_when_remote_fetch_fails(self):
         cached_favorites = {
@@ -1171,10 +1270,15 @@ class DailyIntegrationTests(unittest.TestCase):
             config_cache_path = tmp_path / "feedback-config.json"
             favorites_cache_path = tmp_path / "favorites.json"
             cache_path.write_text(json.dumps(SAMPLE_RECOMMENDER_PAYLOAD), encoding="utf-8")
-            config_cache_path.write_text(json.dumps({
-                "supabase_url": "https://cached.supabase.co",
-                "supabase_anon_key": "cached-anon-key",
-            }), encoding="utf-8")
+            config_cache_path.write_text(
+                json.dumps(
+                    {
+                        "supabase_url": "https://cached.supabase.co",
+                        "supabase_anon_key": "cached-anon-key",
+                    }
+                ),
+                encoding="utf-8",
+            )
             favorites_cache_path.write_text('{"records": []}', encoding="utf-8")
 
             calls = {"payload": 0, "config": 0}
@@ -1187,7 +1291,10 @@ class DailyIntegrationTests(unittest.TestCase):
             def slow_config_fetcher():
                 calls["config"] += 1
                 time.sleep(0.05)
-                return {"supabase_url": "https://remote.supabase.co", "supabase_anon_key": "remote-anon-key"}
+                return {
+                    "supabase_url": "https://remote.supabase.co",
+                    "supabase_anon_key": "remote-anon-key",
+                }
 
             def unexpected_favorites_fetcher():
                 raise AssertionError("fresh favorites cache must not fetch remotely")
@@ -1205,7 +1312,9 @@ class DailyIntegrationTests(unittest.TestCase):
             )
 
         self.assertEqual(calls, {"payload": 0, "config": 0})
-        self.assertEqual(payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration")
+        self.assertEqual(
+            payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration"
+        )
         self.assertEqual(payload["feedback_config"]["supabase_url"], "https://cached.supabase.co")
 
     def test_daily_loader_refreshes_fresh_cache_when_cached_run_date_is_stale(self):
@@ -1281,7 +1390,9 @@ class DailyIntegrationTests(unittest.TestCase):
         payload_fetcher.assert_not_called()
         refresh_mock.assert_called_once_with(payload_fetcher, cache_path, write_empty=True)
         self.assertEqual(payload["run_date"], "2026-06-14")
-        self.assertEqual(payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration")
+        self.assertEqual(
+            payload["items"][0]["title"], "Agentic AI-Driven Microarchitecture Exploration"
+        )
 
     def test_daily_loader_does_not_refetch_a_fresh_previous_run(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -1336,10 +1447,15 @@ class DailyIntegrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             config_cache_path = tmp_path / "feedback-config.json"
-            config_cache_path.write_text(json.dumps({
-                "supabase_url": "https://cached.supabase.co",
-                "supabase_anon_key": "cached-anon-key",
-            }), encoding="utf-8")
+            config_cache_path.write_text(
+                json.dumps(
+                    {
+                        "supabase_url": "https://cached.supabase.co",
+                        "supabase_anon_key": "cached-anon-key",
+                    }
+                ),
+                encoding="utf-8",
+            )
 
             payload = load_daily_payload(
                 payload_fetcher=lambda: SAMPLE_RECOMMENDER_PAYLOAD,
@@ -1358,7 +1474,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertIn('href="/daily"', base)
         self.assertIn("Daily", base)
-        self.assertIn('href="/static/css/styles.min.css?v=158"', base)
+        self.assertIn("asset_url('css/styles.min.css')", base)
         self.assertIn("Paper", daily)
         self.assertIn("PDF", daily)
         self.assertIn("Code", daily)
@@ -1372,13 +1488,13 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("profile_radar", daily)
         self.assertIn("selected_date", daily)
         self.assertIn('id="dailyArchiveCalendar"', daily)
-        self.assertIn('data-archive-counts', daily)
+        self.assertIn("data-archive-counts", daily)
         self.assertIn("daily-archive-card", daily)
         self.assertIn("dailyProfileRadar", daily)
         self.assertIn("daily-profile-card", daily)
         self.assertIn("daily-profile-polygon", daily)
         self.assertNotIn("daily-profile-values", daily)
-        self.assertIn("daily-archive-calendar.js?v=3", daily)
+        self.assertIn("asset_url('js/components/daily-archive-calendar.min.js')", daily)
         self.assertIn("daily-card-main-meta", daily)
         self.assertIn("daily-meta-authors", daily)
         self.assertIn("daily-meta-date", daily)
@@ -1407,7 +1523,7 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn('data-run-date="{{ run_date or', daily)
         self.assertIn('data-feedback-rating="like"', daily)
         self.assertIn('data-feedback-rating="dislike"', daily)
-        self.assertIn('daily-feedback.js?v=5', daily)
+        self.assertIn("asset_url('js/components/daily-feedback.min.js')", daily)
         self.assertIn("item.display_authors", daily)
         self.assertNotIn("item.authors|join", daily)
         self.assertNotIn("daily-sidebar-meta", daily)
@@ -1432,10 +1548,22 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn(".daily-action-button.action-glass", styles)
         self.assertIn(".daily-action-button.daily-action-dislike", styles)
         self.assertIn(".daily-action-button.daily-action-like:hover", styles)
-        self.assertIn("--daily-action-blue-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);", styles)
-        self.assertNotIn(".daily-action-button.action-glass:not(.daily-action-dislike),\n.daily-action-button.feedback.daily-action-like", styles)
-        self.assertIn(".daily-action-button.action-glass:not(.daily-action-dislike):hover,\n.daily-action-button.action-glass:not(.daily-action-dislike):active", styles)
-        self.assertIn(".daily-action-button.daily-action-like:hover,\n.daily-action-button.feedback.is-active", styles)
+        self.assertIn(
+            "--daily-action-blue-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);",
+            styles,
+        )
+        self.assertNotIn(
+            ".daily-action-button.action-glass:not(.daily-action-dislike),\n.daily-action-button.feedback.daily-action-like",
+            styles,
+        )
+        self.assertIn(
+            ".daily-action-button.action-glass:not(.daily-action-dislike):hover,\n.daily-action-button.action-glass:not(.daily-action-dislike):active",
+            styles,
+        )
+        self.assertIn(
+            ".daily-action-button.daily-action-like:hover,\n.daily-action-button.feedback.is-active",
+            styles,
+        )
         self.assertIn("background: var(--pill-lit-background);", styles)
         self.assertIn("border-color: var(--pill-lit-border);", styles)
         dislike = re.search(
@@ -1450,26 +1578,26 @@ class DailyIntegrationTests(unittest.TestCase):
         )
         self.assertIsNotNone(dislike)
         self.assertIsNotNone(dislike_hover)
-        self.assertIn(
-            "background: var(--pill-warning-background)", dislike.group("body")
-        )
-        self.assertIn(
-            "border-color: var(--pill-warning-border)", dislike.group("body")
-        )
-        self.assertIn(
-            "box-shadow: var(--pill-warning-shadow)", dislike.group("body")
-        )
+        self.assertIn("background: var(--pill-warning-background)", dislike.group("body"))
+        self.assertIn("border-color: var(--pill-warning-border)", dislike.group("body"))
+        self.assertIn("box-shadow: var(--pill-warning-shadow)", dislike.group("body"))
         self.assertIn(
             "linear-gradient(135deg, var(--warning), var(--danger))",
             dislike_hover.group("body"),
         )
         self.assertIn(".daily-archive-card", styles)
-        self.assertIn(".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);", styles)
+        self.assertIn(
+            ".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);",
+            styles,
+        )
         self.assertIn(".daily-grid .sidebar {\n    gap: 24px;", styles)
         self.assertIn(".daily-profile-card", styles)
         self.assertIn(".daily-profile-polygon", styles)
         self.assertNotIn(".daily-profile-values", styles)
-        self.assertNotIn(".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);\n    margin-top: 24px;", styles)
+        self.assertNotIn(
+            ".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);\n    margin-top: 24px;",
+            styles,
+        )
         self.assertNotIn(".daily-archive-day.is-liked::after", styles)
         self.assertNotIn("linear-gradient(135deg, #10b981, #2563eb)", styles)
         self.assertIn("#f97316", styles)
@@ -1490,7 +1618,9 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn("hideCard", feedback_js)
         self.assertIn("daily-feedback-state-change", feedback_js)
 
-        archive_js = (root / "static/js/components/daily-archive-calendar.js").read_text(encoding="utf-8")
+        archive_js = (root / "static/js/components/daily-archive-calendar.js").read_text(
+            encoding="utf-8"
+        )
         self.assertIn("homepage_daily_feedback_ui_state", archive_js)
         self.assertIn("daily-archive-day", archive_js)
         self.assertIn("is-liked", archive_js)

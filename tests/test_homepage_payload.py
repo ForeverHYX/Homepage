@@ -4,16 +4,17 @@ from unittest import TestCase
 from unittest.mock import call, patch
 
 from app.routers import pages
+from app.services import content
 
 
 class HomepagePayloadTests(TestCase):
-    @patch.object(pages, "get_about_info", return_value={"name": "Yixun"})
+    @patch.object(content, "get_about_info", return_value={"name": "Yixun"})
     @patch.object(
-        pages,
+        content,
         "parse_markdown_sections",
         return_value=[("Introduction", "<p>Hello</p>")],
     )
-    @patch.object(pages, "parse_and_merge_news")
+    @patch.object(content, "parse_and_merge_news")
     def test_ssr_payload_skips_legacy_html_fields(
         self,
         parse_news,
@@ -33,13 +34,13 @@ class HomepagePayloadTests(TestCase):
             inspect.getsource(pages.home_page),
         )
 
-    @patch.object(pages, "get_about_info", return_value={"name": "Yixun"})
+    @patch.object(content, "get_about_info", return_value={"name": "Yixun"})
     @patch.object(
-        pages,
+        content,
         "parse_markdown_sections",
         return_value=[("Introduction", "<p>Hello</p>")],
     )
-    @patch.object(pages, "parse_and_merge_news")
+    @patch.object(content, "parse_and_merge_news")
     def test_legacy_home_api_payload_stays_backward_compatible(
         self,
         parse_news,

@@ -11,7 +11,9 @@ from unittest.mock import patch
 from PIL import Image
 
 from app import gallery_thumbnail_utils
+from app.cache import clear
 from app.routers import pages, upload
+from app.services import gallery as gallery_service
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +22,12 @@ GALLERY_TEMPLATE = ROOT / "app" / "templates" / "pages" / "gallery.html"
 
 
 class GalleryThumbnailTests(TestCase):
+    def setUp(self) -> None:
+        clear()
+
+    def tearDown(self) -> None:
+        clear()
+
     def test_concurrent_first_requests_generate_one_atomic_thumbnail(self) -> None:
         with TemporaryDirectory() as temp_dir:
             upload_dir = Path(temp_dir)
@@ -35,11 +43,14 @@ class GalleryThumbnailTests(TestCase):
 
             previous_umask = os.umask(0o077)
             try:
-                with patch.object(
-                    gallery_thumbnail_utils,
-                    "_write_gallery_thumbnail",
-                    side_effect=slow_writer,
-                ) as writer_mock, ThreadPoolExecutor(max_workers=8) as executor:
+                with (
+                    patch.object(
+                        gallery_thumbnail_utils,
+                        "_write_gallery_thumbnail",
+                        side_effect=slow_writer,
+                    ) as writer_mock,
+                    ThreadPoolExecutor(max_workers=8) as executor,
+                ):
                     results = list(
                         executor.map(
                             lambda _: gallery_thumbnail_utils.ensure_gallery_thumbnail(
@@ -77,8 +88,9 @@ class GalleryThumbnailTests(TestCase):
             source = album_dir / "photo.webp"
             Image.new("RGB", (2400, 1600), "navy").save(source, "WEBP")
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages, "get_gallery_folders", return_value=["Graduation"]
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(pages, "get_gallery_folders", return_value=["Graduation"]),
             ):
                 payload = pages._build_gallery_payload()
 
@@ -87,9 +99,7 @@ class GalleryThumbnailTests(TestCase):
             thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
             self.assertEqual(len(images), 1)
             self.assertTrue(
-                images[0].startswith(
-                    "/uploads/_thumbs/Graduation/photo.webp.v2.webp?v=2-"
-                )
+                images[0].startswith("/uploads/_thumbs/Graduation/photo.webp.v2.webp?v=2-")
             )
             self.assertEqual(full_images, ["/uploads/Graduation/photo.webp"])
             self.assertTrue(thumbnail.exists())
@@ -105,8 +115,9 @@ class GalleryThumbnailTests(TestCase):
             source = album_dir / "photo.webp"
             Image.new("RGB", (2400, 1600), "navy").save(source, "WEBP")
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages, "get_gallery_folders", return_value=["Graduation"]
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(pages, "get_gallery_folders", return_value=["Graduation"]),
             ):
                 payload = pages._build_gallery_payload("Graduation")
 
@@ -117,6 +128,46 @@ class GalleryThumbnailTests(TestCase):
             self.assertEqual(full_images, ["/uploads/Graduation/photo.webp"])
             self.assertFalse(thumbnail.exists())
 
+    def test_gallery_payload_cache_reuses_and_invalidates_metadata(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            upload_dir = Path(temp_dir)
+            album_dir = upload_dir / "Graduation"
+            album_dir.mkdir()
+            Image.new("RGB", (32, 32), "navy").save(
+                album_dir / "photo.webp",
+                "WEBP",
+            )
+            metadata = album_dir / "meta.json"
+            metadata.write_text('{"title":"Before"}', encoding="utf-8")
+            original_builder = gallery_service._build_payload
+
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(
+                    pages,
+                    "get_gallery_folders",
+                    return_value=["Graduation"],
+                ),
+                patch.object(
+                    gallery_service,
+                    "_build_payload",
+                    wraps=original_builder,
+                ) as build_mock,
+            ):
+                first = pages._build_gallery_payload("Graduation")
+                first["albums"][0]["title"] = "Mutated by caller"
+                second = pages._build_gallery_payload("Graduation")
+
+                metadata.write_text(
+                    '{"title":"After an external edit"}',
+                    encoding="utf-8",
+                )
+                third = pages._build_gallery_payload("Graduation")
+
+            self.assertEqual(second["albums"][0]["title"], "Before")
+            self.assertEqual(third["albums"][0]["title"], "After an external edit")
+            self.assertEqual(build_mock.call_count, 2)
+
     def test_same_stem_different_extensions_get_distinct_thumbnails(self) -> None:
         with TemporaryDirectory() as temp_dir:
             upload_dir = Path(temp_dir)
@@ -125,22 +176,19 @@ class GalleryThumbnailTests(TestCase):
             Image.new("RGB", (1600, 1200), "red").save(album_dir / "photo.jpg", "JPEG")
             Image.new("RGB", (1600, 1200), "blue").save(album_dir / "photo.png", "PNG")
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages, "get_gallery_folders", return_value=["Graduation"]
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(pages, "get_gallery_folders", return_value=["Graduation"]),
             ):
                 payload = pages._build_gallery_payload()
 
             image_urls = payload["albums"][0]["images"]
             self.assertEqual(len(image_urls), 2)
             self.assertTrue(
-                image_urls[0].startswith(
-                    "/uploads/_thumbs/Graduation/photo.jpg.v2.webp?v=2-"
-                )
+                image_urls[0].startswith("/uploads/_thumbs/Graduation/photo.jpg.v2.webp?v=2-")
             )
             self.assertTrue(
-                image_urls[1].startswith(
-                    "/uploads/_thumbs/Graduation/photo.png.v2.webp?v=2-"
-                )
+                image_urls[1].startswith("/uploads/_thumbs/Graduation/photo.png.v2.webp?v=2-")
             )
             thumbnail_paths = [
                 upload_dir / "_thumbs" / "Graduation" / "photo.jpg.v2.webp",
@@ -161,10 +209,13 @@ class GalleryThumbnailTests(TestCase):
             source = album_dir / "photo ?# 01.webp"
             Image.new("RGB", (1600, 1200), "navy").save(source, "WEBP")
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages,
-                "get_gallery_folders",
-                return_value=[album_name],
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(
+                    pages,
+                    "get_gallery_folders",
+                    return_value=[album_name],
+                ),
             ):
                 payload = pages._build_gallery_payload()
                 focused_payload = pages._build_gallery_payload(album_name)
@@ -172,13 +223,10 @@ class GalleryThumbnailTests(TestCase):
             album = payload["albums"][0]
             self.assertTrue(
                 album["images"][0].startswith(
-                    "/uploads/_thumbs/Trip%20%3F%23/"
-                    "photo%20%3F%23%2001.webp.v2.webp?v=2-"
+                    "/uploads/_thumbs/Trip%20%3F%23/photo%20%3F%23%2001.webp.v2.webp?v=2-"
                 )
             )
-            original_url = (
-                "/uploads/Trip%20%3F%23/photo%20%3F%23%2001.webp"
-            )
+            original_url = "/uploads/Trip%20%3F%23/photo%20%3F%23%2001.webp"
             self.assertEqual(album["full_images"], [original_url])
             self.assertEqual(album["focus_url"], "/gallery?focus=Trip+%3F%23")
             self.assertEqual(
@@ -226,13 +274,15 @@ class GalleryThumbnailTests(TestCase):
                 encoded.set()
                 self.assertTrue(allow_publish.wait(timeout=2))
 
-            with patch.object(
-                gallery_thumbnail_utils,
-                "_write_gallery_thumbnail",
-                side_effect=paused_writer,
-            ), patch.object(upload, "UPLOAD_DIR", upload_dir), ThreadPoolExecutor(
-                max_workers=2
-            ) as executor:
+            with (
+                patch.object(
+                    gallery_thumbnail_utils,
+                    "_write_gallery_thumbnail",
+                    side_effect=paused_writer,
+                ),
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                ThreadPoolExecutor(max_workers=2) as executor,
+            ):
                 generation = executor.submit(
                     gallery_thumbnail_utils.ensure_gallery_thumbnail,
                     upload_dir,
@@ -249,12 +299,7 @@ class GalleryThumbnailTests(TestCase):
                 generation.result(timeout=2)
                 deletion.result(timeout=2)
 
-            thumbnail = (
-                upload_dir
-                / "_thumbs"
-                / "Graduation"
-                / "photo.webp.v2.webp"
-            )
+            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
             self.assertFalse(source.exists())
             self.assertFalse(thumbnail.exists())
 
@@ -266,15 +311,20 @@ class GalleryThumbnailTests(TestCase):
             source = album_dir / "photo.webp"
             Image.new("RGB", (1600, 1200), "navy").save(source, "WEBP")
 
-            with patch.object(
-                gallery_thumbnail_utils.os,
-                "chmod",
-                side_effect=PermissionError("read-only cache"),
-            ), patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages,
-                "get_gallery_folders",
-                return_value=["Graduation"],
-            ), patch("builtins.print") as print_mock:
+            with (
+                patch.object(
+                    gallery_thumbnail_utils.os,
+                    "chmod",
+                    side_effect=PermissionError("read-only cache"),
+                ),
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(
+                    pages,
+                    "get_gallery_folders",
+                    return_value=["Graduation"],
+                ),
+                patch("builtins.print") as print_mock,
+            ):
                 payload = pages._build_gallery_payload()
 
             self.assertEqual(
@@ -302,22 +352,20 @@ class GalleryThumbnailTests(TestCase):
                 original_writer(image_path, temporary_path)
                 Image.new("RGB", (800, 600), "cyan").save(image_path, "WEBP")
 
-            with patch.object(
-                gallery_thumbnail_utils,
-                "_write_gallery_thumbnail",
-                side_effect=mutate_source,
-            ), patch("builtins.print") as print_mock:
+            with (
+                patch.object(
+                    gallery_thumbnail_utils,
+                    "_write_gallery_thumbnail",
+                    side_effect=mutate_source,
+                ),
+                patch("builtins.print") as print_mock,
+            ):
                 thumbnail = gallery_thumbnail_utils.ensure_gallery_thumbnail(
                     upload_dir,
                     source,
                 )
 
-            expected_path = (
-                upload_dir
-                / "_thumbs"
-                / "Graduation"
-                / "photo.webp.v2.webp"
-            )
+            expected_path = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
             self.assertIsNone(thumbnail)
             self.assertFalse(expected_path.exists())
             print_mock.assert_called_once()
@@ -331,14 +379,18 @@ class GalleryThumbnailTests(TestCase):
             Image.new("RGB", (1600, 1200), "navy").save(source, "WEBP")
             pending: list[Path] = []
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages,
-                "get_gallery_folders",
-                return_value=["Graduation"],
-            ), patch.object(
-                pages,
-                "ensure_gallery_thumbnail",
-                side_effect=AssertionError("cold render must not encode"),
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(
+                    pages,
+                    "get_gallery_folders",
+                    return_value=["Graduation"],
+                ),
+                patch.object(
+                    pages,
+                    "ensure_gallery_thumbnail",
+                    side_effect=AssertionError("cold render must not encode"),
+                ),
             ):
                 cold_payload = pages._build_gallery_payload(
                     pending_thumbnails=pending,
@@ -355,10 +407,13 @@ class GalleryThumbnailTests(TestCase):
                 pending,
             )
             next_pending: list[Path] = []
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages,
-                "get_gallery_folders",
-                return_value=["Graduation"],
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(
+                    pages,
+                    "get_gallery_folders",
+                    return_value=["Graduation"],
+                ),
             ):
                 warm_payload = pages._build_gallery_payload(
                     pending_thumbnails=next_pending,
@@ -386,11 +441,14 @@ class GalleryThumbnailTests(TestCase):
                 self.assertTrue(allow_first_to_finish.wait(timeout=2))
             return image_path
 
-        with patch.object(
-            gallery_thumbnail_utils,
-            "ensure_gallery_thumbnail",
-            side_effect=controlled_ensure,
-        ), ThreadPoolExecutor(max_workers=1) as executor:
+        with (
+            patch.object(
+                gallery_thumbnail_utils,
+                "ensure_gallery_thumbnail",
+                side_effect=controlled_ensure,
+            ),
+            ThreadPoolExecutor(max_workers=1) as executor,
+        ):
             first_batch = executor.submit(
                 gallery_thumbnail_utils.warm_gallery_thumbnails,
                 upload_dir,
@@ -428,8 +486,9 @@ class GalleryThumbnailTests(TestCase):
                 loop=0,
             )
 
-            with patch.object(pages, "UPLOAD_DIR", upload_dir), patch.object(
-                pages, "get_gallery_folders", return_value=["Graduation"]
+            with (
+                patch.object(pages, "UPLOAD_DIR", upload_dir),
+                patch.object(pages, "get_gallery_folders", return_value=["Graduation"]),
             ):
                 album_payload = pages._build_gallery_payload()
                 focused_payload = pages._build_gallery_payload("Graduation")
@@ -442,12 +501,7 @@ class GalleryThumbnailTests(TestCase):
                 [original_url],
             )
             self.assertFalse(
-                (
-                    upload_dir
-                    / "_thumbs"
-                    / "Graduation"
-                    / "animation.gif.v2.webp"
-                ).exists()
+                (upload_dir / "_thumbs" / "Graduation" / "animation.gif.v2.webp").exists()
             )
 
     def test_gallery_autoscroll_has_one_visibility_aware_scheduler(self) -> None:
@@ -469,5 +523,5 @@ class GalleryThumbnailTests(TestCase):
         self.assertIn("new window.Image()", source)
         self.assertIn("loadToken !== fullImageLoadToken", source)
         self.assertIn('img.removeAttribute("src")', source)
-        self.assertIn('src="/static/js/components/gallery-view.js?v=99"', template)
+        self.assertIn("asset_url('js/components/gallery-view.min.js')", template)
         self.assertIn('data-src="{{ album.full_images[loop.index0]', template)

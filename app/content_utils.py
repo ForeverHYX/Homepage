@@ -7,7 +7,6 @@ from pathlib import Path
 from app.cache import cache_by_mtime
 from app.config import CONTENT_DIR
 from app.education import parse_education_timeline as _parse_education_timeline
-from app.news import parse_and_merge_news
 
 
 def _parse_about_info(path: Path) -> dict:
@@ -30,7 +29,7 @@ def _parse_about_info(path: Path) -> dict:
         info["email"] = match.group(1)
     if match := re.search(r"\((https://github[^)]+)\)", text):
         info["github"] = match.group(1)
-    
+
     if "## Location" in text:
         parts = text.split("## Location")
         if len(parts) > 1:

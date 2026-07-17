@@ -106,7 +106,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/components/anniversary-data.js?v=97" defer></script>
-<script src="/static/js/components/anniversary-calendar.js?v=97" defer></script>
-<script src="/static/js/components/upload-manager.js?v=99" defer></script>
+<script src="{{ asset_url('js/components/anniversary-data.min.js') }}" defer></script>
+<script src="{{ asset_url('js/components/anniversary-calendar.min.js') }}" defer></script>
+<script src="{{ asset_url('js/components/upload-manager.min.js') }}" defer></script>
 {% endblock %}

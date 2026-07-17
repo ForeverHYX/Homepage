@@ -3,6 +3,7 @@ import struct
 from pathlib import Path
 from unittest import TestCase
 
+from app.assets import asset_url
 from app.education import parse_education_timeline
 
 
@@ -20,6 +21,11 @@ FAVICON_64 = ROOT / "static" / "images" / "site" / "favicon-64.png"
 ZJU_LOGO_52 = ROOT / "static" / "images" / "site" / "zju-logo-52.png"
 ZJU_LOGO_104 = ROOT / "static" / "images" / "site" / "zju-logo-104.png"
 ZJU_LOGO_156 = ROOT / "static" / "images" / "site" / "zju-logo-156.png"
+FONT_CSS = ROOT / "static" / "fonts" / "fonts.css"
+SOURCE_SANS_FONT = ROOT / "static" / "fonts" / "source-sans-3-latin-v19.woff2"
+SOURCE_SERIF_FONT = ROOT / "static" / "fonts" / "source-serif-4-latin-v14.woff2"
+DANCING_FONT = ROOT / "static" / "fonts" / "dancing-script-latin-v29.woff2"
+CHINESE_NAME_FONT = ROOT / "static" / "fonts" / "zhi-mang-xing-hyx-v19.woff2"
 
 
 class HomepageEffectsPerformanceTests(TestCase):
@@ -34,8 +40,13 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("spot.renderedOpacity !== opacity", source)
         self.assertIn("spot.renderedTransform !== transform", source)
         self.assertIn("window.requestIdleCallback(start, { timeout: 480 })", source)
-        self.assertIn('document.addEventListener("DOMContentLoaded", scheduleHomeLightfield)', source)
-        self.assertIn('src="/static/js/effects/lightfield.js?v=100"', BASE_HTML.read_text())
+        self.assertIn(
+            'document.addEventListener("DOMContentLoaded", scheduleHomeLightfield)', source
+        )
+        self.assertIn(
+            "asset_url('js/effects/lightfield.min.js')",
+            BASE_HTML.read_text(),
+        )
 
         spot_block = re.search(r"\.home-lightspot\s*\{(?P<body>.*?)\n\}", styles, re.S)
         self.assertIsNotNone(spot_block)
@@ -76,7 +87,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIsNotNone(page_entry)
         self.assertIn("will-change: transform, opacity", page_entry.group("body"))
         self.assertIn("initPageEntry();", source)
-        self.assertIn('rect.height <= maxAnimatedHeight', source)
+        self.assertIn("rect.height <= maxAnimatedHeight", source)
         self.assertIn('body.classList.add("page-enter")', source)
         self.assertIn('body.classList.remove("page-enter")', source)
         self.assertNotIn("content-visibility: auto", styles)
@@ -111,8 +122,12 @@ class HomepageEffectsPerformanceTests(TestCase):
         styles = STYLES_CSS.read_text()
 
         lightfield_block = re.search(r"\.home-lightfield\s*\{(?P<body>.*?)\n\}", styles, re.S)
-        lightfield_before = re.search(r"\.home-lightfield::before\s*\{(?P<body>.*?)\n\}", styles, re.S)
-        lightfield_after_blocks = re.findall(r"\.home-lightfield::after\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        lightfield_before = re.search(
+            r"\.home-lightfield::before\s*\{(?P<body>.*?)\n\}", styles, re.S
+        )
+        lightfield_after_blocks = re.findall(
+            r"\.home-lightfield::after\s*\{(?P<body>.*?)\n\}", styles, re.S
+        )
         spot_block = re.search(r"\.home-lightspot\s*\{(?P<body>.*?)\n\}", styles, re.S)
         card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
 
@@ -126,7 +141,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("translateZ(0)", lightfield_block.group("body"))
         self.assertIn("filter: blur(108px)", lightfield_before.group("body"))
         self.assertIn("opacity: 0.82", lightfield_before.group("body"))
-        lightfield_after = next((body for body in lightfield_after_blocks if "background:" in body), "")
+        lightfield_after = next(
+            (body for body in lightfield_after_blocks if "background:" in body), ""
+        )
         self.assertIn("opacity: 0.68", lightfield_after)
         self.assertIn("blur(var(--spot-blur, 54px))", spot_block.group("body"))
         self.assertIn("opacity: var(--spot-opacity, 0.3)", spot_block.group("body"))
@@ -143,26 +160,44 @@ class HomepageEffectsPerformanceTests(TestCase):
         source = LIQUID_GLASS_JS.read_text()
         base = BASE_HTML.read_text()
 
-        self.assertIn("card.classList.contains(\"ambient-liquid-card\")", source)
-        self.assertNotIn("card.classList.contains(\"home-profile-card\") || card.classList.contains(\"home-news-card\")", source)
-        self.assertNotIn('/static/js/effects/liquid-glass.js', base)
-        self.assertNotIn('ambient-liquid-card', base)
+        self.assertIn('card.classList.contains("ambient-liquid-card")', source)
+        self.assertNotIn(
+            'card.classList.contains("home-profile-card") || card.classList.contains("home-news-card")',
+            source,
+        )
+        self.assertNotIn("/static/js/effects/liquid-glass.js", base)
+        self.assertNotIn("ambient-liquid-card", base)
 
     def test_runtime_liquid_filter_requires_explicit_opt_in(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
 
         self.assertIn("runtimeLiquid", source)
-        self.assertIn('const runtimeLiquid = card.classList.contains("ambient-liquid-card")', source)
+        self.assertIn(
+            'const runtimeLiquid = card.classList.contains("ambient-liquid-card")', source
+        )
         self.assertIn("const runtimeEnabled = enabled && state.runtimeLiquid", source)
-        self.assertNotIn("const globalAmbient = navAmbient || card.classList.contains(\"ambient-liquid-card\")", source)
+        self.assertNotIn(
+            'const globalAmbient = navAmbient || card.classList.contains("ambient-liquid-card")',
+            source,
+        )
 
     def test_liquid_card_material_avoids_edge_blur_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
 
-        card_edge = re.search(r"^\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        dark_card_edge = re.search(r"^\[data-theme=\"dark\"\] \.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        nav_edge = re.search(r"^\.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        nav_warp = re.search(r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        card_edge = re.search(
+            r"^\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
+        dark_card_edge = re.search(
+            r"^\[data-theme=\"dark\"\] \.home-liquid-card::after\s*\{(?P<body>.*?)\n\}",
+            styles,
+            re.S | re.M,
+        )
+        nav_edge = re.search(
+            r"^\.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
+        nav_warp = re.search(
+            r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
 
         self.assertIsNotNone(card_edge)
         self.assertIsNotNone(dark_card_edge)
@@ -189,7 +224,9 @@ class HomepageEffectsPerformanceTests(TestCase):
             styles,
             re.S,
         )
-        nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_block = re.search(
+            r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
 
         self.assertIsNotNone(glass_block)
         self.assertIsNotNone(card_block)
@@ -222,7 +259,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         transform:none freeze and page-specific hover variants stay gone."""
         styles = STYLES_CSS.read_text()
 
-        hover_block = re.search(r"^\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        hover_block = re.search(
+            r"^\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
         self.assertIsNotNone(hover_block)
         hover_body = hover_block.group("body")
 
@@ -239,8 +278,12 @@ class HomepageEffectsPerformanceTests(TestCase):
         (no dirty halo). It does not lift on hover (transform: none)."""
         styles = STYLES_CSS.read_text()
 
-        nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        nav_hover = re.search(r"^\.nav-island\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_block = re.search(
+            r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
+        nav_hover = re.search(
+            r"^\.nav-island\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
 
         self.assertIsNotNone(nav_block)
         self.assertIsNotNone(nav_hover)
@@ -264,9 +307,15 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
         warp_block = re.search(r"^\.home-liquid-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        warp_before_blocks = re.findall(r"^\.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        warp_after_blocks = re.findall(r"^\.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        nav_block = re.search(r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        warp_before_blocks = re.findall(
+            r"^\.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
+        warp_after_blocks = re.findall(
+            r"^\.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
+        nav_block = re.search(
+            r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
 
         self.assertIsNotNone(card_block)
         self.assertIsNotNone(warp_block)
@@ -278,7 +327,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("box-shadow: var(--functional-card-shadow)", card_body)
-        self.assertIn("href=\"/static/css/styles.min.css?v=158\"", base)
+        self.assertIn("asset_url('css/styles.min.css')", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -289,8 +338,12 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         # Sheen layers now use fixed opacities (no var(--liquid-sheen-opacity)
         # / var(--liquid-rim-opacity)) so no highlight tracks the pointer.
-        warp_before_body = next((body for body in warp_before_blocks if "mix-blend-mode: screen" in body), "")
-        warp_after_body = next((body for body in warp_after_blocks if "mix-blend-mode: soft-light" in body), "")
+        warp_before_body = next(
+            (body for body in warp_before_blocks if "mix-blend-mode: screen" in body), ""
+        )
+        warp_after_body = next(
+            (body for body in warp_after_blocks if "mix-blend-mode: soft-light" in body), ""
+        )
         self.assertIn("mix-blend-mode: screen", warp_before_body)
         self.assertIn("mix-blend-mode: soft-light", warp_after_body)
         self.assertNotIn("var(--liquid-sheen-opacity)", warp_before_body)
@@ -301,7 +354,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         source = LIQUID_GLASS_JS.read_text()
         styles = STYLES_CSS.read_text()
         warp_block = re.search(r"^\.home-liquid-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        nav_warp = re.search(r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        nav_warp = re.search(
+            r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M
+        )
 
         self.assertIsNotNone(warp_block)
         self.assertIsNotNone(nav_warp)
@@ -329,8 +384,14 @@ class HomepageEffectsPerformanceTests(TestCase):
             (r"^\.home-liquid-warp\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp"),
             (r"^\.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp::before"),
             (r"^\.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", ".home-liquid-warp::after"),
-            (r"^\[data-theme=\"dark\"\] \.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", "[data-theme=\"dark\"] .home-liquid-card::after"),
-            (r"^\[data-theme=\"dark\"\] \.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", "[data-theme=\"dark\"] .home-liquid-warp::before"),
+            (
+                r"^\[data-theme=\"dark\"\] \.home-liquid-card::after\s*\{(?P<body>.*?)\n\}",
+                '[data-theme="dark"] .home-liquid-card::after',
+            ),
+            (
+                r"^\[data-theme=\"dark\"\] \.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}",
+                '[data-theme="dark"] .home-liquid-warp::before',
+            ),
         ]
 
         forbidden = (
@@ -362,13 +423,34 @@ class HomepageEffectsPerformanceTests(TestCase):
         styles_no_comments = re.sub(r"/\*.*?\*/", "", styles, flags=re.S)
 
         candidates = [
-            (r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}", ".nav-island.home-liquid-card"),
-            (r"^\.nav-island\.home-liquid-card::before\s*\{(?P<body>.*?)\n\}", ".nav-island.home-liquid-card::before"),
-            (r"^\.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", ".nav-island.home-liquid-card::after"),
-            (r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}", ".nav-island .nav-island-warp"),
-            (r"^\.nav-island \.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}", ".nav-island .home-liquid-warp::before"),
-            (r"^\.nav-island \.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}", ".nav-island .home-liquid-warp::after"),
-            (r"^\[data-theme=\"dark\"\] \.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}", "[data-theme=\"dark\"] .nav-island.home-liquid-card::after"),
+            (
+                r"^\.nav-island\.home-liquid-card\s*\{(?P<body>.*?)\n\}",
+                ".nav-island.home-liquid-card",
+            ),
+            (
+                r"^\.nav-island\.home-liquid-card::before\s*\{(?P<body>.*?)\n\}",
+                ".nav-island.home-liquid-card::before",
+            ),
+            (
+                r"^\.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}",
+                ".nav-island.home-liquid-card::after",
+            ),
+            (
+                r"^\.nav-island \.nav-island-warp\s*\{(?P<body>.*?)\n\}",
+                ".nav-island .nav-island-warp",
+            ),
+            (
+                r"^\.nav-island \.home-liquid-warp::before\s*\{(?P<body>.*?)\n\}",
+                ".nav-island .home-liquid-warp::before",
+            ),
+            (
+                r"^\.nav-island \.home-liquid-warp::after\s*\{(?P<body>.*?)\n\}",
+                ".nav-island .home-liquid-warp::after",
+            ),
+            (
+                r"^\[data-theme=\"dark\"\] \.nav-island\.home-liquid-card::after\s*\{(?P<body>.*?)\n\}",
+                '[data-theme="dark"] .nav-island.home-liquid-card::after',
+            ),
         ]
 
         forbidden = (
@@ -448,7 +530,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("card home-liquid-card anniversary-card", anniversary)
         self.assertIn("card home-glass upload-panel", upload)
 
-        self.assertIn('href="/static/css/styles.min.css?v=158"', base)
+        self.assertIn("asset_url('css/styles.min.css')", base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -474,10 +556,10 @@ class HomepageEffectsPerformanceTests(TestCase):
         styles = STYLES_CSS.read_text()
         base = BASE_HTML.read_text()
 
-        self.assertIn("Dancing+Script", base)
+        self.assertIn("dancing-script-latin-v29.woff2", HOME_HTML.read_text())
         self.assertNotIn("Allura", base)
-        self.assertRegex(base, r"/static/css/styles\.min\.css\?v=\d+")
-        self.assertIn("Zhi+Mang+Xing", base)
+        self.assertIn("asset_url('css/styles.min.css')", base)
+        self.assertIn("zhi-mang-xing-hyx-v19.woff2", HOME_HTML.read_text())
         self.assertIn("--font-hand-en", styles)
         self.assertIn("--font-hand-cn", styles)
 
@@ -496,34 +578,36 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("Zhi Mang Xing", styles)
         self.assertIn("STXingkai", styles)
 
-    def test_google_fonts_load_without_blocking_first_render(self) -> None:
+    def test_self_hosted_fonts_are_preloaded_without_third_party_requests(self) -> None:
         base = BASE_HTML.read_text()
+        home = HOME_HTML.read_text()
+        font_css = FONT_CSS.read_text()
 
         self.assertIn('rel="preload"', base)
-        self.assertIn('as="style"', base)
-        self.assertIn("this.rel='stylesheet'", base)
-        self.assertIn("<noscript>", base)
-        self.assertEqual(
-            base.count('rel="preload" as="style" href="https://fonts.googleapis.com'),
-            2,
-        )
-        self.assertIn("Dancing+Script:wght@500", base)
-        self.assertIn("JetBrains+Mono:wght@400;500", base)
-        self.assertIn(
-            "family=Zhi+Mang+Xing&text=%E6%B4%AA%E5%A5%95%E8%BF%85&display=swap",
-            base,
-        )
-        self.assertNotIn("family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Zhi+Mang+Xing", base)
-        self.assertNotIn("Noto+Serif+SC", base)
-        blocking_head = re.sub(r"<noscript>.*?</noscript>", "", base, flags=re.S)
-        self.assertNotIn('rel="stylesheet" href="https://fonts.googleapis.com', blocking_head)
+        self.assertEqual(base.count('as="font" type="font/woff2" crossorigin'), 2)
+        self.assertEqual(home.count('as="font" type="font/woff2" crossorigin'), 2)
+        self.assertIn("asset_url('fonts/fonts.css')", base)
+        self.assertIn("Source Sans 3", font_css)
+        self.assertIn("Source Serif 4", font_css)
+        self.assertIn("Dancing Script", font_css)
+        self.assertIn("Zhi Mang Xing", font_css)
+        self.assertNotIn("fonts.googleapis.com", base + home + font_css)
+        self.assertNotIn("fonts.gstatic.com", base + home + font_css)
+        for font_path in (
+            SOURCE_SANS_FONT,
+            SOURCE_SERIF_FONT,
+            DANCING_FONT,
+            CHINESE_NAME_FONT,
+        ):
+            self.assertTrue(font_path.exists())
+            self.assertGreater(font_path.stat().st_size, 1000)
 
     def test_favicon_uses_right_sized_static_assets(self) -> None:
         base = BASE_HTML.read_text()
 
-        self.assertIn('/static/images/site/favicon-32.png?v=1', base)
-        self.assertIn('/static/images/site/favicon-64.png?v=1', base)
-        self.assertNotIn('/uploads/favicon.png', base)
+        self.assertIn("asset_url('images/site/favicon-32.png')", base)
+        self.assertIn("asset_url('images/site/favicon-64.png')", base)
+        self.assertNotIn("/uploads/favicon.png", base)
 
         for path, expected_size in ((FAVICON_32, 32), (FAVICON_64, 64)):
             data = path.read_bytes()
@@ -546,9 +630,9 @@ class HomepageEffectsPerformanceTests(TestCase):
             "  ![ZJU](/uploads/zju.png)"
         )
 
-        self.assertIn('/static/images/site/zju-logo-52.png?v=1', html)
-        self.assertIn('/static/images/site/zju-logo-104.png?v=1 2x', html)
-        self.assertIn('/static/images/site/zju-logo-156.png?v=1 3x', html)
+        self.assertIn(asset_url("images/site/zju-logo-52.png"), html)
+        self.assertIn(f"{asset_url('images/site/zju-logo-104.png')} 2x", html)
+        self.assertIn(f"{asset_url('images/site/zju-logo-156.png')} 3x", html)
         self.assertNotIn('src="/uploads/zju.png"', html)
         self.assertLess(html.index(" srcset="), html.index(" src="))
 
@@ -578,7 +662,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.min.css?v=158"', base)
+        self.assertIn("asset_url('css/styles.min.css')", base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -608,7 +692,10 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         self.assertIn('fetch("/api/site/news"', source)
         self.assertNotIn('fetch("/api/site/home"', source)
-        self.assertIn('src="/static/js/components/site-header.js?v=102"', BASE_HTML.read_text())
+        self.assertIn(
+            "asset_url('js/components/site-header.min.js')",
+            BASE_HTML.read_text(),
+        )
         self.assertIn('overlay.className = "news-modal-overlay"', source)
         self.assertIn('card.className = "news-modal-card"', source)
         self.assertIn('wrap.className = "home-news-modal-content"', source)

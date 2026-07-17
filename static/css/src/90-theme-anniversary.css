@@ -1,0 +1,477 @@
+/* ============================================
+   Dark Mode Gradient Links
+   ============================================ */
+[data-theme="dark"] .prose a,
+[data-theme="dark"] .news-item a,
+[data-theme="dark"] .edu-role a,
+[data-theme="dark"] .toc a,
+[data-theme="dark"] .article-card-title a {
+    background: linear-gradient(135deg, #93c5fd, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .prose a:hover,
+[data-theme="dark"] .news-item a:hover,
+[data-theme="dark"] .edu-role a:hover,
+[data-theme="dark"] .toc a:hover,
+[data-theme="dark"] .article-card-title a:hover {
+    filter: brightness(1.3);
+    -webkit-text-fill-color: transparent;
+    text-decoration-color: #60a5fa;
+}
+
+[data-theme="dark"] .news-item a {
+    border-bottom-color: #60a5fa;
+}
+/* ============================================
+   Anniversary Calendar (wall-calendar style)
+   ============================================ */
+.anniversary-card {
+    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);
+    margin-top: 24px;
+}
+
+.anniversary-body {
+    padding: 22px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.anniversary-year-row,
+.anniversary-month-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+}
+
+.anniversary-year-text {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: var(--anniv-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    min-width: 88px;
+    text-align: center;
+}
+
+.anniversary-month-text {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--heading);
+    min-width: 70px;
+    text-align: center;
+}
+
+.anniversary-nav-btn {
+    background: transparent;
+    border: 1px solid var(--well-border);
+    color: var(--text);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    padding: 0;
+}
+
+.anniversary-nav-btn:hover:not(:disabled) {
+    background: var(--panel-bg);
+    color: var(--primary);
+    transform: scale(1.08);
+}
+
+.anniversary-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Inner rounded rectangle — the wall-calendar "page" */
+.anniversary-grid-wrap {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: calc(var(--radius-sm) + 4px);
+    padding: 14px 10px 12px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        0 2px 6px rgba(99, 112, 158, 0.05);
+}
+
+[data-theme="dark"] .anniversary-grid-wrap {
+    background: rgba(30, 32, 44, 0.55);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.anniversary-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0 0 8px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    margin-bottom: 8px;
+}
+
+[data-theme="dark"] .anniversary-weekdays {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.anniversary-weekday {
+    line-height: 1;
+}
+
+.anniversary-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.anniversary-day {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+    cursor: default;
+    user-select: none;
+    border-radius: 6px;
+    position: relative;
+    transition: background 0.15s;
+}
+
+.anniversary-day.empty {
+    visibility: hidden;
+}
+
+.anniversary-day.is-important {
+    background: var(--anniv-grad);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 50%;
+    cursor: help;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.32);
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+}
+
+.anniversary-day.is-important:hover,
+.anniversary-day.is-important:focus {
+    outline: none;
+    transform: scale(1.1);
+    filter: brightness(1.1);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.42);
+}
+
+/* Solid, high-contrast tooltip rendered as a real DOM element with
+   position: fixed so it escapes any parent overflow: hidden. */
+.anniversary-tooltip {
+    position: fixed;
+    transform: translate(-50%, calc(-100% - 14px));
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-xs);
+    padding: 10px 14px;
+    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.45);
+    z-index: 9999;
+    min-width: max-content;
+    max-width: 260px;
+    font-size: 12px;
+    line-height: 1.5;
+    pointer-events: none;
+    animation: anniversary-tooltip-in 0.16s ease-out;
+}
+
+.anniversary-tooltip[data-placement="below"] {
+    transform: translate(-50%, 14px);
+}
+
+.anniversary-tooltip-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+}
+
+.anniversary-tooltip-desc {
+    white-space: pre-wrap;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.anniversary-tooltip::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+}
+
+.anniversary-tooltip[data-placement="above"]::after {
+    bottom: -14px;
+    border-top-color: #1d4ed8;
+}
+
+.anniversary-tooltip[data-placement="below"]::after {
+    top: -14px;
+    border-bottom-color: #3b82f6;
+}
+
+@keyframes anniversary-tooltip-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+
+[data-theme="dark"] .anniversary-card {
+    --anniv-grad: linear-gradient(135deg, #93c5fd, #60a5fa);
+}
+
+
+/* --- Keyboard focus (a11y) ------------------------------------------------
+   Visible focus ring for keyboard users. :focus-visible only fires for
+   keyboard / AT navigation, so mouse users do not see it. Disabled elements
+   and elements that already draw their own focus ring (.form-input) keep
+   their existing behavior. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* The search field lives inside a pill-shaped control, so keyboard focus
+   follows that material rather than drawing a square around the text input. */
+.search-input:focus-visible {
+    outline: none;
+}
+
+.search-bar-container:focus-within {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* The calendar grid is a nested well inside the shared functional card. */
+.daily-archive-card .anniversary-grid-wrap {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(241, 245, 249, 0.46));
+    border-color: rgba(255, 255, 255, 0.78);
+    box-shadow:
+        0 8px 18px rgba(71, 85, 105, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
+}
+
+[data-theme="dark"] .daily-archive-card .anniversary-grid-wrap {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(15, 23, 42, 0.24));
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+}
+
+@media (max-width: 800px) {
+    .home-liquid-card:not(.nav-island):not(.nav-mobile-panel) {
+        background: var(--functional-card-background);
+        border-color: var(--functional-card-border);
+        backdrop-filter: blur(18px) saturate(158%);
+        -webkit-backdrop-filter: blur(18px) saturate(158%);
+        box-shadow: var(--functional-card-shadow);
+    }
+
+    .home-glass {
+        --home-glass-blur: var(--document-card-blur);
+        --home-glass-face-top: var(--document-card-face-top);
+        --home-glass-face-sheen: var(--document-card-face-sheen);
+        --home-glass-face-mid: var(--document-card-face-mid);
+        --home-glass-face-bottom: var(--document-card-face-bottom);
+        background: linear-gradient(180deg, var(--home-glass-face-top) 0%, var(--home-glass-face-sheen) 18%, var(--home-glass-face-mid) 48%, var(--home-glass-face-bottom) 100%);
+        backdrop-filter: blur(var(--home-glass-blur)) saturate(158%);
+        -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(158%);
+        border: none;
+        box-shadow:
+            0 18px 40px var(--document-card-shadow),
+            0 5px 14px var(--document-card-shadow-soft),
+            inset 0 1px 0 var(--document-card-inner-top),
+            inset 0 -1px 0 var(--document-card-inner-bottom);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-liquid-card:hover,
+    .home-glass:hover,
+    .chip:hover,
+    .publication-keyword:hover,
+    .daily-type-button:hover {
+        transform: none !important;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .chip:not(.is-active),
+    .publication-keyword:not(.is-active),
+    .daily-type-button:not(.is-active),
+    .article-tag-chip {
+        background: #f8fafc !important;
+        border-color: rgba(71, 85, 105, 0.42);
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    [data-theme="dark"] .chip:not(.is-active),
+    [data-theme="dark"] .publication-keyword:not(.is-active),
+    [data-theme="dark"] .daily-type-button:not(.is-active),
+    [data-theme="dark"] .article-tag-chip {
+        background: #0f172a !important;
+        border-color: rgba(226, 232, 240, 0.34);
+    }
+
+    .daily-action-button.daily-action-dislike {
+        background: #fff7ed !important;
+    }
+
+    [data-theme="dark"] .daily-action-button.daily-action-dislike {
+        background: #431407 !important;
+    }
+}
+
+@media (prefers-contrast: more) {
+    .home-liquid-card:not(.nav-island),
+    .home-glass {
+        background: rgba(248, 250, 252, 0.98);
+        border-color: rgba(15, 23, 42, 0.58);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .chip:not(.is-active),
+    .publication-keyword:not(.is-active),
+    .daily-type-button:not(.is-active),
+    .article-tag-chip {
+        background: #fff;
+        border-color: rgba(15, 23, 42, 0.68);
+    }
+
+    [data-theme="dark"] .home-liquid-card:not(.nav-island),
+    [data-theme="dark"] .home-glass {
+        background: rgba(7, 18, 33, 0.98);
+        border-color: rgba(248, 250, 252, 0.62);
+    }
+
+    [data-theme="dark"] .chip:not(.is-active),
+    [data-theme="dark"] .publication-keyword:not(.is-active),
+    [data-theme="dark"] .daily-type-button:not(.is-active),
+    [data-theme="dark"] .article-tag-chip {
+        background: #0f172a;
+        border-color: rgba(248, 250, 252, 0.58);
+    }
+
+    .publication-badge {
+        color: #fff;
+        background: #1d4ed8;
+        border-color: #0f172a;
+    }
+
+    .daily-action-button.daily-action-dislike {
+        color: #7c2d12;
+        background: #fff7ed;
+        border-color: #9a3412;
+    }
+
+    [data-theme="dark"] .daily-action-button.daily-action-dislike {
+        color: #fed7aa;
+        background: #431407;
+        border-color: #fdba74;
+    }
+
+    .home-liquid-card:not(.nav-island)::before,
+    .home-liquid-card:not(.nav-island)::after,
+    .home-liquid-card:not(.nav-island) .home-liquid-warp,
+    .home-glass::before,
+    .home-glass::after {
+        display: none;
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .home-liquid-card:not(.nav-island),
+    .home-glass {
+        background: rgba(248, 250, 252, 0.97);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    [data-theme="dark"] .home-liquid-card:not(.nav-island),
+    [data-theme="dark"] .home-glass {
+        background: rgba(7, 18, 33, 0.97);
+    }
+
+    .home-liquid-card:not(.nav-island)::before,
+    .home-liquid-card:not(.nav-island)::after,
+    .home-liquid-card:not(.nav-island) .home-liquid-warp,
+    .home-glass::before,
+    .home-glass::after {
+        display: none;
+    }
+}
+
+/* Keep forced-colors last so it also wins when the browser combines this
+   preference with the no-backdrop-filter fallback above. */
+@media (forced-colors: active) {
+    .home-liquid-card:not(.nav-island),
+    .home-glass,
+    .chip,
+    .daily-type-button,
+    .publication-keyword,
+    .publication-badge,
+    .article-tag-chip,
+    .daily-action-button,
+    .daily-archive-card .anniversary-grid-wrap {
+        color: CanvasText;
+        background: Canvas;
+        border: 1px solid CanvasText;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        -webkit-text-fill-color: currentColor;
+    }
+
+    .chip.is-active,
+    .daily-type-button.is-active,
+    .prose a.publication-keyword.is-active,
+    .publication-badge,
+    .daily-action-button.feedback.is-active {
+        color: HighlightText;
+        background: Highlight;
+        border-color: Highlight;
+        -webkit-text-fill-color: HighlightText;
+    }
+
+    .home-liquid-card:not(.nav-island)::before,
+    .home-liquid-card:not(.nav-island)::after,
+    .home-liquid-card:not(.nav-island) .home-liquid-warp,
+    .home-glass::before,
+    .home-glass::after {
+        display: none;
+    }
+}

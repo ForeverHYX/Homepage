@@ -20,7 +20,14 @@ class ContentEnhancerPerformanceTests(TestCase):
         source = CONTENT_ENHANCER.read_text(encoding="utf-8")
 
         init_body = source.split("function init()", 1)[1]
-        self.assertLess(init_body.index("decorateCodeBlocks();"), init_body.index("loadHighlightScript"))
-        self.assertLess(init_body.index("enhanceGithubLinks();"), init_body.index("loadHighlightScript"))
+        self.assertLess(
+            init_body.index("decorateCodeBlocks();"), init_body.index("loadHighlightScript")
+        )
+        self.assertLess(
+            init_body.index("enhanceGithubLinks();"), init_body.index("loadHighlightScript")
+        )
         self.assertNotIn("setTimeout", init_body)
-        self.assertIn('content-enhancer.js?v=98', ARTICLE_TEMPLATE.read_text(encoding="utf-8"))
+        self.assertIn(
+            "asset_url('js/components/content-enhancer.min.js')",
+            ARTICLE_TEMPLATE.read_text(encoding="utf-8"),
+        )

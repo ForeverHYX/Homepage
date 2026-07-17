@@ -21,7 +21,9 @@ from app.daily_articles import daily_article_slug
 DEFAULT_DAILY_BASE_URL = "https://foreverhyx.github.io/agentic-arch-paper-recommender"
 REQUEST_TIMEOUT = 12
 REMOTE_CACHE_TTL_SECONDS = int(os.getenv("HOMEPAGE_DAILY_REMOTE_CACHE_SECONDS", "900"))
-FEEDBACK_CONFIG_CACHE_TTL_SECONDS = int(os.getenv("HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_SECONDS", "3600"))
+FEEDBACK_CONFIG_CACHE_TTL_SECONDS = int(
+    os.getenv("HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_SECONDS", "3600")
+)
 FAVORITES_CACHE_TTL_SECONDS = int(os.getenv("HOMEPAGE_DAILY_FAVORITES_CACHE_SECONDS", "7200"))
 DAILY_RUN_READY_HOUR_UTC = int(os.getenv("HOMEPAGE_DAILY_RUN_READY_HOUR_UTC", "4"))
 DISPLAY_AUTHOR_LIMIT = 4
@@ -100,31 +102,102 @@ KEYWORD_LABELS = {
     "workloads": "Workload",
 }
 TITLE_KEYWORD_ALLOWLIST = {
-    "Accelerator", "Agent", "Agents", "Agentic", "AI", "Architecture", "Autonomy",
-    "Cache", "CUDA", "Cognition", "Codesign", "Communication", "Compiler",
-    "Data", "Design", "Distributed", "Gem5", "GPU", "Hardware", "HPC",
-    "Inference", "Interconnect", "LLM", "Maestro", "Microarchitecture", "Network",
-    "Neural", "OpenMP", "Parallelism", "PyTorch", "ROCm", "Runtime", "Scheduling",
-    "Search", "Serving", "Simulation", "Sparsity", "VLLM", "Workload",
+    "Accelerator",
+    "Agent",
+    "Agents",
+    "Agentic",
+    "AI",
+    "Architecture",
+    "Autonomy",
+    "Cache",
+    "CUDA",
+    "Cognition",
+    "Codesign",
+    "Communication",
+    "Compiler",
+    "Data",
+    "Design",
+    "Distributed",
+    "Gem5",
+    "GPU",
+    "Hardware",
+    "HPC",
+    "Inference",
+    "Interconnect",
+    "LLM",
+    "Maestro",
+    "Microarchitecture",
+    "Network",
+    "Neural",
+    "OpenMP",
+    "Parallelism",
+    "PyTorch",
+    "ROCm",
+    "Runtime",
+    "Scheduling",
+    "Search",
+    "Serving",
+    "Simulation",
+    "Sparsity",
+    "VLLM",
+    "Workload",
 }
 KEYWORD_STOPWORDS = {
-    "a", "an", "and", "as", "at", "based", "by", "for", "from", "in", "into", "is",
-    "layer", "of", "on", "or", "the", "this", "to", "with", "x",
-    "arxiv", "aware", "cross", "driven", "fast", "github", "modeling", "multi",
-    "paper", "papers", "star", "stars", "system", "systems", "today",
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "based",
+    "by",
+    "for",
+    "from",
+    "in",
+    "into",
+    "is",
+    "layer",
+    "of",
+    "on",
+    "or",
+    "the",
+    "this",
+    "to",
+    "with",
+    "x",
+    "arxiv",
+    "aware",
+    "cross",
+    "driven",
+    "fast",
+    "github",
+    "modeling",
+    "multi",
+    "paper",
+    "papers",
+    "star",
+    "stars",
+    "system",
+    "systems",
+    "today",
 }
-DEFAULT_DAILY_CACHE_PATH = Path(os.getenv(
-    "HOMEPAGE_DAILY_CACHE_FILE",
-    Path(__file__).resolve().parent.parent / "content" / "daily" / "recommendations.json",
-))
-DEFAULT_FEEDBACK_CONFIG_CACHE_PATH = Path(os.getenv(
-    "HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_FILE",
-    DEFAULT_DAILY_CACHE_PATH.with_name("feedback-config.json"),
-))
-DEFAULT_DAILY_ARCHIVE_DIR = Path(os.getenv(
-    "HOMEPAGE_DAILY_ARCHIVE_DIR",
-    DEFAULT_DAILY_CACHE_PATH.parent / "archive",
-))
+DEFAULT_DAILY_CACHE_PATH = Path(
+    os.getenv(
+        "HOMEPAGE_DAILY_CACHE_FILE",
+        Path(__file__).resolve().parent.parent / "content" / "daily" / "recommendations.json",
+    )
+)
+DEFAULT_FEEDBACK_CONFIG_CACHE_PATH = Path(
+    os.getenv(
+        "HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_FILE",
+        DEFAULT_DAILY_CACHE_PATH.with_name("feedback-config.json"),
+    )
+)
+DEFAULT_DAILY_ARCHIVE_DIR = Path(
+    os.getenv(
+        "HOMEPAGE_DAILY_ARCHIVE_DIR",
+        DEFAULT_DAILY_CACHE_PATH.parent / "archive",
+    )
+)
 DEFAULT_FAVORITES_REPO_TREE_URL = os.getenv(
     "HOMEPAGE_DAILY_FAVORITES_TREE_URL",
     "https://api.github.com/repos/ForeverHYX/daily-recommender-paper-favorites/git/trees/main?recursive=1",
@@ -133,10 +206,12 @@ DEFAULT_FAVORITES_RAW_BASE_URL = os.getenv(
     "HOMEPAGE_DAILY_FAVORITES_RAW_BASE_URL",
     "https://raw.githubusercontent.com/ForeverHYX/daily-recommender-paper-favorites/main",
 )
-DEFAULT_DAILY_FAVORITES_CACHE_PATH = Path(os.getenv(
-    "HOMEPAGE_DAILY_FAVORITES_CACHE_FILE",
-    DEFAULT_DAILY_CACHE_PATH.parent / "favorites-archive.json",
-))
+DEFAULT_DAILY_FAVORITES_CACHE_PATH = Path(
+    os.getenv(
+        "HOMEPAGE_DAILY_FAVORITES_CACHE_FILE",
+        DEFAULT_DAILY_CACHE_PATH.parent / "favorites-archive.json",
+    )
+)
 _REFRESHING_CACHE_PATHS: set[Path] = set()
 _REFRESH_LOCK = threading.Lock()
 _JSON_CACHE_MAX_ENTRIES = 32
@@ -148,16 +223,29 @@ _DERIVED_CACHE_LOCK = threading.RLock()
 _DerivedValue = TypeVar("_DerivedValue")
 
 
-def fetch_daily_recommender_payload(base_url: str = DEFAULT_DAILY_BASE_URL) -> dict[str, Any]:
+def fetch_daily_recommender_payload(
+    base_url: str = DEFAULT_DAILY_BASE_URL,
+) -> dict[str, Any]:
     url = f"{base_url.rstrip('/')}/recommendations.json"
-    request = Request(url, headers={"Accept": "application/json", "User-Agent": "foreverhyx-homepage/1.0"})
+    request = Request(
+        url,
+        headers={"Accept": "application/json", "User-Agent": "foreverhyx-homepage/1.0"},
+    )
     with urlopen(request, timeout=REQUEST_TIMEOUT) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
-def fetch_daily_feedback_config(base_url: str = DEFAULT_DAILY_BASE_URL) -> dict[str, str]:
+def fetch_daily_feedback_config(
+    base_url: str = DEFAULT_DAILY_BASE_URL,
+) -> dict[str, str]:
     url = f"{base_url.rstrip('/')}/config.js"
-    request = Request(url, headers={"Accept": "application/javascript", "User-Agent": "foreverhyx-homepage/1.0"})
+    request = Request(
+        url,
+        headers={
+            "Accept": "application/javascript",
+            "User-Agent": "foreverhyx-homepage/1.0",
+        },
+    )
     try:
         with urlopen(request, timeout=REQUEST_TIMEOUT) as response:
             text = response.read().decode("utf-8")
@@ -173,7 +261,10 @@ def fetch_daily_favorites_archive(
     tree_url: str = DEFAULT_FAVORITES_REPO_TREE_URL,
     raw_base_url: str = DEFAULT_FAVORITES_RAW_BASE_URL,
 ) -> dict[str, Any]:
-    request = Request(tree_url, headers={"Accept": "application/json", "User-Agent": "foreverhyx-homepage/1.0"})
+    request = Request(
+        tree_url,
+        headers={"Accept": "application/json", "User-Agent": "foreverhyx-homepage/1.0"},
+    )
     with urlopen(request, timeout=REQUEST_TIMEOUT) as response:
         tree_payload = json.loads(response.read().decode("utf-8"))
     records: list[dict[str, Any]] = []
@@ -182,7 +273,13 @@ def fetch_daily_favorites_archive(
         if entry.get("type") != "blob" or not re.fullmatch(r"\d{4}-\d{2}/.+/.+\.json", path):
             continue
         raw_url = f"{raw_base_url.rstrip('/')}/{quote(path, safe='/')}"
-        item_request = Request(raw_url, headers={"Accept": "application/json", "User-Agent": "foreverhyx-homepage/1.0"})
+        item_request = Request(
+            raw_url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "foreverhyx-homepage/1.0",
+            },
+        )
         with urlopen(item_request, timeout=REQUEST_TIMEOUT) as item_response:
             item = json.loads(item_response.read().decode("utf-8"))
         if isinstance(item, dict):
@@ -209,12 +306,18 @@ def load_daily_payload(
         REMOTE_CACHE_TTL_SECONDS if remote_cache_ttl_seconds is None else remote_cache_ttl_seconds
     )
     favorites_cache_ttl = (
-        FAVORITES_CACHE_TTL_SECONDS if remote_cache_ttl_seconds is None else remote_cache_ttl_seconds
+        FAVORITES_CACHE_TTL_SECONDS
+        if remote_cache_ttl_seconds is None
+        else remote_cache_ttl_seconds
     )
     config_cache_ttl = (
-        FEEDBACK_CONFIG_CACHE_TTL_SECONDS if remote_cache_ttl_seconds is None else remote_cache_ttl_seconds
+        FEEDBACK_CONFIG_CACHE_TTL_SECONDS
+        if remote_cache_ttl_seconds is None
+        else remote_cache_ttl_seconds
     )
-    required_run_date = expected_run_date if expected_run_date is not None else _expected_daily_run_date()
+    required_run_date = (
+        expected_run_date if expected_run_date is not None else _expected_daily_run_date()
+    )
     selected_date = _parse_archive_date(date)
     favorites_payload = _load_cache_first(
         fetcher=favorites_fetcher,
@@ -283,8 +386,10 @@ def _load_cache_first(
     cached_value = _read_cache(cache_path)
     cached_has_required_run = _matches_required_run_date(cached_value, required_run_date)
     cache_is_fresh = _cache_age_seconds(cache_path) <= remote_cache_ttl_seconds
-    if cached_value and cache_is_fresh and (
-        cached_has_required_run or refresh_stale_cache_in_background
+    if (
+        cached_value
+        and cache_is_fresh
+        and (cached_has_required_run or refresh_stale_cache_in_background)
     ):
         return cached_value
     # A previous run is still a complete, useful page while today's remote
@@ -339,7 +444,9 @@ def _expected_daily_run_date(now: Optional[float] = None) -> str:
     return time.strftime("%Y-%m-%d", time.gmtime(timestamp))
 
 
-def _matches_required_run_date(cached_value: Optional[dict[str, Any]], required_run_date: Optional[str]) -> bool:
+def _matches_required_run_date(
+    cached_value: Optional[dict[str, Any]], required_run_date: Optional[str]
+) -> bool:
     if not required_run_date:
         return True
     if not cached_value:
@@ -366,7 +473,9 @@ def _favorite_records(payload: dict[str, Any]) -> list[dict[str, Any]]:
 def _favorite_dates(records: list[dict[str, Any]]) -> list[str]:
     dates = {
         date
-        for date in (_parse_archive_date(str(record.get("created_at") or "")[:10]) for record in records)
+        for date in (
+            _parse_archive_date(str(record.get("created_at") or "")[:10]) for record in records
+        )
         if date
     }
     return sorted(dates, reverse=True)
@@ -428,10 +537,14 @@ def _recommendation_counts(items: Any) -> dict[str, int]:
 
 
 def _is_repository_record(item: dict[str, Any]) -> bool:
-    return str(item.get("item_type") or "").lower() == "repository" or bool(item.get("repository_url"))
+    return str(item.get("item_type") or "").lower() == "repository" or bool(
+        item.get("repository_url")
+    )
 
 
-def _favorites_payload_for_date(records: list[dict[str, Any]], selected_date: str) -> dict[str, Any] | None:
+def _favorites_payload_for_date(
+    records: list[dict[str, Any]], selected_date: str
+) -> dict[str, Any] | None:
     if not selected_date:
         return None
     items = [
@@ -460,7 +573,9 @@ def _favorite_record_to_recommendation(record: dict[str, Any]) -> dict[str, Any]
     if item.get("repository_url"):
         item["item_type"] = "repository"
         if not item.get("repository_full_name"):
-            item["repository_full_name"] = _repository_name_from_url(str(item.get("repository_url"))) or str(item.get("title") or "")
+            item["repository_full_name"] = _repository_name_from_url(
+                str(item.get("repository_url"))
+            ) or str(item.get("title") or "")
     return item
 
 
@@ -486,7 +601,9 @@ def _write_archive_snapshot(archive_dir: Path, payload: dict[str, Any]) -> None:
     _write_cache(_archive_snapshot_path(archive_dir, run_date), payload)
 
 
-def _archive_dates(archive_dir: Path, current_payload: Optional[dict[str, Any]] = None) -> list[str]:
+def _archive_dates(
+    archive_dir: Path, current_payload: Optional[dict[str, Any]] = None
+) -> list[str]:
     dates = set()
     try:
         for path in archive_dir.glob("*.json"):
@@ -593,7 +710,9 @@ def _normalized_payload_snapshot(
     )
 
 
-def _normalize_archive_counts(value: Optional[dict[str, dict[str, int]]]) -> dict[str, dict[str, int]]:
+def _normalize_archive_counts(
+    value: Optional[dict[str, dict[str, int]]],
+) -> dict[str, dict[str, int]]:
     counts: dict[str, dict[str, int]] = {}
     if not isinstance(value, dict):
         return counts
@@ -608,7 +727,9 @@ def _normalize_archive_counts(value: Optional[dict[str, dict[str, int]]]) -> dic
     return counts
 
 
-def daily_search_entries(recommender_payload: dict[str, Any], source_base_url: str = DEFAULT_DAILY_BASE_URL) -> list[dict[str, Any]]:
+def daily_search_entries(
+    recommender_payload: dict[str, Any], source_base_url: str = DEFAULT_DAILY_BASE_URL
+) -> list[dict[str, Any]]:
     payload = build_daily_payload(recommender_payload, source_base_url=source_base_url)
     return daily_payload_search_entries(payload)
 
@@ -616,24 +737,41 @@ def daily_search_entries(recommender_payload: dict[str, Any], source_base_url: s
 def daily_payload_search_entries(payload: dict[str, Any]) -> list[dict[str, Any]]:
     entries = []
     for item in payload["items"]:
-        entries.append({
-            "type": "Daily",
-            "title": item["title"],
-            "desc": item["tldr"] or item["abstract"],
-            "tags": item["keywords"],
-            "date": payload["run_date"],
-            "url": item.get("detail_url") or f"/daily?paper_id={item['id']}",
-        })
+        entries.append(
+            {
+                "type": "Daily",
+                "title": item["title"],
+                "desc": item["tldr"] or item["abstract"],
+                "tags": item["keywords"],
+                "date": payload["run_date"],
+                "url": item.get("detail_url") or f"/daily?paper_id={item['id']}",
+            }
+        )
     return entries
 
 
-def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source_base_url: str, run_date: str) -> dict[str, Any]:
-    item_id = str(item.get("paper_id") or item.get("repository_full_name") or item.get("title") or "")
+def _normalize_item(
+    item: dict[str, Any],
+    section_labels: dict[str, str],
+    source_base_url: str,
+    run_date: str,
+) -> dict[str, Any]:
+    item_id = str(
+        item.get("paper_id") or item.get("repository_full_name") or item.get("title") or ""
+    )
     is_repository = str(item.get("item_type", "")).lower() == "repository"
-    paper_url = (item.get("repository_url") or item.get("url")) if is_repository else (item.get("url") or item.get("arxiv_url"))
+    paper_url = (
+        (item.get("repository_url") or item.get("url"))
+        if is_repository
+        else (item.get("url") or item.get("arxiv_url"))
+    )
     if not paper_url and item_id and not is_repository:
         paper_url = f"https://arxiv.org/abs/{item_id}"
-    pdf_url = "" if is_repository else (item.get("pdf_url") or (f"https://arxiv.org/pdf/{item_id}" if item_id else ""))
+    pdf_url = (
+        ""
+        if is_repository
+        else (item.get("pdf_url") or (f"https://arxiv.org/pdf/{item_id}" if item_id else ""))
+    )
     code_urls = _string_list(item.get("code_urls"))
     if is_repository and item.get("repository_url") and item.get("repository_url") not in code_urls:
         code_urls = [str(item.get("repository_url")), *code_urls]
@@ -657,7 +795,9 @@ def _normalize_item(item: dict[str, Any], section_labels: dict[str, str], source
         "display_authors": authors[:DISPLAY_AUTHOR_LIMIT],
         "categories": _string_list(item.get("categories")),
         "section": section,
-        "section_label": section_labels.get(section, section.replace("_", " ").title() if section else "Daily"),
+        "section_label": section_labels.get(
+            section, section.replace("_", " ").title() if section else "Daily"
+        ),
         "keywords": keywords,
         "tldr": _english_tldr(item, is_repository=is_repository, keywords=keywords),
         "paper_url": paper_url or "",
@@ -711,12 +851,21 @@ def _keywords_for_item(item: dict[str, Any], section_labels: dict[str, str]) -> 
         values.extend(_keyword_labels(topic))
     for category in _string_list(item.get("categories")):
         values.extend(_keyword_labels(category))
-    sections = _string_list(item.get("sections")) or ([str(item.get("section"))] if item.get("section") else [])
+    sections = _string_list(item.get("sections")) or (
+        [str(item.get("section"))] if item.get("section") else []
+    )
     for section in sections:
         values.extend(SECTION_KEYWORDS.get(section, []))
-    values.extend(_keyword_labels(_title_keyword_text(str(item.get("title") or "")), allowed=TITLE_KEYWORD_ALLOWLIST))
+    values.extend(
+        _keyword_labels(
+            _title_keyword_text(str(item.get("title") or "")),
+            allowed=TITLE_KEYWORD_ALLOWLIST,
+        )
+    )
     if not has_curated_keyword_source:
-        values.extend(_keyword_labels(str(item.get("abstract") or ""), allowed=TITLE_KEYWORD_ALLOWLIST))
+        values.extend(
+            _keyword_labels(str(item.get("abstract") or ""), allowed=TITLE_KEYWORD_ALLOWLIST)
+        )
     return _unique(value for value in values if _is_display_keyword(value))[:DISPLAY_KEYWORD_LIMIT]
 
 
@@ -782,7 +931,12 @@ def _pack_keyword_rows(
                 width = _keyword_row_width(row, gap)
                 if width > row_width:
                     continue
-                score = (width, sum(pair[1] for pair in row), len(indexes), -sum(indexes))
+                score = (
+                    width,
+                    sum(pair[1] for pair in row),
+                    len(indexes),
+                    -sum(indexes),
+                )
                 if score > best_score:
                     best_score = score
                     best_indexes = indexes
@@ -807,11 +961,18 @@ def _keyword_chip_width(pair: tuple[str, int]) -> int:
     return round(20 + len(text) * 5.2)
 
 
-def _english_tldr(item: dict[str, Any], is_repository: bool = False, keywords: list[str] | None = None) -> str:
+def _english_tldr(
+    item: dict[str, Any], is_repository: bool = False, keywords: list[str] | None = None
+) -> str:
     tldr = _strip_trailing_ellipsis(str(item.get("tldr") or "").strip())
     abstract = _strip_trailing_ellipsis(str(item.get("abstract") or "").strip())
     if is_repository:
-        if tldr and not _contains_cjk(tldr) and tldr != abstract and not _looks_like_readme_excerpt(tldr):
+        if (
+            tldr
+            and not _contains_cjk(tldr)
+            and tldr != abstract
+            and not _looks_like_readme_excerpt(tldr)
+        ):
             return tldr
         return _repository_tldr(item, keywords or [])
     if tldr and not _contains_cjk(tldr):
@@ -841,11 +1002,13 @@ def _repository_tldr(item: dict[str, Any], keywords: list[str]) -> str:
         if summary and not _looks_like_readme_excerpt(summary):
             return summary
 
-    topics = _unique([
-        *keywords,
-        *_keyword_labels(" ".join(_string_list(item.get("repository_topics")))),
-        *_keyword_labels(" ".join(_string_list(item.get("categories")))),
-    ])
+    topics = _unique(
+        [
+            *keywords,
+            *_keyword_labels(" ".join(_string_list(item.get("repository_topics")))),
+            *_keyword_labels(" ".join(_string_list(item.get("categories")))),
+        ]
+    )
     topic_text = _human_list(topics[:4]) or "systems research tooling"
     return f"This repository is archived because its metadata matches {topic_text}."
 
@@ -864,7 +1027,7 @@ def _concise_summary_from_text(value: str, limit: int, max_sentences: int = 1) -
     if not text:
         return ""
     sentences = _sentences(text)
-    summary_parts = sentences[:max(1, max_sentences)] if sentences else [text]
+    summary_parts = sentences[: max(1, max_sentences)] if sentences else [text]
     summary = " ".join(summary_parts)
     if len(summary) > limit:
         summary = _clip_text(summary, limit)
@@ -873,14 +1036,18 @@ def _concise_summary_from_text(value: str, limit: int, max_sentences: int = 1) -
     return _strip_trailing_ellipsis(summary)
 
 
-def _profile_radar_for_payload(current_payload: dict[str, Any], favorite_records: list[dict[str, Any]]) -> dict[str, Any]:
+def _profile_radar_for_payload(
+    current_payload: dict[str, Any], favorite_records: list[dict[str, Any]]
+) -> dict[str, Any]:
     backend_radar = _prepare_profile_radar(current_payload.get("profile_radar"))
     if backend_radar:
         return backend_radar
     return _profile_radar_from_favorite_records(favorite_records)
 
 
-def _profile_radar_from_favorite_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+def _profile_radar_from_favorite_records(
+    records: list[dict[str, Any]],
+) -> dict[str, Any]:
     items = []
     for record in records:
         run_date = _parse_archive_date(str(record.get("created_at") or "")[:10])
@@ -891,14 +1058,18 @@ def _profile_radar_from_favorite_records(records: list[dict[str, Any]]) -> dict[
         keyword_counts.update(item.get("keywords", []))
     axes = [
         {"label": label, "value": count}
-        for label, count in sorted(keyword_counts.items(), key=lambda item: (-item[1], item[0].casefold()))[:PROFILE_RADAR_AXIS_LIMIT]
+        for label, count in sorted(
+            keyword_counts.items(), key=lambda item: (-item[1], item[0].casefold())
+        )[:PROFILE_RADAR_AXIS_LIMIT]
         if count > 0
     ]
-    return _prepare_profile_radar({
-        "source": "favorites_archive",
-        "total_likes": len(items),
-        "axes": axes,
-    })
+    return _prepare_profile_radar(
+        {
+            "source": "favorites_archive",
+            "total_likes": len(items),
+            "axes": axes,
+        }
+    )
 
 
 def _prepare_profile_radar(value: Any) -> dict[str, Any]:
@@ -911,8 +1082,12 @@ def _prepare_profile_radar(value: Any) -> dict[str, Any]:
     for raw_axis in raw_axes:
         if not isinstance(raw_axis, dict):
             continue
-        label = _profile_axis_label(raw_axis.get("label") or raw_axis.get("name") or raw_axis.get("keyword"))
-        axis_value = _safe_float(raw_axis.get("value", raw_axis.get("weight", raw_axis.get("score", 0))))
+        label = _profile_axis_label(
+            raw_axis.get("label") or raw_axis.get("name") or raw_axis.get("keyword")
+        )
+        axis_value = _safe_float(
+            raw_axis.get("value", raw_axis.get("weight", raw_axis.get("score", 0)))
+        )
         if not label or axis_value <= 0:
             continue
         axes.append({"label": label, "value": _profile_axis_value(axis_value)})
@@ -931,19 +1106,26 @@ def _prepare_profile_radar(value: Any) -> dict[str, Any]:
         ratio = float(axis["value"]) / max_count if max_count else 0
         point_x, point_y = _radar_point(angle, PROFILE_RADAR_RADIUS * ratio)
         polygon_points.append(_svg_point(point_x, point_y))
-        axis.update({
-            "line_points": f"{PROFILE_RADAR_CENTER},{PROFILE_RADAR_CENTER} {_svg_point(outer_x, outer_y)}",
-            "point_x": round(point_x, 1),
-            "point_y": round(point_y, 1),
-            "label_x": round(label_x, 1),
-            "label_y": round(label_y, 1),
-            "label_anchor": _profile_label_anchor(label_x),
-        })
+        axis.update(
+            {
+                "line_points": f"{PROFILE_RADAR_CENTER},{PROFILE_RADAR_CENTER} {_svg_point(outer_x, outer_y)}",
+                "point_x": round(point_x, 1),
+                "point_y": round(point_y, 1),
+                "label_x": round(label_x, 1),
+                "label_y": round(label_y, 1),
+                "label_anchor": _profile_label_anchor(label_x),
+            }
+        )
 
     rings = []
     for ratio in (1 / 3, 2 / 3, 1):
         ring_points = [
-            _svg_point(*_radar_point(-math.pi / 2 + (2 * math.pi * index / total_axes), PROFILE_RADAR_RADIUS * ratio))
+            _svg_point(
+                *_radar_point(
+                    -math.pi / 2 + (2 * math.pi * index / total_axes),
+                    PROFILE_RADAR_RADIUS * ratio,
+                )
+            )
             for index in range(total_axes)
         ]
         rings.append(" ".join(ring_points))
@@ -973,7 +1155,7 @@ def _profile_axis_label(value: Any) -> str:
     label = " ".join(str(value or "").split())
     if len(label) <= PROFILE_RADAR_LABEL_MAX_LENGTH:
         return label
-    return f"{label[:PROFILE_RADAR_LABEL_MAX_LENGTH - 3].rstrip()}..."
+    return f"{label[: PROFILE_RADAR_LABEL_MAX_LENGTH - 3].rstrip()}..."
 
 
 def _profile_axis_value(value: float) -> int | float:
@@ -1042,7 +1224,9 @@ def _repository_description(item: dict[str, Any]) -> str:
         text = " ".join(line.split()).strip(" -")
         if not text:
             continue
-        if text.lower().startswith(("about ", "key features", "getting started", "contributing", "citation")):
+        if text.lower().startswith(
+            ("about ", "key features", "getting started", "contributing", "citation")
+        ):
             continue
         return _clip_text(_strip_trailing_ellipsis(text), 180)
     return ""
@@ -1057,7 +1241,17 @@ def _clip_text(value: str, limit: int) -> str:
 
 def _looks_like_readme_excerpt(value: str) -> bool:
     lowered = value.lower()
-    return any(marker in lowered for marker in ("readme", "install", "pip install", "clone", "usage", "quickstart"))
+    return any(
+        marker in lowered
+        for marker in (
+            "readme",
+            "install",
+            "pip install",
+            "clone",
+            "usage",
+            "quickstart",
+        )
+    )
 
 
 def _strip_trailing_ellipsis(value: str) -> str:
@@ -1094,11 +1288,7 @@ def _parse_keywords(value: Optional[str], available_keywords: Iterable[str] = ()
     if not requested_by_key:
         return []
 
-    canonical_keywords = {
-        keyword.casefold(): keyword
-        for keyword in available_keywords
-        if keyword
-    }
+    canonical_keywords = {keyword.casefold(): keyword for keyword in available_keywords if keyword}
     if canonical_keywords:
         return sorted(
             (canonical_keywords[key] for key in requested_by_key if key in canonical_keywords),
@@ -1186,7 +1376,11 @@ def _read_cache(path: Path) -> dict[str, Any] | None:
                     return None
 
                 verified_stat = resolved_path.stat()
-                verified_key = (resolved_path, verified_stat.st_mtime_ns, verified_stat.st_size)
+                verified_key = (
+                    resolved_path,
+                    verified_stat.st_mtime_ns,
+                    verified_stat.st_size,
+                )
                 if verified_key != cache_key:
                     continue
 

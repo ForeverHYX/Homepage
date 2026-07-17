@@ -1,270 +1,141 @@
-# Homepage
+# Yixun Hong's Homepage
 
-This repository powers a personal academic homepage. It runs as a **single
-process** built entirely on **FastAPI + Jinja2 templates + vanilla JS** — no
-React, no Next.js, no build step, no database. Markdown files in `content/`
-are the sole data source.
+一个以文件为数据源、由 FastAPI 服务的个人学术主页。项目保留完整的 Liquid Glass 视觉、亮暗主题、站内搜索、Daily、Gallery、Resume 与上传管理功能，同时把前端构建、缓存和部署流程做成可复现的开箱即用工作流。
 
-> **Note on the old Next.js app**: the original `frontend/` tree was removed
-> from the runtime repository. Git history still preserves it for reference,
-> but everything described below is the current, live system.
+线上站点：[foreverhyx.top](https://foreverhyx.top)
 
-### Why Next.js was removed
+## 快速开始
 
-The production server is a 2-core / 1.7 GB Debian 12 box. Under the previous
-hybrid setup, Next.js consumed ~150 MB of RAM even though nearly every
-component was marked `"use client"`, making it effectively a thin proxy in
-front of FastAPI. Removing it:
+需要 Python 3.11 或更高版本。公开页面无需配置数据库，也无需配置管理员密码。
 
-- freed ~130 MB of RAM,
-- cut TTFB from ~80–120 ms down to **17–27 ms**,
-- eliminated the frontend build step, and
-- collapsed the deployment into a single gunicorn-managed process.
+```bash
+git clone git@github.com:ForeverHYX/Homepage.git
+cd Homepage
+make setup
+make run
+```
 
-## Architecture
+打开 <http://127.0.0.1:8000>。`make setup` 会创建 `.venv`、安装固定版本依赖、构建前端资源并运行环境诊断。
 
-A single FastAPI application (run under gunicorn with 1 uvicorn worker in
-production) serves both HTML pages and JSON APIs out of one process:
+如需使用 `/upload` 管理后台：
 
-- **FastAPI 0.115.8** serves HTML pages (via Jinja2 templates) **and** JSON APIs
-- **Uvicorn worker** managed by **gunicorn** (1 worker in production)
-- **Vanilla JS** for all client-side interactivity — no React, no Next.js,
-  no build step
-- **Markdown files in `content/`** as the sole data source — zero database
-- **Deployed on Debian 12** (2-core / 1.7 GB RAM), managed by **systemd**
-  with **Nginx** as the reverse proxy
+```bash
+cp .env.example .env
+make password
+```
 
-The backend lives in `app/` and is organized as:
+把命令输出的 bcrypt 字符串写入 `.env` 的 `HOMEPAGE_UPLOAD_PASS_HASH`。项目没有默认密码；未配置哈希时登录会安全地失败。
 
-| Module | Responsibility |
+## 常用命令
+
+| 命令 | 用途 |
 | --- | --- |
-| `app/main.py` | App entry + Jinja2Templates setup |
-| `app/config.py` | Paths, rate limiter, env vars |
-| `app/auth.py` | bcrypt + session tokens |
-| `app/cache.py` | Bounded, signature-based in-memory cache |
-| `app/news.py` | News aggregation |
-| `app/content_utils.py` | Section extraction, about parsing |
-| `app/markdown_utils.py` | Markdown + structured publication rendering |
-| `app/education.py` | Education timeline parser |
-| `app/file_utils.py` | Image conversion, safe path join |
-| `app/gallery_utils.py` | Gallery config management |
-| `app/utils.py` | Unified re-exports |
-| `app/routers/pages.py` | HTML page routes + JSON API + payload builders |
-| `app/routers/upload.py` | File upload APIs |
-| `app/routers/auth.py` | Login API |
+| `make setup` | 创建开发环境、安装依赖、构建并诊断 |
+| `make run` | 用 Uvicorn 热重载启动本地服务 |
+| `make build` | 重建 CSS、JS、字体子集、清单和 `.gz` |
+| `make check` | 构建新鲜度、格式、静态检查和完整测试 |
+| `make doctor` | 检查依赖、目录、清单、环境和构建状态 |
+| `make password` | 交互式生成上传密码哈希 |
+| `make profile URL=https://foreverhyx.top` | 移动端/桌面端各跑三次 Lighthouse |
 
-## Route split
+## 功能
 
-| Route group | Handler | Purpose |
-| --- | --- | --- |
-| `/`, `/publications`, `/daily`, `/gallery`, `/resume` | FastAPI + Jinja2 | Public HTML pages |
-| `/login`, `/upload` | FastAPI + Jinja2 | Admin pages (auth-gated) |
-| `/api/site/*`, `/api/search-index` | FastAPI JSON | Data for client-side JS fetches |
-| `/api/upload`, `/api/files*`, `/api/folder*`, `/api/gallery/toggle`, `/api/login` | FastAPI JSON | Admin operations (auth-gated) |
-| `/static/*` | Nginx direct | CSS + JS assets (7-day immutable cache) |
-| `/uploads/*` | Nginx direct | Uploaded files (7-day cache) |
+- Markdown 驱动的个人介绍、教育经历、论文、新闻与 Daily 页面
+- 亮色/暗色主题、响应式悬浮导航、键盘友好的站内搜索
+- 保留桌面端玻璃材质与动态光场；移动端使用视觉一致的轻量回退
+- Gallery 相册、焦点模式、懒加载预览、全尺寸灯箱和后台缩略图预热
+- 受 bcrypt、HttpOnly Cookie、限流和路径校验保护的上传管理
+- `robots.txt`、Sitemap、IndexNow key 和规范化 URL
+- 无数据库：内容、相册元数据、Daily 数据均保存在可备份文件中
 
-## Current feature set
-
-- Public academic homepage with a floating capsule-style navigation bar
-- CSS-only, single-backdrop Liquid Glass navigation material; the experimental
-  SVG displacement engine remains available for explicitly opted-in elements
-  but is not loaded by default
-- Custom lightfield animation engine (6 gradient light spots, mouse parallax,
-  theme-adaptive)
-- Mobile fallback to standard frosted glass for better performance
-- Markdown-driven homepage sections
-- Markdown-driven publication system with:
-  - conference/journal badges
-  - keyword filtering
-  - venue and author metadata
-  - optional Paper and Code links
-- Folder-based gallery publishing with metadata
-- Search across publications, Daily entries, and albums
-- Dark/light theme via `data-theme` attribute + CSS custom properties
-- Secure upload dashboard for:
-  - drag-and-drop uploads
-  - folder creation
-  - file deletion
-  - gallery publish/unpublish toggles
-  - album metadata editing
-  - automatic JPG→WebP conversion (quality 80, max 1920px) on upload
-
-## Repository layout
+## 目录
 
 ```text
 .
-├── app/                          # FastAPI application
-│   ├── main.py                   # App entry + Jinja2Templates setup
-│   ├── config.py                 # Paths, rate limiter, env vars
-│   ├── auth.py                   # bcrypt + session tokens
-│   ├── cache.py                  # bounded file-signature cache
-│   ├── news.py                   # News aggregation
-│   ├── content_utils.py          # Section extraction, about parsing
-│   ├── markdown_utils.py         # Markdown + publication renderer
-│   ├── education.py              # Education timeline parser
-│   ├── file_utils.py             # Image conversion, safe path join
-│   ├── gallery_utils.py          # Gallery config management
-│   ├── utils.py                  # Unified re-exports
-│   ├── routers/
-│   │   ├── pages.py              # HTML page routes + JSON API + payload builders
-│   │   ├── upload.py             # File upload APIs
-│   │   └── auth.py               # Login API
-│   └── templates/
-│       ├── base.html             # Layout: nav island, lightfield, footer, scripts
-│       └── pages/
-│           ├── home.html
-│           ├── publications.html
-│           ├── article_detail.html
-│           ├── gallery.html
-│           ├── resume.html
-│           ├── login.html
-│           ├── upload.html
-│           └── 404.html
+├── app/
+│   ├── main.py                 # create_app() 与 ASGI 入口
+│   ├── routers/                # 页面、认证、上传 HTTP 边界
+│   ├── services/               # 首页、Gallery、搜索展示数据
+│   ├── templates/              # Jinja 页面
+│   ├── assets.py               # 静态/上传资源版本 URL
+│   └── cache.py                # 有界、线程安全、按文件签名失效的缓存
+├── content/                    # Markdown 与 Daily 文件数据
+├── uploads/                    # 图片、PDF、相册元数据；生产数据不入库
 ├── static/
-│   ├── css/
-│   │   ├── styles.css            # Readable styling source of truth
-│   │   └── styles.min.css        # Reproducible comment-stripped production asset
-│   └── js/
-│       ├── effects/
-│       │   ├── liquid-glass.js   # SVG feDisplacementMap glass effect
-│       │   └── lightfield.js     # Animated gradient light field
-│       └── components/
-│           ├── site-header.js    # Nav island, search, theme toggle
-│           ├── content-enhancer.js  # Code highlighting + GitHub cards
-│           ├── gallery-view.js   # Carousel + lightbox
-│           ├── upload-manager.js # Drag-drop upload dashboard
-│           ├── anniversary-calendar.js
-│           └── anniversary-data.js
-├── content/                      # Markdown content (the "database")
-│   ├── about.md                  # Profile info
-│   ├── content.md                # Homepage sections + publication records
-│   └── news.md                   # Manual news entries
-├── uploads/                      # Gallery albums, avatar, documents
-│   ├── <album>/                  # Images + meta.json per album
-│   ├── avatar.png
-│   └── transcript.pdf
-├── deploy/                       # Saved deployment configs
-│   └── nginx-foreverhyx.conf
-├── requirements.txt
-└── README.md
+│   ├── css/src/                # 分层 CSS 源码
+│   ├── js/src/site-header/     # 导航模块源码
+│   ├── fonts/src/              # 字体样式源码
+│   └── ...                     # 构建后的浏览器资源
+├── assets/fonts/vendor/        # 可重复裁剪所需的完整字体源
+├── scripts/                    # 构建、诊断、性能测试、密码工具
+├── deploy/                     # Nginx 与 systemd 参考配置
+├── docs/                       # 架构、开发、部署、性能、内容、运维
+├── tests/                      # 功能、安全、并发与性能约束回归测试
+├── Makefile
+├── requirements.txt            # 生产运行依赖
+└── requirements-dev.txt        # 开发/构建/测试依赖
 ```
 
-## Content model
+## 构建与缓存模型
 
-The site is file-driven. There is **no database** — Markdown files in
-`content/` are the sole data source, and the in-memory cache invalidates
-automatically whenever a file's mtime changes.
+可读源码与浏览器产物明确分开：
 
-### Homepage content
+- CSS 按编号维护在 `static/css/src/`，构建为单一 `styles.css` 和 `styles.min.css`。
+- Header 按职责维护在 `static/js/src/site-header/`，构建为经典脚本，保持原加载方式和请求数。
+- 其他页面脚本保留可读 `.js`，构建器生成对应 `.min.js`。
+- Source Sans 3 和 Source Serif 4 从 `assets/fonts/vendor/` 裁剪到实际使用轴范围。
+- `static/asset-manifest.json` 为每个运行资源生成 SHA-256 内容指纹 URL。
+- 文本资源生成时间戳固定、跨平台一致的 `.gz`，由 Nginx `gzip_static` 直接返回。
 
-- `content/about.md`
-  - basic profile info such as email, GitHub link, location, name, role
-- `content/content.md`
-  - main homepage sections
-- `content/news.md`
-  - manual news entries
+Nginx 只对带 `?v=<内容哈希>` 的静态 URL 设置一年 immutable；无指纹静态 URL 仅缓存 5 分钟。`/uploads/` 是可变数据，只缓存 1 小时并保留 ETag。这里没有 `content-visibility: auto`、列表虚拟化或滚出视口卸载，因此页面滚动返回时不会出现内容消失后重新加载。
 
-### Publications
+## 配置
 
-- `content/content.md`
-  - `:::publication` blocks define title, venue, authors, keywords, and links
-  - the same structured records power the homepage and `/publications` filters
+核心环境变量见 [.env.example](.env.example)：
 
-### Gallery
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `HOMEPAGE_UPLOAD_USER` | `admin` | 管理员用户名 |
+| `HOMEPAGE_UPLOAD_PASS_HASH` | 空 | bcrypt 哈希；为空时禁止登录 |
+| `HOMEPAGE_COOKIE_SECURE` | `true` | 生产 HTTPS Cookie |
+| `HOMEPAGE_SESSION_TIMEOUT_SECONDS` | `86400` | 会话有效期 |
+| `HOMEPAGE_CONTENT_DIR` | `./content` | 内容目录覆盖 |
+| `HOMEPAGE_UPLOAD_DIR` | `./uploads` | 上传目录覆盖 |
 
-- `uploads/<album>/`
-  - image files for one album
-- `uploads/<album>/meta.json`
-  - optional album title, description, date, author
-- `gallery_config.json`
-  - controls which upload folders are publicly exposed as gallery albums
+不要提交 `.env`、`.sessions.json` 或生产 `uploads/`。密码中的首尾空格会被保留，不会被隐式裁剪。
 
-### Misc assets
+## 质量与性能原则
 
-- `uploads/avatar.png`
-  - homepage avatar
-- `uploads/transcript.pdf`
-  - resume / transcript link if you want one in the nav
+- 视觉和功能回归优先：玻璃材质、阴影、动画和交互没有因性能优化被简化。
+- 不采用会移除 DOM、清空图片 `src` 或让离屏内容重新挂载的激进优化。
+- 图片保留稳定尺寸，异步解码；相册卡片使用持久缩略图，焦点模式保留原图。
+- 文件内容缓存以纳秒 mtime 和大小为签名，内容改变自动失效，最大 256 项。
+- Gallery 冷缩略图在响应后预热；重叠任务合并，避免并发重复编码。
+- 搜索索引和 Gallery 展示数据复用缓存，但始终返回独立副本，避免请求间污染。
+- 自托管字体消除第三方握手和字体替换导致的布局偏移。
 
-## Environment variables
+性能基线、复测方法和当前数据见 [docs/PERFORMANCE.md](docs/PERFORMANCE.md)。
 
-Create a `.env` file in the repository root:
+## 文档
 
-```env
-HOMEPAGE_UPLOAD_USER=admin
-HOMEPAGE_UPLOAD_PASS=change-me
-HOMEPAGE_UPLOAD_PASS_HASH=<bcrypt hash>  # alternative to plain pass
-HOMEPAGE_CONTENT_DIR=/path/to/content    # optional override
-HOMEPAGE_UPLOAD_DIR=/path/to/uploads     # optional override
-HOMEPAGE_COOKIE_SECURE=true              # production HTTPS
-HOMEPAGE_DAILY_REMOTE_CACHE_SECONDS=900  # current Daily recommendations
-HOMEPAGE_DAILY_FEEDBACK_CONFIG_CACHE_SECONDS=3600
-HOMEPAGE_DAILY_FAVORITES_CACHE_SECONDS=7200
-```
+- [架构与数据流](docs/ARCHITECTURE.md)
+- [开发与前端构建](docs/DEVELOPMENT.md)
+- [生产部署与回滚](docs/DEPLOYMENT.md)
+- [性能预算与 Profile 方法](docs/PERFORMANCE.md)
+- [内容、论文、Daily 与相册维护](docs/CONTENT.md)
+- [监控、备份与故障处理](docs/OPERATIONS.md)
 
-## Local development
+## 生产入口
 
-There is no bundler or transpiler; static JS is served directly. After editing
-`static/css/styles.css`, regenerate the checked-in production CSS asset:
+生产参考拓扑是 Nginx → 单 worker Gunicorn/Uvicorn → FastAPI，静态文件与上传文件由 Nginx 直接服务。首次安装和无停机更新步骤见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。部署前至少执行：
 
 ```bash
-python scripts/build_static_css.py
+make check
+.venv/bin/python scripts/doctor.py --production
 ```
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
+macOS 本地开发请使用 `make run`。带 `--preload` 的 Gunicorn 生产配置面向 Linux；macOS 的 Objective-C runtime 在 fork 后可能主动终止进程。
 
-Then open `http://127.0.0.1:8000`.
+## 字体许可
 
-> Tip: append `?v=N` to a static asset URL during development to bust
-> browser cache after editing.
-
-## Production deploy
-
-There is no deploy-time frontend build step — the generated CSS asset is
-checked in, and gunicorn runs the FastAPI app directly.
-
-```bash
-# Backend only — no build step
-gunicorn app.main:app -k uvicorn.workers.UvicornWorker \
-  --bind 127.0.0.1:8000 --workers 1 --timeout 60
-```
-
-Nginx proxies `/*` and `/api/*` to FastAPI on `127.0.0.1:8000` and serves
-`/static/` and `/uploads/` directly (7-day cache). A reference Nginx config
-lives at `deploy/nginx-foreverhyx.conf`.
-
-The systemd service file lives at
-`/etc/systemd/system/foreverhyx-homepage.service` and manages the gunicorn
-process.
-
-## Notes for contributors
-
-- **No bundler.** Static assets are served directly. Run
-  `python scripts/build_static_css.py` after changing `styles.css`; tests verify
-  that the checked-in production asset is current.
-- **Cache-bust with `?v=N`.** Because assets are served directly, append a
-  `?v=N` query param when iterating on CSS/JS during development.
-- **`static/css/styles.css` is the single source of truth for styling**;
-  `styles.min.css` removes comments and formatting whitespace without
-  reordering selectors or declarations.
-- Sessions are stored in `.sessions.json`; this is plain
-  `token_urlsafe(32)` plus bcrypt, intentionally
-  simple — replace it with a real session store if you need more.
-- Rate limiting is provided by `slowapi` (200/min global, stricter on
-  `/login` and `/upload`).
-- All filesystem access uses `safe_join()` to prevent path traversal.
-- Windows-compatible SVG filter regions are required for the liquid-glass
-  effect — a black-shadow bug there was recently fixed.
-
-## License / attribution
-
-This project is the source for Yixun Hong's homepage and remains highly
-tailored to that deployment. You are free to study and adapt the structure,
-but expect to customize content parsing, deployment, and styling for your
-own use case.
+自托管字体均采用 SIL Open Font License 1.1。来源、子集范围和许可证文件位于 [`static/fonts/`](static/fonts/README.md)。

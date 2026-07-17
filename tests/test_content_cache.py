@@ -15,6 +15,7 @@ from app.cache import (
     cache_by_signature,
     clear,
 )
+from app.services import search
 
 
 class UnifiedContentCacheTests(TestCase):
@@ -134,11 +135,14 @@ class HomepageDerivedCacheTests(TestCase):
                 encoding="utf-8",
             )
             parser = content_utils._parse_raw_sections
-            with patch.object(content_utils, "CONTENT_DIR", content_dir), patch.object(
-                content_utils,
-                "_parse_raw_sections",
-                wraps=parser,
-            ) as parse_mock:
+            with (
+                patch.object(content_utils, "CONTENT_DIR", content_dir),
+                patch.object(
+                    content_utils,
+                    "_parse_raw_sections",
+                    wraps=parser,
+                ) as parse_mock,
+            ):
                 self.assertEqual(
                     content_utils.get_raw_section_body("content.md", "Education"),
                     "Degree",
@@ -182,15 +186,20 @@ class NewsCacheTests(TestCase):
             config_file = root / "gallery_config.json"
             original_builder = news._build_news_items
 
-            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
-                news,
-                "GALLERY_CONFIG_FILE",
-                config_file,
-            ), patch.object(news, "get_gallery_folders", return_value=[]), patch.object(
-                news,
-                "_build_news_items",
-                wraps=original_builder,
-            ) as build_mock:
+            with (
+                patch.object(news, "CONTENT_DIR", content_dir),
+                patch.object(
+                    news,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(news, "get_gallery_folders", return_value=[]),
+                patch.object(
+                    news,
+                    "_build_news_items",
+                    wraps=original_builder,
+                ) as build_mock,
+            ):
                 short_feed = news.parse_and_merge_news(limit=1)
                 full_feed = news.parse_and_merge_news(limit=100)
 
@@ -208,11 +217,15 @@ class NewsCacheTests(TestCase):
             news_path.write_text("- **2026-07**: One.\n", encoding="utf-8")
             config_file = root / "gallery_config.json"
 
-            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
-                news,
-                "GALLERY_CONFIG_FILE",
-                config_file,
-            ), patch.object(news, "get_gallery_folders", return_value=[]):
+            with (
+                patch.object(news, "CONTENT_DIR", content_dir),
+                patch.object(
+                    news,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(news, "get_gallery_folders", return_value=[]),
+            ):
                 self.assertIn("One.", news.parse_and_merge_news())
                 self.assertEqual(len(_cache), 1)
 
@@ -239,15 +252,20 @@ class NewsCacheTests(TestCase):
             )
             config_file = root / "gallery_config.json"
 
-            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
-                news,
-                "UPLOAD_DIR",
-                upload_dir,
-            ), patch.object(
-                news,
-                "GALLERY_CONFIG_FILE",
-                config_file,
-            ), patch.object(news, "get_gallery_folders", return_value=["Album"]):
+            with (
+                patch.object(news, "CONTENT_DIR", content_dir),
+                patch.object(
+                    news,
+                    "UPLOAD_DIR",
+                    upload_dir,
+                ),
+                patch.object(
+                    news,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(news, "get_gallery_folders", return_value=["Album"]),
+            ):
                 first = news.parse_and_merge_news()
                 meta_path.write_text(
                     '{"title":"After external edit","date":"2026-07-01"}',
@@ -258,3 +276,85 @@ class NewsCacheTests(TestCase):
             self.assertIn("Before", first)
             self.assertIn("After external edit", second)
             self.assertNotIn("Before", second)
+
+
+class SearchIndexCacheTests(TestCase):
+    def setUp(self) -> None:
+        clear()
+
+    def tearDown(self) -> None:
+        clear()
+
+    def test_search_index_reuses_and_invalidates_gallery_metadata(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            content_dir = root / "content"
+            upload_dir = root / "uploads"
+            album_dir = upload_dir / "Album"
+            content_dir.mkdir()
+            album_dir.mkdir(parents=True)
+            content_file = content_dir / "content.md"
+            daily_file = content_dir / "recommendations.json"
+            config_file = root / "gallery_config.json"
+            metadata = album_dir / "meta.json"
+            content_file.write_text("# Introduction\n", encoding="utf-8")
+            daily_file.write_text("{}", encoding="utf-8")
+            config_file.write_text("{}", encoding="utf-8")
+            metadata.write_text('{"title":"Before"}', encoding="utf-8")
+            original_builder = search._build_search_entries
+
+            with (
+                patch.object(search, "CONTENT_DIR", content_dir),
+                patch.object(
+                    search,
+                    "UPLOAD_DIR",
+                    upload_dir,
+                ),
+                patch.object(
+                    search,
+                    "DEFAULT_DAILY_CACHE_PATH",
+                    daily_file,
+                ),
+                patch.object(
+                    search,
+                    "GALLERY_CONFIG_FILE",
+                    config_file,
+                ),
+                patch.object(
+                    search,
+                    "get_gallery_folders",
+                    return_value=["Album"],
+                ),
+                patch.object(
+                    search,
+                    "get_publications",
+                    return_value=[],
+                ),
+                patch.object(
+                    search,
+                    "load_daily_payload",
+                    return_value={},
+                ),
+                patch.object(
+                    search,
+                    "daily_payload_search_entries",
+                    return_value=[],
+                ),
+                patch.object(
+                    search,
+                    "_build_search_entries",
+                    wraps=original_builder,
+                ) as build_mock,
+            ):
+                first = search.build_search_index()
+                second = search.build_search_index()
+                metadata.write_text(
+                    '{"title":"After an external edit"}',
+                    encoding="utf-8",
+                )
+                third = search.build_search_index()
+
+            self.assertEqual(first, second)
+            self.assertEqual(first[0]["title"], "Before")
+            self.assertEqual(third[0]["title"], "After an external edit")
+            self.assertEqual(build_mock.call_count, 2)

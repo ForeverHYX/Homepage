@@ -25,8 +25,16 @@ REQUIRED_SECTIONS = (
 
 def daily_article_slug(item: dict[str, Any], run_date: str) -> str:
     date = _safe_date(run_date)
-    identifier = str(item.get("id") or item.get("paper_id") or item.get("repository_full_name") or item.get("title") or "daily-item")
-    if str(item.get("item_type") or "").lower() == "repository" and not identifier.startswith("repo-"):
+    identifier = str(
+        item.get("id")
+        or item.get("paper_id")
+        or item.get("repository_full_name")
+        or item.get("title")
+        or "daily-item"
+    )
+    if str(item.get("item_type") or "").lower() == "repository" and not identifier.startswith(
+        "repo-"
+    ):
         identifier = f"repo-{identifier}"
     return f"{date}-{_slugify(identifier)}"
 
@@ -42,7 +50,9 @@ def ensure_daily_article_markdown(
     if _is_current_daily_article(path):
         return path
 
-    markdown_text = _llm_daily_article_markdown(item, run_date) or generate_daily_article_markdown(item, run_date)
+    markdown_text = _llm_daily_article_markdown(item, run_date) or generate_daily_article_markdown(
+        item, run_date
+    )
     markdown_text = _ensure_generator_marker(markdown_text)
     path.write_text(markdown_text, encoding="utf-8")
     return path
@@ -52,53 +62,59 @@ def generate_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
     title = _clean_text(item.get("title")) or "Daily Recommendation"
     item_type = "Repository" if item.get("item_type") == "repository" else "Paper"
     tags = _unique(["Daily", item_type, *_string_list(item.get("keywords"))[:5]])
-    abstract = _clean_text(item.get("abstract")) or _clean_text(item.get("tldr")) or "No abstract is available in the daily payload."
+    abstract = (
+        _clean_text(item.get("abstract"))
+        or _clean_text(item.get("tldr"))
+        or "No abstract is available in the daily payload."
+    )
     tldr = _clean_text(item.get("tldr")) or abstract
     source_url = _source_url(item)
     figure_markdown = _figure_markdown(item)
     code_markdown = _code_markdown(item)
     formula = _formula_for(item)
 
-    return "\n".join([
-        f"# {title}",
-        "",
-        f"Date: {_safe_date(run_date)}",
-        "Author: Yixun Hong",
-        f"Tags: {', '.join(tags)}",
-        f"Abstract: {_single_line(_abstract_line(tldr, abstract))}",
-        f"<!-- {ARTICLE_GENERATOR_MARKER} -->",
-        "",
-        source_url,
-        "",
-        "## Core Idea",
-        "",
-        _core_idea_text(item, tldr),
-        "",
-        _profile_relevance_text(item),
-        "",
-        "## What Is New",
-        "",
-        _innovation_text(item),
-        "",
-        "## Methodology",
-        "",
-        _methodology_text(item),
-        "",
-        formula,
-        "",
-        "## Figure To Read First",
-        "",
-        figure_markdown,
-        "",
-        "## Minimal Mental Model",
-        "",
-        code_markdown,
-        "",
-        "## Why It Matters",
-        "",
-        _why_it_matters(item),
-        "",
-    ])
+    return "\n".join(
+        [
+            f"# {title}",
+            "",
+            f"Date: {_safe_date(run_date)}",
+            "Author: Yixun Hong",
+            f"Tags: {', '.join(tags)}",
+            f"Abstract: {_single_line(_abstract_line(tldr, abstract))}",
+            f"<!-- {ARTICLE_GENERATOR_MARKER} -->",
+            "",
+            source_url,
+            "",
+            "## Core Idea",
+            "",
+            _core_idea_text(item, tldr),
+            "",
+            _profile_relevance_text(item),
+            "",
+            "## What Is New",
+            "",
+            _innovation_text(item),
+            "",
+            "## Methodology",
+            "",
+            _methodology_text(item),
+            "",
+            formula,
+            "",
+            "## Figure To Read First",
+            "",
+            figure_markdown,
+            "",
+            "## Minimal Mental Model",
+            "",
+            code_markdown,
+            "",
+            "## Why It Matters",
+            "",
+            _why_it_matters(item),
+            "",
+        ]
+    )
 
 
 def _llm_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
@@ -111,20 +127,22 @@ def _llm_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
     prompt = _llm_prompt(item, run_date)
     request = Request(
         endpoint,
-        data=json.dumps({
-            "model": model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You write concise English research notes for a personal academic homepage. "
-                        "Return Markdown only. Follow the requested frontmatter-like format exactly."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.25,
-        }).encode("utf-8"),
+        data=json.dumps(
+            {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You write concise English research notes for a personal academic homepage. "
+                            "Return Markdown only. Follow the requested frontmatter-like format exactly."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.25,
+            }
+        ).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
@@ -182,29 +200,39 @@ def _figure_markdown(item: dict[str, Any]) -> str:
 
 def _code_markdown(item: dict[str, Any]) -> str:
     if item.get("item_type") == "repository":
-        repo = _clean_text(item.get("repository_full_name")) or _clean_text(item.get("title")) or "repository"
-        return "\n".join([
+        repo = (
+            _clean_text(item.get("repository_full_name"))
+            or _clean_text(item.get("title"))
+            or "repository"
+        )
+        return "\n".join(
+            [
+                "```text",
+                f"{repo}",
+                "  inputs        -> workload / prompt / trace",
+                "  core engine   -> scheduling, search, simulation, or runtime policy",
+                "  outputs       -> artifact, measurement, or optimized configuration",
+                "```",
+            ]
+        )
+    return "\n".join(
+        [
             "```text",
-            f"{repo}",
-            "  inputs        -> workload / prompt / trace",
-            "  core engine   -> scheduling, search, simulation, or runtime policy",
-            "  outputs       -> artifact, measurement, or optimized configuration",
+            "research artifact",
+            "  question      -> what design, runtime, or system boundary changes?",
+            "  mechanism     -> model, agent, compiler, simulator, or hardware feedback",
+            "  evaluation    -> baseline comparison plus cost / latency / accuracy signal",
+            "  reusable idea -> what should carry into the next architecture experiment?",
             "```",
-        ])
-    return "\n".join([
-        "```text",
-        "research artifact",
-        "  question      -> what design, runtime, or system boundary changes?",
-        "  mechanism     -> model, agent, compiler, simulator, or hardware feedback",
-        "  evaluation    -> baseline comparison plus cost / latency / accuracy signal",
-        "  reusable idea -> what should carry into the next architecture experiment?",
-        "```",
-    ])
+        ]
+    )
 
 
 def _formula_for(item: dict[str, Any]) -> str:
     if item.get("item_type") == "repository":
-        return "`utility(repo) = relevance_to_profile + reproducibility_signal + maintenance_signal`"
+        return (
+            "`utility(repo) = relevance_to_profile + reproducibility_signal + maintenance_signal`"
+        )
     return "`score(design) = quality_metric(design) - cost_to_evaluate(design) + feedback_gain(design)`"
 
 
@@ -334,7 +362,11 @@ def _first_sentence(value: str) -> str:
 
 def _evidence_sentence(sentences: list[str]) -> str:
     for sentence in sentences:
-        if re.search(r"\b(achieves?|shows?|validates?|evaluates?|improves?|outperforms?|demonstrates?|results?)\b", sentence, re.I):
+        if re.search(
+            r"\b(achieves?|shows?|validates?|evaluates?|improves?|outperforms?|demonstrates?|results?)\b",
+            sentence,
+            re.I,
+        ):
             return sentence
     return sentences[0] if sentences else ""
 
@@ -356,7 +388,9 @@ def _is_current_daily_article(path: Path) -> bool:
         text = path.read_text(encoding="utf-8")
     except OSError:
         return False
-    return ARTICLE_GENERATOR_MARKER in text and all(section in text for section in REQUIRED_SECTIONS)
+    return ARTICLE_GENERATOR_MARKER in text and all(
+        section in text for section in REQUIRED_SECTIONS
+    )
 
 
 def _ensure_generator_marker(markdown_text: str) -> str:

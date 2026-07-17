@@ -20,11 +20,15 @@ class UploadFileManagementTests(TestCase):
             image_bytes = BytesIO()
             Image.new("RGB", (80, 60), "navy").save(image_bytes, "WEBP")
 
-            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
-                upload,
-                "require_login",
-                return_value=None,
-            ), patch.object(upload, "ensure_gallery_thumbnail") as ensure_mock:
+            with (
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                patch.object(
+                    upload,
+                    "require_login",
+                    return_value=None,
+                ),
+                patch.object(upload, "ensure_gallery_thumbnail") as ensure_mock,
+            ):
                 response = TestClient(app).post(
                     "/api/upload",
                     data={"path": "Album"},
@@ -57,8 +61,9 @@ class UploadFileManagementTests(TestCase):
             (upload_dir / "data.csv").write_text("a,b\n1,2\n", encoding="utf-8")
             (upload_dir / "bundle.zip").write_bytes(b"zip")
 
-            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
-                upload, "require_login", return_value=None
+            with (
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                patch.object(upload, "require_login", return_value=None),
             ):
                 response = TestClient(app).get("/api/files")
 
@@ -96,9 +101,11 @@ class UploadFileManagementTests(TestCase):
                 encoding="utf-8",
             )
 
-            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
-                upload, "require_login", return_value=None
-            ), patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file):
+            with (
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                patch.object(upload, "require_login", return_value=None),
+                patch.object(gallery_utils, "GALLERY_CONFIG_FILE", config_file),
+            ):
                 response = TestClient(app).post(
                     "/api/files/delete",
                     data={"path": "旅行 照片"},
@@ -128,10 +135,13 @@ class UploadFileManagementTests(TestCase):
             for thumbnail_path in thumbnail_paths:
                 thumbnail_path.write_bytes(b"thumb")
 
-            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
-                upload,
-                "require_login",
-                return_value=None,
+            with (
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                patch.object(
+                    upload,
+                    "require_login",
+                    return_value=None,
+                ),
             ):
                 response = TestClient(app).post(
                     "/api/files/delete",
@@ -164,8 +174,9 @@ class UploadFileManagementTests(TestCase):
             for thumbnail_path in thumbnail_paths:
                 thumbnail_path.write_bytes(b"thumb")
 
-            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
-                upload, "require_login", return_value=None
+            with (
+                patch.object(upload, "UPLOAD_DIR", upload_dir),
+                patch.object(upload, "require_login", return_value=None),
             ):
                 response = TestClient(app).post(
                     "/api/files/rename",

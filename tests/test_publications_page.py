@@ -104,14 +104,16 @@ tags: Architecture, AI
         self.assertIn("@media (prefers-reduced-transparency: reduce)", styles)
         self.assertIn("@media (prefers-contrast: more)", styles)
         self.assertIn("@media (forced-colors: active)", styles)
-        reduced_transparency = styles.rsplit(
-            "@media (prefers-reduced-transparency: reduce)", 1
-        )[1].split("@media (prefers-contrast: more)", 1)[0]
+        reduced_transparency = styles.rsplit("@media (prefers-reduced-transparency: reduce)", 1)[
+            1
+        ].split("@media (prefers-contrast: more)", 1)[0]
         self.assertNotIn(".publication-badge", reduced_transparency)
         forced_colors = styles.rsplit("@media (forced-colors: active)", 1)[1]
         self.assertIn(".prose a.publication-keyword.is-active", forced_colors)
         self.assertIn(".publication-badge", forced_colors)
-        self.assertGreater(styles.rfind("@media (forced-colors: active)"), styles.rfind("@supports not"))
+        self.assertGreater(
+            styles.rfind("@media (forced-colors: active)"), styles.rfind("@supports not")
+        )
 
     def test_publication_filter_urls_toggle_encoded_multi_keywords(self) -> None:
         self.assertEqual(
@@ -122,7 +124,9 @@ tags: Architecture, AI
             pages._publication_keywords_url(["GPU Modeling", "AI Workloads"], "GPU Modeling"),
             "/publications?keywords=AI%20Workloads",
         )
-        self.assertEqual(pages._publication_keywords_url(["GPU Modeling"], "GPU Modeling"), "/publications")
+        self.assertEqual(
+            pages._publication_keywords_url(["GPU Modeling"], "GPU Modeling"), "/publications"
+        )
 
     def test_publications_api_and_search_index_expose_publication_data(self) -> None:
         client = TestClient(app)
@@ -168,9 +172,11 @@ tags: Architecture, AI
             )
             gallery_config = content_dir / "gallery_config.json"
             _cache.clear()
-            with patch.object(news, "CONTENT_DIR", content_dir), patch.object(
-                news, "GALLERY_CONFIG_FILE", gallery_config
-            ), patch.object(news, "get_gallery_folders", return_value=[]):
+            with (
+                patch.object(news, "CONTENT_DIR", content_dir),
+                patch.object(news, "GALLERY_CONFIG_FILE", gallery_config),
+                patch.object(news, "get_gallery_folders", return_value=[]),
+            ):
                 rendered = news.parse_and_merge_news(limit=100)
 
         self.assertIn("Publication accepted.", rendered)

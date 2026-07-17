@@ -48,7 +48,7 @@
 <rect class="box" x="92" y="295" width="210" height="125" rx="26"/>
 <rect class="accent-blue" x="114" y="317" width="74" height="8" rx="4"/>
 <text class="label" style="font-size:22px" x="114" y="360">1 Browser</text>
-<text class="small" x="114" y="393">GET /articles</text>
+<text class="small" x="114" y="393">GET / or /daily</text>
 <text class="small" x="114" y="418">or any HTML page</text>
 <rect class="box" x="380" y="295" width="210" height="125" rx="26"/>
 <rect class="accent-cyan" x="402" y="317" width="74" height="8" rx="4"/>
@@ -64,7 +64,7 @@
 <rect class="accent-green" x="992" y="317" width="74" height="8" rx="4"/>
 <text class="label" style="font-size:22px" x="992" y="360">4 Payload</text>
 <text class="small" x="992" y="393">read content/*.md</text>
-<text class="small" x="992" y="418">cache hit/miss</text>
+<text class="small" x="992" y="418">signature cache hit/miss</text>
 <rect class="box" x="1270" y="295" width="210" height="125" rx="26"/>
 <rect class="accent-amber" x="1292" y="317" width="74" height="8" rx="4"/>
 <text class="label" style="font-size:22px" x="1292" y="360">5 Jinja2</text>
@@ -83,7 +83,7 @@
 <text class="small" x="92" y="701">CSS, JS, gallery images, avatar, and documents use cache headers.</text>
 <text class="small" x="92" y="726">FastAPI workers stay focused on HTML, APIs, upload logic, and Markdown parsing.</text>
 <rect class="box-soft" x="110" y="755" width="250" height="42" rx="18"/>
-<text class="mono" x="134" y="782">/static/js/*.js</text>
+<text class="mono" x="134" y="782">/static/*.min.js?v=hash</text>
 <rect class="box-soft" x="390" y="755" width="250" height="42" rx="18"/>
 <text class="mono" x="414" y="782">/uploads/*</text>
 <path class="arrow-muted" d="M485 420 C475 500 450 520 420 560"/>

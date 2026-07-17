@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections import OrderedDict
 from pathlib import Path
 from threading import RLock
@@ -18,6 +19,16 @@ CACHE_MAX_ENTRIES = 256
 # access stays synchronized and entries retain one consistent shape.
 _cache: OrderedDict[tuple[str, Hashable], dict[str, Any]] = OrderedDict()
 _cache_lock = RLock()
+
+
+def cache_path(path: Path) -> Path:
+    """Return a stable absolute key without resolving every path component.
+
+    ``Path.resolve()`` performs an ``lstat`` for every parent on every cache
+    hit. These paths are trusted application paths, so an absolute spelling is
+    sufficient and still follows a replaced symlink when ``stat()`` runs.
+    """
+    return Path(os.path.abspath(os.fspath(path)))
 
 
 def file_signature(path: Path) -> FileSignature:
@@ -68,7 +79,7 @@ def cache_by_mtime(
     An explicit namespace lets one file safely back multiple derived values,
     such as parsed sections, rendered HTML, and structured publications.
     """
-    resolved_path = path.resolve()
+    resolved_path = cache_path(path)
     return cache_by_signature(
         str(resolved_path),
         file_signature(resolved_path),
@@ -93,7 +104,7 @@ def invalidate_namespace(namespace: str) -> None:
 
 def invalidate(path: Path, *, namespace: str | None = None) -> None:
     """Invalidate one or every namespace associated with ``path``."""
-    resolved_key = str(path.resolve())
+    resolved_key = str(cache_path(path))
     with _cache_lock:
         if namespace is not None:
             _cache.pop((namespace, resolved_key), None)

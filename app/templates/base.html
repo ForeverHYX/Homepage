@@ -5,17 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% block meta %}{% endblock %}
     <title>{% block title %}Yixun Hong | Personal Academic Homepage{% endblock %}</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/images/site/favicon-32.png?v=1">
-    <link rel="icon" type="image/png" sizes="64x64" href="/static/images/site/favicon-64.png?v=1">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&family=JetBrains+Mono:wght@400;500&family=Marcellus&family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&text=%E6%B4%AA%E5%A5%95%E8%BF%85&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&family=JetBrains+Mono:wght@400;500&family=Marcellus&family=Source+Sans+3:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&display=swap">
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&text=%E6%B4%AA%E5%A5%95%E8%BF%85&display=swap">
-    </noscript>
-    <link rel="stylesheet" href="/static/css/styles.min.css?v=158">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset_url('images/site/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{{ asset_url('images/site/favicon-64.png') }}">
+    <link rel="preload" href="{{ asset_url('fonts/source-sans-3-latin-v19.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ asset_url('fonts/source-serif-4-latin-v14.woff2') }}" as="font" type="font/woff2" crossorigin>
+    {% block font_preloads %}{% endblock %}
+    <link rel="stylesheet" href="{{ asset_url('fonts/fonts.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('css/styles.min.css') }}">
     <script>
       (function () {
         try {
@@ -104,8 +100,8 @@
         </div>
     </footer>
     <!-- Search dropdown portal target -->
-    <script src="/static/js/effects/lightfield.js?v=100" defer></script>
-    <script src="/static/js/components/site-header.js?v=102" defer></script>
+    <script src="{{ asset_url('js/effects/lightfield.min.js') }}" defer></script>
+    <script src="{{ asset_url('js/components/site-header.min.js') }}" defer></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
