@@ -162,6 +162,17 @@ def _gallery_cache_headers(
     return {"Cache-Control": cache_control, "Vary": "Cookie"}
 
 
+def _admin_redirect(url: str) -> RedirectResponse:
+    response = RedirectResponse(url=url, status_code=303)
+    response.headers.update(
+        {
+            "Cache-Control": "private, no-store",
+            "X-Robots-Tag": "noindex, nofollow",
+        }
+    )
+    return response
+
+
 def _build_markdown_article_payload(
     path: Path, slug: str, back_url: str, back_label: str
 ) -> dict[str, Any]:
@@ -546,7 +557,7 @@ def resume_page(request: Request):
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     if get_current_user(request):
-        return RedirectResponse(url="/upload", status_code=303)
+        return _admin_redirect("/upload")
     response = templates.TemplateResponse(request, "pages/login.html", {})
     response.headers.update(
         {
@@ -560,7 +571,7 @@ def login_page(request: Request):
 @router.get("/upload", response_class=HTMLResponse)
 def upload_page(request: Request):
     if not get_current_user(request):
-        return RedirectResponse(url="/login?next=%2Fupload", status_code=303)
+        return _admin_redirect("/login?next=%2Fupload")
     response = templates.TemplateResponse(request, "pages/upload.html", {})
     response.headers.update(
         {

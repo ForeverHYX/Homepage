@@ -22,6 +22,7 @@ class AnonymousAccessBoundaryTests(TestCase):
 
         self.assertEqual(response.status_code, 303)
         self.assertEqual(response.headers["location"], "/login?next=%2Fupload")
+        self.assertEqual(response.headers["cache-control"], "private, no-store")
         self.assertNotIn("Upload Manager", response.text)
 
     def test_public_navigation_hides_upload_link(self) -> None:
