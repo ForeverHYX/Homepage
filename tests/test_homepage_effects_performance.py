@@ -591,12 +591,10 @@ class HomepageEffectsPerformanceTests(TestCase):
     def test_daily_cards_avoid_nested_backdrop_repaint_cost(self) -> None:
         styles = STYLES_CSS.read_text()
 
-        daily_card = re.search(r"\.daily-card\.home-glass\s*\{(?P<body>.*?)\n\}", styles, re.S)
         daily_action = re.search(r"\.daily-action-button\s*\{(?P<body>.*?)\n\}", styles, re.S)
 
-        self.assertIsNotNone(daily_card)
         self.assertIsNotNone(daily_action)
-        self.assertIn("--home-glass-blur: 18px", daily_card.group("body"))
+        self.assertNotIn(".daily-card.home-glass", styles)
         self.assertIn("backdrop-filter: none", daily_action.group("body"))
         self.assertIn("-webkit-backdrop-filter: none", daily_action.group("body"))
         self.assertNotIn("backdrop-filter: blur", daily_action.group("body"))
