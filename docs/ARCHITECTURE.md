@@ -118,7 +118,7 @@ flowchart LR
 
 - 不存在内置上传密码；哈希为空时认证失败。
 - bcrypt 校验、HttpOnly/SameSite Cookie、HTTPS Secure Cookie 和登录限流共同保护后台。
-- `/upload` 在渲染前服务端鉴权，匿名导航也不会显示 Upload；不依赖前端请求失败后再跳转。
+- `/upload` 在渲染前服务端鉴权；导航只显示常驻个人中心图标，匿名点击进入 Login，认证后进入后台。Logout 使用同源校验的 POST，同时删除文件会话和 Cookie。
 - 不安全方法额外校验浏览器 Origin/Sec-Fetch-Site，降低同站或跨站请求伪造风险。
 - `safe_join()` 阻止上传、删除、相册路径穿越。
 - public Gallery 与少量站点文件可匿名访问；private/hidden/普通文件需登录，或使用 256-bit 随机 token 分享。

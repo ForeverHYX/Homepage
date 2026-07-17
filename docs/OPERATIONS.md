@@ -183,7 +183,7 @@ journalctl -u foreverhyx-homepage --since today | tail -n 100
 - 搜索返回论文/Daily/公开相册。
 - 亮暗主题、News modal、移动菜单可用。
 - Gallery 滚动返回后图片不消失，灯箱仍为原图。
-- 匿名 `/upload` 为 303 且公开导航无 Upload；登录后后台与 private Gallery 正常。
+- 匿名 `/upload` 为 303，个人中心图标进入 Login；登录后图标直达后台，Logout 后旧会话失效，private Gallery 不再可见。
 - private/hidden 普通直链匿名为 404；Copy link 生成的 `/share/<token>` 匿名为 200。
 - `/docs`、`/redoc`、`/openapi.json` 在生产均为 404。
 - Console 无错误。

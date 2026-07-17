@@ -25,12 +25,17 @@ class AnonymousAccessBoundaryTests(TestCase):
         self.assertEqual(response.headers["cache-control"], "private, no-store")
         self.assertNotIn("Upload Manager", response.text)
 
-    def test_public_navigation_hides_upload_link(self) -> None:
+    def test_public_navigation_uses_login_account_control_instead_of_upload_text(self) -> None:
         with patch.object(templating, "get_current_user", return_value=False):
             response = TestClient(app).get("/")
 
         self.assertEqual(response.status_code, 200)
         self.assertNotIn('href="/upload"', response.text)
+        self.assertIn('href="/login?next=%2Fupload"', response.text)
+        self.assertIn('class="action-btn nav-account-link"', response.text)
+        self.assertIn('aria-label="Sign in to Upload Manager"', response.text)
+        self.assertNotIn('class="nav-link" data-route="/upload"', response.text)
+        self.assertNotIn('class="nav-mobile-link" data-route="/upload"', response.text)
 
     def test_authenticated_navigation_and_upload_page_remain_available(self) -> None:
         with (
@@ -41,8 +46,45 @@ class AnonymousAccessBoundaryTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('href="/upload"', response.text)
+        self.assertIn('aria-label="Open Upload Manager"', response.text)
+        self.assertNotIn('class="nav-link" data-route="/upload"', response.text)
+        self.assertNotIn('class="nav-mobile-link" data-route="/upload"', response.text)
         self.assertIn("Upload Manager", response.text)
+        self.assertIn('action="/api/logout"', response.text)
+        self.assertIn("Log out", response.text)
         self.assertEqual(response.headers["cache-control"], "private, no-store")
+
+    def test_logout_destroys_server_session_and_expires_cookie(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            session_file = Path(temp_dir) / ".sessions.json"
+            with (
+                patch.object(auth, "SESSION_FILE", session_file),
+                patch.object(auth, "COOKIE_SECURE", True),
+            ):
+                token = auth.create_session()
+                client = TestClient(app, follow_redirects=False)
+                client.cookies.set(auth.SESSION_KEY, token)
+
+                response = client.post(
+                    "/api/logout",
+                    headers={"Origin": "http://testserver"},
+                )
+                stale_session = client.get(
+                    "/upload",
+                    headers={"Cookie": f"{auth.SESSION_KEY}={token}"},
+                )
+                remaining_sessions = auth._load_sessions()
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/")
+        self.assertEqual(response.headers["cache-control"], "private, no-store")
+        self.assertIn(f'{auth.SESSION_KEY}=""', response.headers["set-cookie"])
+        self.assertIn("Max-Age=0", response.headers["set-cookie"])
+        self.assertIn("HttpOnly", response.headers["set-cookie"])
+        self.assertIn("Secure", response.headers["set-cookie"])
+        self.assertEqual(remaining_sessions, {})
+        self.assertEqual(stale_session.status_code, 303)
+        self.assertEqual(stale_session.headers["location"], "/login?next=%2Fupload")
 
     def test_file_listing_download_and_mutations_require_login(self) -> None:
         client = TestClient(app)
@@ -56,19 +98,26 @@ class AnonymousAccessBoundaryTests(TestCase):
                 data={"path": "blocked", "new_name": "still-blocked.txt"},
             ),
             client.post("/api/files/share", data={"path": "blocked"}),
+            client.post("/api/logout"),
         ]
 
         self.assertTrue(all(response.status_code == 401 for response in responses))
 
-    def test_authenticated_cross_origin_mutation_is_rejected(self) -> None:
+    def test_authenticated_cross_origin_mutations_and_logout_are_rejected(self) -> None:
         with patch.object(auth, "get_current_user", return_value=True):
-            response = TestClient(app).post(
+            client = TestClient(app)
+            mutation_response = client.post(
                 "/api/folder",
                 data={"name": "blocked"},
                 headers={"Origin": "https://attacker.example"},
             )
+            logout_response = client.post(
+                "/api/logout",
+                headers={"Origin": "https://attacker.example"},
+            )
 
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(mutation_response.status_code, 403)
+        self.assertEqual(logout_response.status_code, 403)
 
     def test_robots_excludes_admin_api_and_share_routes(self) -> None:
         response = TestClient(app).get("/robots.txt")

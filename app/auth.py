@@ -163,6 +163,7 @@ def destroy_session(token: str) -> None:
 def get_cookie_settings() -> dict:
     return {
         "key": SESSION_KEY,
+        "path": "/",
         "httponly": True,
         "secure": COOKIE_SECURE,
         "samesite": "lax",

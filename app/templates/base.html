@@ -48,9 +48,6 @@
                                 <a href="/daily" class="nav-link" data-route="/daily">Daily</a>
                                 <a href="/gallery" class="nav-link" data-route="/gallery">Gallery</a>
                                 <a href="/resume" class="nav-link" data-route="/resume">Resume</a>
-                                {% if show_upload_navigation %}
-                                <a href="/upload" class="nav-link" data-route="/upload">Upload</a>
-                                {% endif %}
                             </nav>
                             <div class="nav-divider" aria-hidden="true"></div>
                             <div id="inlineSearchBar" class="search-bar-container">
@@ -70,6 +67,11 @@
                                     <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
                                     <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                                 </button>
+                                {% set account_href = '/upload' if show_upload_navigation else '/login?next=%2Fupload' %}
+                                {% set account_label = 'Open Upload Manager' if show_upload_navigation else 'Sign in to Upload Manager' %}
+                                <a href="{{ account_href }}" class="action-btn nav-account-link" title="{{ account_label }}" aria-label="{{ account_label }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -83,9 +85,6 @@
                             <a href="/daily" class="nav-mobile-link" data-route="/daily">Daily</a>
                             <a href="/gallery" class="nav-mobile-link" data-route="/gallery">Gallery</a>
                             <a href="/resume" class="nav-mobile-link" data-route="/resume">Resume</a>
-                            {% if show_upload_navigation %}
-                            <a href="/upload" class="nav-mobile-link" data-route="/upload">Upload</a>
-                            {% endif %}
                         </nav>
                     </div>
                 </div>

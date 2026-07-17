@@ -365,3 +365,9 @@ footer {
         max-width: min(100%, 180px);
     }
 }
+
+@media (max-width: 400px) {
+    .nav-brand-label-short {
+        display: none;
+    }
+}
