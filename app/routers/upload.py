@@ -4,7 +4,15 @@ from pathlib import Path
 from typing import List
 from urllib.parse import quote
 
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import JSONResponse, FileResponse
 
 from app.config import (
@@ -12,11 +20,22 @@ from app.config import (
     limiter,
 )
 from app.utils import (
-    safe_join, process_uploaded_image, get_folder_meta, save_folder_meta,
-    get_gallery_visibility_map, set_gallery_folder_visibility, toggle_gallery_folder
+    get_folder_meta,
+    get_gallery_visibility_map,
+    process_uploaded_image,
+    safe_join,
+    save_folder_meta,
+    set_gallery_folder_visibility,
+    toggle_gallery_folder,
 )
 from app.auth import require_login
-from app.gallery_thumbnail_utils import THUMBNAIL_DIR_NAME, get_gallery_thumbnail_path
+from app.gallery_thumbnail_utils import (
+    GALLERY_THUMBNAIL_SOURCE_EXTENSIONS,
+    THUMBNAIL_DIR_NAME,
+    ensure_gallery_thumbnail,
+    gallery_thumbnail_source_mutation,
+    get_gallery_thumbnail_cache_paths,
+)
 
 router = APIRouter()
 
@@ -124,9 +143,12 @@ def _prune_empty_thumbnail_parents(path: Path) -> None:
 
 
 def _remove_thumbnail_for_file(path: Path) -> None:
-    thumbnail_path = get_gallery_thumbnail_path(Path(UPLOAD_DIR).resolve(), path)
-    thumbnail_path.unlink(missing_ok=True)
-    _prune_empty_thumbnail_parents(thumbnail_path)
+    upload_dir = Path(UPLOAD_DIR).resolve()
+    thumbnail_paths = get_gallery_thumbnail_cache_paths(upload_dir, path)
+    for thumbnail_path in thumbnail_paths:
+        thumbnail_path.unlink(missing_ok=True)
+    for thumbnail_path in thumbnail_paths:
+        _prune_empty_thumbnail_parents(thumbnail_path)
 
 
 def _remove_gallery_entries(relative_path: str) -> None:
@@ -142,19 +164,26 @@ def _delete_upload_item(path: str) -> str:
 
     if target.is_dir():
         thumbnail_dir = Path(UPLOAD_DIR) / THUMBNAIL_DIR_NAME / relative_path
-        shutil.rmtree(target)
-        shutil.rmtree(thumbnail_dir, ignore_errors=True)
+        with gallery_thumbnail_source_mutation():
+            shutil.rmtree(target)
+            shutil.rmtree(thumbnail_dir, ignore_errors=True)
         _remove_gallery_entries(relative_path)
     else:
-        target.unlink()
-        _remove_thumbnail_for_file(target)
+        with gallery_thumbnail_source_mutation():
+            target.unlink()
+            _remove_thumbnail_for_file(target)
 
     return relative_path
 
 
 @router.post("/api/upload")
 @limiter.limit("30/minute")
-async def upload_file_api(request: Request, file: UploadFile = File(...), path: str = Form("")) -> JSONResponse:
+async def upload_file_api(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    path: str = Form(""),
+) -> JSONResponse:
     require_login(request)
     if not file.filename:
         raise HTTPException(status_code=400, detail="Missing filename")
@@ -191,15 +220,20 @@ async def upload_file_api(request: Request, file: UploadFile = File(...), path: 
 
     # Process Image (JPG -> WebP)
     final_name = process_uploaded_image(target_path)
-    
-    # Return relative URL
-    rel_path = _relative_upload_path(target_path.parent)
-    if rel_path == ".":
-        url = f"/uploads/{final_name}"
-    else:
-        url = f"/uploads/{rel_path}/{final_name}"
+    final_path = target_path.with_name(final_name)
+    if final_path.suffix.lower() in GALLERY_THUMBNAIL_SOURCE_EXTENSIONS:
+        background_tasks.add_task(
+            ensure_gallery_thumbnail,
+            Path(UPLOAD_DIR).resolve(),
+            final_path.resolve(),
+        )
 
-    return JSONResponse({"filename": final_name, "url": url})
+    return JSONResponse(
+        {
+            "filename": final_name,
+            "url": _upload_url(_relative_upload_path(final_path)),
+        }
+    )
 
 
 @router.post("/api/folder")
@@ -360,10 +394,17 @@ def rename_file_api(
     if destination.exists():
         raise HTTPException(status_code=409, detail="A file with that name already exists")
 
-    old_thumbnail = get_gallery_thumbnail_path(Path(UPLOAD_DIR).resolve(), target)
-    target.rename(destination)
-    old_thumbnail.unlink(missing_ok=True)
-    _prune_empty_thumbnail_parents(old_thumbnail)
+    upload_dir = Path(UPLOAD_DIR).resolve()
+    thumbnail_paths = (
+        get_gallery_thumbnail_cache_paths(upload_dir, target)
+        | get_gallery_thumbnail_cache_paths(upload_dir, destination)
+    )
+    with gallery_thumbnail_source_mutation():
+        target.rename(destination)
+        for thumbnail_path in thumbnail_paths:
+            thumbnail_path.unlink(missing_ok=True)
+    for thumbnail_path in thumbnail_paths:
+        _prune_empty_thumbnail_parents(thumbnail_path)
 
     return JSONResponse({"detail": "Renamed", **_file_payload(destination)})
 

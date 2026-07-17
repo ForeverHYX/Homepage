@@ -58,11 +58,26 @@ class GalleryVisibilityTests(TestCase):
                 with patch("app.routers.pages.get_current_user", return_value=False):
                     response = TestClient(app).get("/api/site/gallery")
                 self.assertEqual(response.status_code, 200)
-                self.assertEqual(response.headers["cache-control"], "public, max-age=60")
+                self.assertEqual(response.headers["cache-control"], "no-store")
                 self.assertEqual(response.headers["vary"], "Cookie")
                 self.assertEqual(
                     {album["rel_path"] for album in response.json()["albums"]},
                     {"Legacy", "Public"},
+                )
+
+                with patch("app.routers.pages.get_current_user", return_value=False):
+                    warm_response = TestClient(app).get("/api/site/gallery")
+                self.assertEqual(
+                    warm_response.headers["cache-control"],
+                    "public, max-age=60",
+                )
+                self.assertTrue(
+                    all(
+                        image_url.startswith("/uploads/_thumbs/")
+                        and "?v=2-" in image_url
+                        for album in warm_response.json()["albums"]
+                        for image_url in album["images"]
+                    )
                 )
 
                 with patch("app.routers.pages.get_current_user", return_value=True):

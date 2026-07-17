@@ -1,10 +1,12 @@
 import json
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from app import gallery_utils
 from app.main import app
@@ -12,6 +14,39 @@ from app.routers import upload
 
 
 class UploadFileManagementTests(TestCase):
+    def test_image_upload_prewarms_gallery_thumbnail_after_response(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            upload_dir = Path(temp_dir)
+            image_bytes = BytesIO()
+            Image.new("RGB", (80, 60), "navy").save(image_bytes, "WEBP")
+
+            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
+                upload,
+                "require_login",
+                return_value=None,
+            ), patch.object(upload, "ensure_gallery_thumbnail") as ensure_mock:
+                response = TestClient(app).post(
+                    "/api/upload",
+                    data={"path": "Album"},
+                    files={
+                        "file": (
+                            "photo ?# 01.webp",
+                            image_bytes.getvalue(),
+                            "image/webp",
+                        )
+                    },
+                )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.json()["url"],
+                "/uploads/Album/photo%20%3F%23%2001.webp",
+            )
+            ensure_mock.assert_called_once_with(
+                upload_dir.resolve(),
+                (upload_dir / "Album" / "photo ?# 01.webp").resolve(),
+            )
+
     def test_file_list_hides_internal_entries_and_exposes_file_behavior(self) -> None:
         with TemporaryDirectory() as temp_dir:
             upload_dir = Path(temp_dir)
@@ -75,6 +110,38 @@ class UploadFileManagementTests(TestCase):
             stored = json.loads(config_file.read_text(encoding="utf-8"))
             self.assertEqual(stored, {"folders": [], "visibility": {}})
 
+    def test_file_delete_removes_legacy_and_versioned_thumbnail_caches(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            upload_dir = Path(temp_dir)
+            album_dir = upload_dir / "Album"
+            album_dir.mkdir()
+            source = album_dir / "photo.jpg"
+            source.write_bytes(b"image")
+            thumbnail_dir = upload_dir / "_thumbs" / "Album"
+            thumbnail_dir.mkdir(parents=True)
+            thumbnail_paths = [
+                thumbnail_dir / "photo.webp",
+                thumbnail_dir / "photo.jpg.webp",
+                thumbnail_dir / "photo.jpg.v1.webp",
+                thumbnail_dir / "photo.jpg.v2.webp",
+            ]
+            for thumbnail_path in thumbnail_paths:
+                thumbnail_path.write_bytes(b"thumb")
+
+            with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
+                upload,
+                "require_login",
+                return_value=None,
+            ):
+                response = TestClient(app).post(
+                    "/api/files/delete",
+                    data={"path": "Album/photo.jpg"},
+                )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertFalse(source.exists())
+            self.assertTrue(all(not path.exists() for path in thumbnail_paths))
+
     def test_rename_handles_spaces_conflicts_and_thumbnail_cleanup(self) -> None:
         with TemporaryDirectory() as temp_dir:
             upload_dir = Path(temp_dir)
@@ -82,9 +149,20 @@ class UploadFileManagementTests(TestCase):
             album_dir.mkdir()
             original = album_dir / "old photo.webp"
             original.write_bytes(b"image")
-            thumbnail = upload_dir / "_thumbs" / "Album" / "old photo.webp.webp"
-            thumbnail.parent.mkdir(parents=True)
-            thumbnail.write_bytes(b"thumb")
+            thumbnail_dir = upload_dir / "_thumbs" / "Album"
+            thumbnail_dir.mkdir(parents=True)
+            thumbnail_paths = [
+                thumbnail_dir / "old photo.webp",
+                thumbnail_dir / "old photo.webp.webp",
+                thumbnail_dir / "old photo.webp.v1.webp",
+                thumbnail_dir / "old photo.webp.v2.webp",
+                thumbnail_dir / "new photo.webp",
+                thumbnail_dir / "new photo.webp.webp",
+                thumbnail_dir / "new photo.webp.v1.webp",
+                thumbnail_dir / "new photo.webp.v2.webp",
+            ]
+            for thumbnail_path in thumbnail_paths:
+                thumbnail_path.write_bytes(b"thumb")
 
             with patch.object(upload, "UPLOAD_DIR", upload_dir), patch.object(
                 upload, "require_login", return_value=None
@@ -107,6 +185,6 @@ class UploadFileManagementTests(TestCase):
             self.assertEqual(response.json()["name"], "new photo.webp")
             self.assertFalse(original.exists())
             self.assertTrue((album_dir / "new photo.webp").exists())
-            self.assertFalse(thumbnail.exists())
+            self.assertTrue(all(not path.exists() for path in thumbnail_paths))
             self.assertEqual(invalid.status_code, 400)
             self.assertEqual(conflict.status_code, 409)

@@ -5,14 +5,25 @@ from urllib.parse import quote, urlencode
 import re
 import markdown
 
-from fastapi import APIRouter, Request, Form, status, HTTPException
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Form,
+    HTTPException,
+    Request,
+    status,
+)
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from app.config import UPLOAD_DIR, limiter
 from app.utils import (
-    parse_markdown_sections, render_markdown_file, get_gallery_folders, 
-    safe_join, get_folder_meta, PdfExtension
+    PdfExtension,
+    get_folder_meta,
+    get_gallery_folders,
+    parse_markdown_sections,
+    render_markdown_file,
+    safe_join,
 )
 from app.markdown_utils import get_publications
 from app.content_utils import get_about_info, parse_and_merge_news, parse_education_timeline, get_raw_section_body
@@ -24,7 +35,13 @@ from app.daily import (
 )
 from app.daily_articles import DAILY_ARTICLES_DIR, ensure_daily_article_markdown
 from app.auth import get_current_user
-from app.gallery_thumbnail_utils import ensure_gallery_thumbnail
+from app.gallery_thumbnail_utils import (
+    GALLERY_IMAGE_EXTENSIONS,
+    ensure_gallery_thumbnail,
+    get_current_gallery_thumbnail,
+    get_gallery_thumbnail_cache_token,
+    warm_gallery_thumbnails,
+)
 
 router = APIRouter()
 
@@ -206,7 +223,11 @@ def _build_daily_payload(keywords: Optional[str] = None, item_type: Optional[str
     return load_daily_payload(keywords=keywords, item_type=item_type, date=date)
 
 
-def _build_gallery_payload(focus: Optional[str] = None, include_private: bool = False) -> dict[str, Any]:
+def _build_gallery_payload(
+    focus: Optional[str] = None,
+    include_private: bool = False,
+    pending_thumbnails: Optional[list[Path]] = None,
+) -> dict[str, Any]:
     upload_dir = Path(UPLOAD_DIR).resolve()
     gallery_dirs = get_gallery_folders(include_private=include_private)
     is_focused = False
@@ -227,9 +248,11 @@ def _build_gallery_payload(focus: Optional[str] = None, include_private: bool = 
         full_images = []
         try:
             for file in sorted(list(path.iterdir()), key=lambda item: item.name):
-                if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp", ".gif"]:
+                if file.suffix.lower() in GALLERY_IMAGE_EXTENSIONS:
                     rel_file_path = file.relative_to(upload_dir)
-                    original_url = f"/uploads/{rel_file_path}"
+                    original_url = (
+                        f"/uploads/{quote(str(rel_file_path), safe='/')}"
+                    )
                     full_images.append(original_url)
 
                     # Focus mode preserves the original full-resolution visual.
@@ -239,10 +262,17 @@ def _build_gallery_payload(focus: Optional[str] = None, include_private: bool = 
                         images.append(original_url)
                         continue
 
-                    thumbnail_path = ensure_gallery_thumbnail(upload_dir, file)
+                    if pending_thumbnails is None:
+                        thumbnail_path = ensure_gallery_thumbnail(upload_dir, file)
+                    else:
+                        thumbnail_path = get_current_gallery_thumbnail(upload_dir, file)
+                        if thumbnail_path is None:
+                            pending_thumbnails.append(file)
                     if thumbnail_path:
                         thumb_rel_path = thumbnail_path.relative_to(upload_dir)
-                        images.append(f"/uploads/{thumb_rel_path}")
+                        cache_token = get_gallery_thumbnail_cache_token(file)
+                        thumb_url = quote(str(thumb_rel_path), safe="/")
+                        images.append(f"/uploads/{thumb_url}?v={cache_token}")
                     else:
                         images.append(original_url)
         except Exception:
@@ -284,6 +314,7 @@ def _build_gallery_payload(focus: Optional[str] = None, include_private: bool = 
         albums.append({
             "path_name": path.name,
             "rel_path": rel_path,
+            "focus_url": f"/gallery?{urlencode({'focus': rel_path})}",
             "title": meta.get("title", path.name),
             "desc": meta.get("description", ""),
             "date_str": date_str,
@@ -308,8 +339,16 @@ def _build_gallery_payload(focus: Optional[str] = None, include_private: bool = 
     }
 
 
-def _gallery_cache_headers(include_private: bool) -> dict[str, str]:
-    cache_control = "private, no-store" if include_private else "public, max-age=60"
+def _gallery_cache_headers(
+    include_private: bool,
+    thumbnails_pending: bool = False,
+) -> dict[str, str]:
+    if include_private:
+        cache_control = "private, no-store"
+    elif thumbnails_pending:
+        cache_control = "no-store"
+    else:
+        cache_control = "public, max-age=60"
     return {"Cache-Control": cache_control, "Vary": "Cookie"}
 
 
@@ -468,11 +507,31 @@ def daily_api(request: Request, keyword: Optional[str] = None, keywords: Optiona
 
 
 @router.get("/api/site/gallery")
-def gallery_api(request: Request, focus: Optional[str] = None) -> Any:
+def gallery_api(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    focus: Optional[str] = None,
+) -> Any:
     include_private = bool(get_current_user(request))
+    pending_thumbnails: list[Path] = []
+    payload = _build_gallery_payload(
+        focus,
+        include_private=include_private,
+        pending_thumbnails=pending_thumbnails,
+    )
+    if pending_thumbnails:
+        background_tasks.add_task(
+            warm_gallery_thumbnails,
+            Path(UPLOAD_DIR).resolve(),
+            tuple(pending_thumbnails),
+        )
     return JSONResponse(
-        _build_gallery_payload(focus, include_private=include_private),
-        headers=_gallery_cache_headers(include_private),
+        payload,
+        headers=_gallery_cache_headers(
+            include_private,
+            thumbnails_pending=bool(pending_thumbnails),
+        ),
+        background=background_tasks,
     )
 
 
@@ -608,15 +667,40 @@ def daily_article_detail_page(request: Request, slug: str):
 
 
 @router.get("/gallery", response_class=HTMLResponse)
-def gallery_page(request: Request, focus: Optional[str] = None):
+def gallery_page(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    focus: Optional[str] = None,
+):
     include_private = bool(get_current_user(request))
-    payload = _build_gallery_payload(focus, include_private=include_private)
-    response = templates.TemplateResponse(request, "pages/gallery.html", {
-        "albums": payload["albums"],
-        "is_focused": payload["is_focused"],
-        "focus": payload["focus"],
-    })
-    response.headers.update(_gallery_cache_headers(include_private))
+    pending_thumbnails: list[Path] = []
+    payload = _build_gallery_payload(
+        focus,
+        include_private=include_private,
+        pending_thumbnails=pending_thumbnails,
+    )
+    if pending_thumbnails:
+        background_tasks.add_task(
+            warm_gallery_thumbnails,
+            Path(UPLOAD_DIR).resolve(),
+            tuple(pending_thumbnails),
+        )
+    response = templates.TemplateResponse(
+        request,
+        "pages/gallery.html",
+        {
+            "albums": payload["albums"],
+            "is_focused": payload["is_focused"],
+            "focus": payload["focus"],
+        },
+        background=background_tasks,
+    )
+    response.headers.update(
+        _gallery_cache_headers(
+            include_private,
+            thumbnails_pending=bool(pending_thumbnails),
+        )
+    )
     return response
 
 
