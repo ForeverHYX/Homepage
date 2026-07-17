@@ -52,13 +52,14 @@ df -h /root/newhomepage
 - `content/`
 - `uploads/`（包括原图；缩略图可选）
 - `gallery_config.json`
+- `.share-links.json`（必须与对应 uploads 同步，保留历史分享 URL）
 - `.sessions.json`（可选，通常恢复时应丢弃）
 
 ```bash
 install -d -m 0700 /root/homepage-backups
 tar -C /root/newhomepage -czf \
   /root/homepage-backups/homepage-data-$(date -u +%Y%m%dT%H%M%SZ).tar.gz \
-  .env .sessions.json content uploads gallery_config.json
+  .env .sessions.json .share-links.json content uploads gallery_config.json
 chmod 0600 /root/homepage-backups/homepage-data-*.tar.gz
 ```
 
@@ -81,7 +82,8 @@ gzip -t /root/homepage-backups/<archive>.tar.gz
 
 ```bash
 systemctl stop foreverhyx-homepage
-tar -C /root/newhomepage -xzf <archive> content uploads gallery_config.json
+tar -C /root/newhomepage -xzf <archive> \
+  content uploads gallery_config.json .share-links.json
 systemctl start foreverhyx-homepage
 curl -fsS https://foreverhyx.top/ >/dev/null
 curl -fsS https://foreverhyx.top/api/search-index >/dev/null
@@ -122,7 +124,9 @@ curl -sS -D - -o /dev/null \
 | --- | --- |
 | 指纹 `/static?v=hash` | 一年、immutable、文本可 gzip |
 | 无指纹 `/static` | 300 秒、非 immutable |
-| `/uploads` | 3600 秒 + 最多 3600 秒 stale-while-revalidate、非 immutable；open-file cache 关闭 |
+| 公开 `/uploads` | 3600 秒 + 最多 3600 秒 stale-while-revalidate、非 immutable |
+| 登录私有 `/uploads` | `private, no-store` |
+| `/share/<token>` | 300 秒、`noindex`；文件主体由 Nginx 发送 |
 | Search API | 60 秒 + stale-while-revalidate 300 秒 |
 | 私有 Gallery | private, no-store |
 
@@ -141,10 +145,10 @@ nginx -T | rg 'gzip_static|location /static' || true
 按顺序检查：
 
 1. 实际文件是否已修改、时间和大小是否变化。
-2. 请求是否命中浏览器 60 秒 API cache 或 uploads 1 小时 cache。
+2. 请求是否命中浏览器 60 秒 API cache、公开 uploads 1 小时 cache 或分享链接 5 分钟 cache。
 3. 应用是否已 reload 以读取新 `asset-manifest.json`。
 4. Gallery visibility 是否为 public/private 的预期状态。
-5. Nginx alias 是否仍指向 `/root/newhomepage`。
+5. `/uploads/` 是否代理到 FastAPI，`/_homepage_uploads/` internal alias 是否仍指向 `/root/newhomepage/uploads/`。
 
 Markdown、metadata 和搜索缓存不需要人工清理；签名变化会自动失效。如果是紧急替换可变上传，优先使用新文件名或通过 `upload_url()` 版本化，而不是把整个站点设为 no-cache。
 
@@ -179,6 +183,9 @@ journalctl -u foreverhyx-homepage --since today | tail -n 100
 - 搜索返回论文/Daily/公开相册。
 - 亮暗主题、News modal、移动菜单可用。
 - Gallery 滚动返回后图片不消失，灯箱仍为原图。
+- 匿名 `/upload` 为 303 且公开导航无 Upload；登录后后台与 private Gallery 正常。
+- private/hidden 普通直链匿名为 404；Copy link 生成的 `/share/<token>` 匿名为 200。
+- `/docs`、`/redoc`、`/openapi.json` 在生产均为 404。
 - Console 无错误。
 - Nginx 配置通过，service active。
 - mobile/desktop Lighthouse 各三轮无明显回归。

@@ -11,7 +11,7 @@ from fastapi import (
     HTTPException,
     Request,
 )
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
 from app.config import UPLOAD_DIR
 from app.templating import templates
@@ -358,6 +358,10 @@ def robots_txt():
         [
             "User-agent: *",
             "Allow: /",
+            "Disallow: /api/",
+            "Disallow: /login",
+            "Disallow: /share/",
+            "Disallow: /upload",
             "",
             f"Sitemap: {SITE_URL}/sitemap.xml",
             "",
@@ -541,9 +545,27 @@ def resume_page(request: Request):
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse(request, "pages/login.html", {})
+    if get_current_user(request):
+        return RedirectResponse(url="/upload", status_code=303)
+    response = templates.TemplateResponse(request, "pages/login.html", {})
+    response.headers.update(
+        {
+            "Cache-Control": "private, no-store",
+            "X-Robots-Tag": "noindex, nofollow",
+        }
+    )
+    return response
 
 
 @router.get("/upload", response_class=HTMLResponse)
 def upload_page(request: Request):
-    return templates.TemplateResponse(request, "pages/upload.html", {})
+    if not get_current_user(request):
+        return RedirectResponse(url="/login?next=%2Fupload", status_code=303)
+    response = templates.TemplateResponse(request, "pages/upload.html", {})
+    response.headers.update(
+        {
+            "Cache-Control": "private, no-store",
+            "X-Robots-Tag": "noindex, nofollow",
+        }
+    )
+    return response

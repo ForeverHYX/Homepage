@@ -8,8 +8,8 @@ import uvicorn
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
-from app.config import BASE_DIR, UPLOAD_DIR, limiter
-from app.routers import pages, upload, auth
+from app.config import BASE_DIR, ENABLE_API_DOCS, limiter
+from app.routers import auth, media, pages, upload
 from app.templating import templates
 
 
@@ -33,7 +33,13 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 def create_app() -> FastAPI:
     """Create the complete ASGI application for tests and production."""
-    application = FastAPI(title="Yixun Hong's Homepage", version="1.0.0")
+    application = FastAPI(
+        title="Yixun Hong's Homepage",
+        version="1.0.0",
+        docs_url="/docs" if ENABLE_API_DOCS else None,
+        redoc_url="/redoc" if ENABLE_API_DOCS else None,
+        openapi_url="/openapi.json" if ENABLE_API_DOCS else None,
+    )
     application.state.limiter = limiter
     application.add_exception_handler(
         RateLimitExceeded,
@@ -44,14 +50,14 @@ def create_app() -> FastAPI:
         http_exception_handler,
     )
 
-    # Nginx serves these paths in production; these mounts keep local
-    # development and TestClient fully self-contained.
+    # Nginx serves fingerprinted static assets in production. Uploaded media
+    # uses the media router so authorization is identical in every environment.
     application.mount(
         "/static",
         StaticFiles(directory=str(BASE_DIR / "static")),
         name="static",
     )
-    application.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+    application.include_router(media.router)
     application.include_router(pages.router)
     application.include_router(upload.router)
     application.include_router(auth.router)

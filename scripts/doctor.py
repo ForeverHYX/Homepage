@@ -142,6 +142,21 @@ def _check_environment(report: Report, *, production: bool) -> None:
     elif session_file.exists():
         report.ok("session file is owner-only")
 
+    share_file = Path(
+        os.getenv(
+            "HOMEPAGE_SHARE_LINK_FILE",
+            values.get("HOMEPAGE_SHARE_LINK_FILE", ROOT / ".share-links.json"),
+        )
+    )
+    if not share_file.is_absolute():
+        share_file = ROOT / share_file
+    if share_file.exists() and (share_file.stat().st_mode & 0o077):
+        report.fail(f"share-link file permissions are too broad: {share_file}")
+    elif share_file.exists():
+        report.ok("share-link file is owner-only")
+    else:
+        report.ok("share-link file will be created owner-only on first use")
+
 
 def _check_build(report: Report) -> None:
     result = subprocess.run(

@@ -55,7 +55,7 @@
 <rect class="chip" x="560" y="280" width="142" height="31" rx="15.5"/>
 <text class="chip-text" x="576" y="301">/static/* direct</text>
 <rect class="chip" x="734" y="280" width="158" height="31" rx="15.5"/>
-<text class="chip-text" x="750" y="301">/uploads/* direct</text>
+<text class="chip-text" x="750" y="301">/uploads/* auth</text>
 <rect class="chip" x="922" y="280" width="162" height="31" rx="15.5"/>
 <text class="chip-text" x="938" y="301">/* and /api/* proxy</text>
 <path class="arrow" d="M370 240 C440 240 452 236 520 236"/>
@@ -70,13 +70,13 @@
 <rect class="accent-amber" x="642" y="452" width="74" height="8" rx="4"/>
 <text class="label" x="642" y="495">Uploaded files</text>
 <text class="small" x="642" y="528">Gallery images and documents</text>
-<text class="small" x="642" y="553">1-hour mutable cache</text>
-<text class="small" x="642" y="578">Served by Nginx alias</text>
+<text class="small" x="642" y="553">FastAPI access decision</text>
+<text class="small" x="642" y="578">Bytes via internal Nginx alias</text>
 <rect class="box" x="1100" y="405" width="380" height="190" rx="26"/>
 <rect class="accent-rose" x="1122" y="427" width="74" height="8" rx="4"/>
 <text class="label" x="1122" y="470">Application traffic</text>
 <text class="small" x="1122" y="503">proxy_pass 127.0.0.1:8000</text>
-<text class="small" x="1122" y="528">HTML pages and JSON APIs</text>
+<text class="small" x="1122" y="528">HTML, JSON, and media auth</text>
 <text class="small" x="1122" y="553">Rate limited with burst=60</text>
 <path class="arrow" d="M645 330 C555 370 420 380 280 430"/>
 <path class="arrow" d="M806 330 C820 376 815 396 800 430"/>

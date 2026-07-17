@@ -326,14 +326,7 @@
             }));
 
             actions.appendChild(iconButton(iconSvg("copy"), "Copy link", function () {
-                if (!item.url) return;
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(item.url).then(function () {
-                        showToast("Link copied");
-                    });
-                } else {
-                    showToast(item.url);
-                }
+                copyShareLink(item);
             }));
 
             actions.appendChild(iconButton(iconSvg("trash"), "Delete file", function () {
@@ -350,6 +343,35 @@
 
     function refresh() {
         return fetchFiles(state.currentPath);
+    }
+
+    function copyShareLink(item) {
+        if (!item.path) return;
+        var formData = new FormData();
+        formData.append("path", item.path);
+        requestJson("/api/files/share", {
+            method: "POST",
+            body: formData,
+            credentials: "include"
+        })
+            .then(function (data) {
+                var shareUrl = new URL(data.url, window.location.origin).href;
+                if (!navigator.clipboard) {
+                    showToast(shareUrl);
+                    return;
+                }
+                return navigator.clipboard.writeText(shareUrl).then(function () {
+                    showToast("Share link copied");
+                }, function () {
+                    showToast(shareUrl);
+                });
+            })
+            .catch(function (err) {
+                console.error(err);
+                if (err.message !== "Unauthorized") {
+                    showToast(err.message || "Share link failed");
+                }
+            });
     }
 
     function deleteItem(item) {

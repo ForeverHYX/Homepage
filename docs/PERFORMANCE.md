@@ -61,7 +61,7 @@
 - 缓存单飞避免冷请求并发重复解析，并限制在 256 项。
 - Gallery 冷缩略图在响应后预热，重叠预热任务合并。
 - 路径缓存 key 使用稳定绝对路径，避免每次命中都逐级 `resolve/lstat`。
-- Nginx 直接服务静态/上传文件，动态 worker 不参与这些请求；指纹静态文件缓存 open metadata，而可原子替换的 uploads 明确关闭 open-file cache。
+- Nginx 直接服务静态文件；上传请求由 FastAPI 做一次轻量访问判定后通过 `X-Accel-Redirect` 交回 Nginx，Python 不传输文件主体。公开 uploads 保守缓存，私有资源 `no-store`，internal alias 关闭 open-file cache。
 - 单 worker + preload 避免重复应用对象和内容缓存。
 
 ## 明确不采用的优化
@@ -158,4 +158,4 @@ make check
 make profile URL=http://127.0.0.1:8000
 ```
 
-随后手工/自动验证亮暗主题、桌面与移动导航、搜索、News modal、Daily filters、Gallery 滚动/灯箱、Resume、Login 和上传重定向。性能提升只有在这些行为全部不变时才成立。
+随后手工/自动验证亮暗主题、桌面与移动导航、搜索、News modal、Daily filters、Gallery 滚动/灯箱、Resume、Login、匿名上传重定向，以及登录后 Copy link 的匿名可访问性。性能提升只有在这些行为全部不变时才成立。

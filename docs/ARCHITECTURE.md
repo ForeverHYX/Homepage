@@ -10,29 +10,33 @@ flowchart LR
         Nginx[Nginx<br/>TLS、限流、gzip_static]
         Gunicorn[Gunicorn<br/>1 worker、preload]
         FastAPI[FastAPI<br/>create_app]
-        Routers[routers<br/>pages / auth / upload]
-        Services[services<br/>content / gallery / search]
+        Routers[routers<br/>pages / auth / upload / media]
+        Services[services<br/>content / gallery / search / share links]
         Cache[内存缓存<br/>文件签名、最多 256 项]
         Static[(static<br/>指纹资源与预压缩文件)]
         Files[(content / uploads<br/>Markdown、JSON、图片、PDF)]
         Sessions[(.sessions.json<br/>原子写、0600)]
+        Shares[(.share-links.json<br/>随机 token、0600)]
     end
 
     Browser -->|HTML 与 /api| Nginx
     Browser -->|/static?v=hash| Nginx
-    Browser -->|/uploads| Nginx
+    Browser -->|/uploads 或 /share| Nginx
     Nginx -->|反向代理| Gunicorn
     Nginx --> Static
-    Nginx --> Files
+    Nginx -->|上传访问判定| Gunicorn
+    FastAPI -->|X-Accel-Redirect| Nginx
+    Nginx -->|internal alias 发送字节| Files
     Gunicorn --> FastAPI
     FastAPI --> Routers
     Routers --> Services
     Services <--> Cache
     Services --> Files
     Routers --> Sessions
+    Routers --> Shares
 ```
 
-边界非常明确：Nginx 处理网络、静态传输和缓存头；FastAPI 只处理动态 HTML/JSON 与管理写操作；内容本身保存在文件系统，没有数据库。
+边界非常明确：Nginx 处理网络、静态传输和实际文件字节；FastAPI 处理动态 HTML/JSON、管理写操作，并对上传路径做公开、会话或 share-token 判定。授权通过后用内部跳转把传输交还 Nginx，内容本身仍保存在文件系统，没有数据库。
 
 ## 应用分层
 
@@ -102,19 +106,23 @@ flowchart LR
 ## 状态与一致性
 
 - `content/`：公开内容和 Daily 快照。读取缓存按签名自动失效。
-- `uploads/`：可变二进制与相册 `meta.json`。删除、重命名、写元数据均经过安全路径拼接和原子写。
+- `uploads/`：可变二进制与相册 `meta.json`。普通文件默认私有；显式站点资源和 public Gallery 可匿名读取；删除、重命名、写元数据均经过安全路径拼接。
 - `gallery_config.json`：public/private/hidden 状态。写操作有进程内锁和原子替换。
 - `.sessions.json`：单 worker 会话存储。文件为 0600，写入先 fsync 临时文件再 `os.replace`。
+- `.share-links.json`：`token -> 文件路径` 的持久映射，同样以 0600 原子写；重命名保留 token，删除同步移除。
 - `static/`：发布产物。运行期间只读，URL 由构建清单决定。
 
-当前设计刻意使用一个 Gunicorn worker：文件会话和进程内缓存不需要跨进程协调，内存占用也更低。若未来扩展到多 worker，必须先把会话迁移到共享存储，并接受每个 worker 各自维护内容缓存。
+当前设计刻意使用一个 Gunicorn worker：文件会话、分享映射和进程内缓存不需要跨进程协调，内存占用也更低。若未来扩展到多 worker，必须先把会话与分享映射迁移到共享存储，并接受每个 worker 各自维护内容缓存。
 
 ## 安全边界
 
 - 不存在内置上传密码；哈希为空时认证失败。
 - bcrypt 校验、HttpOnly/SameSite Cookie、HTTPS Secure Cookie 和登录限流共同保护后台。
+- `/upload` 在渲染前服务端鉴权，匿名导航也不会显示 Upload；不依赖前端请求失败后再跳转。
+- 不安全方法额外校验浏览器 Origin/Sec-Fetch-Site，降低同站或跨站请求伪造风险。
 - `safe_join()` 阻止上传、删除、相册路径穿越。
-- Nginx 对动态请求限流；静态请求不占 FastAPI worker。
-- `.env`、生产上传、会话文件不进入 Git。
+- public Gallery 与少量站点文件可匿名访问；private/hidden/普通文件需登录，或使用 256-bit 随机 token 分享。
+- Nginx 对动态请求限流；上传授权会经过 FastAPI，但文件字节由 Nginx internal alias 发送。
+- `.env`、生产上传、会话与分享文件不进入 Git。
 
 部署拓扑和配置位置见 [DEPLOYMENT.md](DEPLOYMENT.md)，日常备份与恢复见 [OPERATIONS.md](OPERATIONS.md)。

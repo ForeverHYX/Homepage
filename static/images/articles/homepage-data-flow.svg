@@ -78,10 +78,10 @@
 <text class="line-label" x="650" y="483">text/html returned to browser</text>
 <rect class="box" x="60" y="560" width="700" height="270" rx="26"/>
 <rect class="accent-green" x="92" y="594" width="86" height="8" rx="4"/>
-<text class="label" x="92" y="636">Assets bypass Python</text>
-<text class="small" x="92" y="676">Nginx serves /static/* and /uploads/* directly.</text>
-<text class="small" x="92" y="701">CSS, JS, gallery images, avatar, and documents use cache headers.</text>
-<text class="small" x="92" y="726">FastAPI workers stay focused on HTML, APIs, upload logic, and Markdown parsing.</text>
+<text class="label" x="92" y="636">Nginx sends asset bytes</text>
+<text class="small" x="92" y="676">/static is direct; /uploads gets a lightweight access decision.</text>
+<text class="small" x="92" y="701">Authorized media returns through an internal X-Accel redirect.</text>
+<text class="small" x="92" y="726">FastAPI never streams gallery images, avatar, or shared documents.</text>
 <rect class="box-soft" x="110" y="755" width="250" height="42" rx="18"/>
 <text class="mono" x="134" y="782">/static/*.min.js?v=hash</text>
 <rect class="box-soft" x="390" y="755" width="250" height="42" rx="18"/>

@@ -24,4 +24,5 @@ test_jsdom.js
 uvicorn.log
 
 .sessions.json
+.share-links.json
 artifacts/

@@ -14,6 +14,16 @@ from app.routers import upload
 
 
 class UploadFileManagementTests(TestCase):
+    def setUp(self) -> None:
+        self.remove_share_links = patch.object(upload, "remove_share_links", return_value=None)
+        self.move_share_links = patch.object(upload, "move_share_links", return_value=None)
+        self.remove_share_links.start()
+        self.move_share_links.start()
+
+    def tearDown(self) -> None:
+        self.move_share_links.stop()
+        self.remove_share_links.stop()
+
     def test_image_upload_prewarms_gallery_thumbnail_after_response(self) -> None:
         with TemporaryDirectory() as temp_dir:
             upload_dir = Path(temp_dir)

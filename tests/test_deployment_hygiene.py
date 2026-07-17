@@ -18,6 +18,12 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("ExecReload=/bin/kill -s HUP $MAINPID", service)
         self.assertIn("KillSignal=SIGTERM", service)
         self.assertIn("TimeoutStopSec=35", service)
+        self.assertIn("Environment=HOMEPAGE_USE_X_ACCEL_REDIRECT=true", service)
+        self.assertIn("Environment=HOMEPAGE_ENABLE_API_DOCS=false", service)
+        self.assertIn(
+            "Environment=HOMEPAGE_SHARE_LINK_FILE=/root/newhomepage/.share-links.json",
+            service,
+        )
         self.assertNotIn("--access-logfile", service)
         self.assertNotIn("homepage_access.log", service)
 
@@ -34,12 +40,13 @@ class DeploymentHygieneTests(TestCase):
             "add_header Cache-Control $homepage_static_cache_control always;",
             nginx,
         )
-        self.assertIn(
-            'Cache-Control "public, max-age=3600, stale-while-revalidate=3600"',
-            nginx,
-        )
         uploads_location = nginx.split("location /uploads/ {", 1)[1].split("}", 1)[0]
-        self.assertIn("open_file_cache off;", uploads_location)
+        internal_location = nginx.split("location /_homepage_uploads/ {", 1)[1].split("}", 1)[0]
+        self.assertIn("proxy_pass http://127.0.0.1:8000;", uploads_location)
+        self.assertNotIn("alias ", uploads_location)
+        self.assertIn("internal;", internal_location)
+        self.assertIn("alias /root/newhomepage/uploads/;", internal_location)
+        self.assertIn("open_file_cache off;", internal_location)
 
     def test_saved_nginx_config_canonicalizes_https_www_with_permanent_redirect(self) -> None:
         nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")

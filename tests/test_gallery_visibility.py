@@ -341,9 +341,11 @@ class GalleryVisibilityTests(TestCase):
             self.assertIn("No available albums.", response.text)
 
     def test_upload_page_contains_visibility_editor_control(self) -> None:
-        response = TestClient(app).get("/upload")
+        with patch.object(pages, "get_current_user", return_value=True):
+            response = TestClient(app).get("/upload")
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["cache-control"], "private, no-store")
         self.assertIn('id="metaGalleryVisibility"', response.text)
         self.assertIn("Login-only Gallery", response.text)
 

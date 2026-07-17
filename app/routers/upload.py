@@ -13,7 +13,7 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.config import (
     UPLOAD_DIR,
@@ -34,6 +34,16 @@ from app.gallery_thumbnail_utils import (
     ensure_gallery_thumbnail,
     gallery_thumbnail_source_mutation,
     get_gallery_thumbnail_cache_paths,
+)
+from app.services.media import (
+    PRIVATE_MEDIA_CACHE_CONTROL,
+    resolve_upload_file,
+    uploaded_file_response,
+)
+from app.services.share_links import (
+    get_or_create_share_token,
+    move_share_links,
+    remove_share_links,
 )
 
 router = APIRouter()
@@ -218,6 +228,7 @@ def _delete_upload_item(path: str) -> str:
             target.unlink()
             _remove_thumbnail_for_file(target)
 
+    remove_share_links(relative_path)
     return relative_path
 
 
@@ -444,6 +455,7 @@ def rename_file_api(
     target = _resolve_upload_item(path)
     if not target.is_file():
         raise HTTPException(status_code=400, detail="Only files can be renamed")
+    source_relative_path = _relative_upload_path(target)
 
     clean_name = _validate_new_name(new_name)
     destination = target.with_name(clean_name)
@@ -463,12 +475,33 @@ def rename_file_api(
     for thumbnail_path in thumbnail_paths:
         _prune_empty_thumbnail_parents(thumbnail_path)
 
+    move_share_links(source_relative_path, _relative_upload_path(destination))
     return JSONResponse({"detail": "Renamed", **_file_payload(destination)})
 
 
+@router.post("/api/files/share")
+@limiter.limit("30/minute")
+def share_file_api(request: Request, path: str = Form(...)) -> JSONResponse:
+    require_login(request)
+    target = _resolve_upload_item(path)
+    if not target.is_file():
+        raise HTTPException(status_code=400, detail="Only files can be shared")
+    token = get_or_create_share_token(_relative_upload_path(target))
+    return JSONResponse({"url": f"/share/{token}"})
+
+
 @router.get("/api/files/{file_path:path}")
-def download_file_api(file_path: str, download: bool = False) -> FileResponse:
-    target = safe_join(UPLOAD_DIR, file_path)
-    if not target.exists() or not target.is_file():
-        raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(target, filename=target.name if download else None)
+def download_file_api(
+    request: Request,
+    file_path: str,
+    download: bool = False,
+) -> Response:
+    require_login(request)
+    target, relative_path = resolve_upload_file(file_path)
+    return uploaded_file_response(
+        target,
+        relative_path,
+        cache_control=PRIVATE_MEDIA_CACHE_CONTROL,
+        download=download,
+        noindex=True,
+    )

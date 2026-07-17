@@ -48,7 +48,9 @@
                                 <a href="/daily" class="nav-link" data-route="/daily">Daily</a>
                                 <a href="/gallery" class="nav-link" data-route="/gallery">Gallery</a>
                                 <a href="/resume" class="nav-link" data-route="/resume">Resume</a>
+                                {% if show_upload_navigation %}
                                 <a href="/upload" class="nav-link" data-route="/upload">Upload</a>
+                                {% endif %}
                             </nav>
                             <div class="nav-divider" aria-hidden="true"></div>
                             <div id="inlineSearchBar" class="search-bar-container">
@@ -81,7 +83,9 @@
                             <a href="/daily" class="nav-mobile-link" data-route="/daily">Daily</a>
                             <a href="/gallery" class="nav-mobile-link" data-route="/gallery">Gallery</a>
                             <a href="/resume" class="nav-mobile-link" data-route="/resume">Resume</a>
+                            {% if show_upload_navigation %}
                             <a href="/upload" class="nav-mobile-link" data-route="/upload">Upload</a>
+                            {% endif %}
                         </nav>
                     </div>
                 </div>

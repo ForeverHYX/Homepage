@@ -8,6 +8,7 @@ import secrets
 import tempfile
 import time
 from threading import RLock
+from urllib.parse import urlsplit
 
 from fastapi import HTTPException, Request, status
 from passlib.context import CryptContext
@@ -24,6 +25,8 @@ from app.config import (
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SESSION_KEY = "session_token"
 _SESSION_LOCK = RLock()
+_AUTH_CACHE_MISSING = object()
+_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
 def _load_sessions() -> dict[str, float]:
@@ -75,18 +78,48 @@ def _save_sessions(sessions: dict[str, float]) -> None:
 
 
 def get_current_user(request: Request) -> bool:
+    cached = getattr(request.state, "_homepage_upload_authenticated", _AUTH_CACHE_MISSING)
+    if cached is not _AUTH_CACHE_MISSING:
+        return bool(cached)
+
     token = request.cookies.get(SESSION_KEY)
     if not token:
+        request.state._homepage_upload_authenticated = False
         return False
     with _SESSION_LOCK:
         sessions = _load_sessions()
         expiry = sessions.get(token)
         if expiry and expiry > time.time():
+            request.state._homepage_upload_authenticated = True
             return True
         if expiry is not None:
             sessions.pop(token, None)
             _save_sessions(sessions)
+    request.state._homepage_upload_authenticated = False
     return False
+
+
+def _require_same_origin(request: Request) -> None:
+    """Reject browser-originated unsafe requests from another origin.
+
+    Non-browser clients commonly omit Origin and Sec-Fetch-Site, so an absent
+    pair remains valid. Browsers provide at least one of them for cross-site
+    form/fetch requests, complementing the SameSite cookie policy.
+    """
+
+    if request.method.upper() in _SAFE_METHODS:
+        return
+
+    origin = request.headers.get("origin")
+    if origin:
+        supplied = urlsplit(origin)
+        expected = urlsplit(str(request.base_url))
+        if (supplied.scheme, supplied.netloc) != (expected.scheme, expected.netloc):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden origin")
+        return
+
+    if request.headers.get("sec-fetch-site", "").lower() == "cross-site":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden origin")
 
 
 def require_login(request: Request) -> None:
@@ -95,6 +128,7 @@ def require_login(request: Request) -> None:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized",
         )
+    _require_same_origin(request)
 
 
 def verify_credentials(username: str, password: str) -> bool:
