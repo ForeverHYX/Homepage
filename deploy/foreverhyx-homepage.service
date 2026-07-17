@@ -13,6 +13,7 @@ Environment=HOMEPAGE_USE_X_ACCEL_REDIRECT=true
 Environment=HOMEPAGE_ENABLE_API_DOCS=false
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/root/newhomepage/.venv/bin/gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 --workers 1 --preload --timeout 60 --graceful-timeout 30 --error-logfile /var/log/nginx/homepage_error.log
+# HUP recycles workers from the preloaded master; deploy new code with restart.
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=always
 RestartSec=3

@@ -102,10 +102,10 @@ cd /root/newhomepage
 
 ```bash
 rm -f .sessions.json
-systemctl reload foreverhyx-homepage
+systemctl restart foreverhyx-homepage
 ```
 
-删除 sessions 会让所有现有登录失效。不要把明文密码放入命令参数、shell history、systemd unit 或 Git。
+删除 sessions 会让所有现有登录失效。密码和环境由预载 master 读取，因此修改 `.env` 后必须 restart，不能只 reload。不要把明文密码放入命令参数、shell history、systemd unit 或 Git。
 
 ## 缓存与压缩核查
 

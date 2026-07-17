@@ -127,7 +127,7 @@ systemctl restart foreverhyx-homepage
 systemctl reload nginx
 ```
 
-仅代码变化且 unit 没变时可用 `systemctl reload foreverhyx-homepage`，Gunicorn 会优雅替换 worker。unit、依赖或环境发生变化时使用 restart；`graceful-timeout=30` 和 `SIGTERM` 会给在途请求完成时间。当前 Gunicorn/Uvicorn 组合已验证可在约 0.4 秒完成空闲服务的 application shutdown；不要把 systemd `KillSignal` 改成 `SIGQUIT`。
+代码、模板、环境或依赖发生变化时都使用 `systemctl restart foreverhyx-homepage`。当前启用了 `--preload`，HUP 只会从已经预载的 master 回收 worker，不能保证重新导入刚拉取的 Python 代码；`systemctl reload` 仅用于主动回收同版本 worker。`graceful-timeout=30` 和 `SIGTERM` 会给在途请求完成时间。当前 Gunicorn/Uvicorn 组合已验证可在约 0.4 秒完成空闲服务的 application shutdown；不要把 systemd `KillSignal` 改成 `SIGQUIT`。
 
 ### 4. 健康检查
 
