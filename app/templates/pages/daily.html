@@ -23,15 +23,16 @@
         <div class="article-grid daily-grid">
             <div class="page-stack">
                 {% if filter_keywords %}
-                <div class="card home-glass article-card">
-                    <div class="home-glass-body" style="padding: 24px 28px">
+                <div class="card home-liquid-card daily-filter-summary-card">
+                    <span class="home-liquid-warp" aria-hidden="true"></span>
+                    <div class="home-liquid-body article-filter-bar">
                         <span class="article-filter-label">
                             Filtered by:
                             {% for keyword in filter_keywords %}
-                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip is-active" style="cursor:pointer;text-decoration:none;margin-right:6px">{{ keyword }} &times;</a>
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip is-active">{{ keyword }} &times;</a>
                             {% endfor %}
                         </span>
-                        <a href="{{ type_url(active_item_type) }}" rel="nofollow" class="article-card-link" style="margin-top:0">Clear all</a>
+                        <a href="{{ type_url(active_item_type) }}" rel="nofollow" class="article-card-link">Clear all</a>
                     </div>
                 </div>
                 {% endif %}
@@ -60,7 +61,7 @@
                                 {% endif %}
                                 <div class="chip-list daily-keyword-list">
                                     {% for keyword in item.keywords[:8] %}
-                                    <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip{% if keyword in filter_keywords %} is-active{% endif %}" style="cursor:pointer;text-decoration:none">{{ keyword }}{% if keyword in filter_keywords %} &times;{% endif %}</a>
+                                    <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip{% if keyword in filter_keywords %} is-active{% endif %}">{{ keyword }}{% if keyword in filter_keywords %} &times;{% endif %}</a>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -115,7 +116,7 @@
             </div>
 
             <aside class="sidebar">
-                <div class="card home-liquid-card home-news-card layered-filter-card daily-keywords-card">
+                <div class="card home-liquid-card home-news-card daily-keywords-card">
                     <span class="home-liquid-warp" aria-hidden="true"></span>
                     <div class="home-liquid-body">
                         <div class="daily-sidebar-heading">
@@ -133,9 +134,9 @@
                         <div class="chip-list daily-filter-chips">
                             {% for keyword, count in sorted_keywords[:36] %}
                             {% if keyword in filter_keywords %}
-                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip is-active" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span> &times;</a>
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip is-active">{{ keyword }} <span>({{ count }})</span> &times;</a>
                             {% else %}
-                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip" style="cursor:pointer">{{ keyword }} <span>({{ count }})</span></a>
+                            <a href="{{ keywords_url(filter_keywords, keyword, active_item_type) }}" rel="nofollow" class="chip">{{ keyword }} <span>({{ count }})</span></a>
                             {% endif %}
                             {% endfor %}
                         </div>

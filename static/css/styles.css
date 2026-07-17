@@ -24,7 +24,7 @@
     --danger: #ef4444;
     --warning: #f97316;
     --warning-strong: #ea580c;
-    --daily-action-blue-gradient: linear-gradient(135deg, #93c5fd, #2563eb);
+    --daily-action-blue-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
     --muted: #475569;
 
     /* Unified frosted-liquid material system.
@@ -63,27 +63,57 @@
     --panel-inner: rgba(255, 255, 255, 0.4);
     --panel-shine: rgba(255, 255, 255, 0.08);
 
-    /* Dark mode: keep the same material language, just darker tints so the
-       unified frosted-liquid system reads as one material across cards. */
-    --home-material-face-top: rgba(18, 28, 48, 0.82);
-    --home-material-face-mid: rgba(11, 18, 32, 0.20);
-    --home-material-face-bottom: rgba(20, 28, 44, 0.82);
-    --home-material-tint: rgba(37, 99, 235, 0.12);
-    --home-material-edge: rgba(255, 255, 255, 0.22);
-    --home-material-edge-accent: rgba(96, 165, 250, 0.2);
-    --home-material-shadow: rgba(0, 0, 0, 0.4);
-    --home-material-shadow-soft: rgba(0, 0, 0, 0.22);
-    --home-material-inner-top: rgba(255, 255, 255, 0.16);
-    --home-material-inner-bottom: rgba(148, 163, 184, 0.1);
+    /* Card roles. The site intentionally exposes exactly three material
+       families: navigation chrome, functional/tool cards, and document cards.
+       Navigation keeps its dedicated optical variables below; these tokens
+       keep every other card role identical across pages. */
+    --functional-card-background:
+        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.16) 32%, rgba(255, 255, 255, 0) 56%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(241, 245, 249, 0.18) 52%, rgba(219, 234, 254, 0.24));
+    --functional-card-border: rgba(255, 255, 255, 0.72);
+    --functional-card-shadow:
+        0 18px 42px rgba(73, 92, 138, 0.13),
+        0 4px 12px rgba(73, 92, 138, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.82),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.12),
+        inset 0 -14px 28px rgba(96, 165, 250, 0.06);
+    --functional-card-hover-border: rgba(255, 255, 255, 0.84);
+    --functional-card-hover-shadow:
+        0 24px 50px rgba(73, 92, 138, 0.16),
+        0 8px 18px rgba(73, 92, 138, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.88),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.13),
+        inset 0 -14px 28px rgba(96, 165, 250, 0.07);
+    --functional-card-blur: 26px;
+    --functional-card-saturation: 168%;
 
-    --well-bg: rgba(255, 255, 255, 0.06);
-    --well-border: rgba(255, 255, 255, 0.12);
-    --well-inner: rgba(255, 255, 255, 0.08);
-    --well-shine: rgba(255, 255, 255, 0.04);
-    --panel-bg: rgba(255, 255, 255, 0.12);
-    --panel-border: rgba(255, 255, 255, 0.18);
-    --panel-inner: rgba(255, 255, 255, 0.1);
-    --panel-shine: rgba(255, 255, 255, 0.03);
+    --document-card-face-top: rgba(255, 255, 255, 0.5);
+    --document-card-face-sheen: rgba(255, 255, 255, 0.2);
+    --document-card-face-mid: rgba(255, 255, 255, 0.16);
+    --document-card-face-bottom: rgba(255, 255, 255, 0.28);
+    --document-card-shadow: rgba(73, 92, 138, 0.18);
+    --document-card-shadow-soft: rgba(73, 92, 138, 0.09);
+    --document-card-inner-top: rgba(255, 255, 255, 0.62);
+    --document-card-inner-bottom: rgba(148, 163, 184, 0.1);
+    --document-card-blur: 18px;
+
+    /* Pills are solid frosted sub-layers. They deliberately avoid a nested
+       backdrop sample, which keeps text crisp and prevents dozens of tiny
+       filters from repainting while a card moves. */
+    --pill-rest-color: var(--text);
+    --pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(226, 232, 240, 0.5));
+    --pill-rest-border: rgba(255, 255, 255, 0.92);
+    --pill-rest-shadow:
+        0 6px 16px rgba(71, 85, 105, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.94),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
+    --pill-lit-background: var(--daily-action-blue-gradient);
+    --pill-lit-border: rgba(37, 99, 235, 0.58);
+    --pill-lit-shadow:
+        0 8px 18px rgba(37, 99, 235, 0.24),
+        0 0 0 1px rgba(147, 197, 253, 0.72),
+        inset 0 1px 8px rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(30, 64, 175, 0.2);
 
     /* Legacy aliases — repointed to the unified well/panel tokens so any
        remaining consumer (upload-manager.js inline styles, search dropdown,
@@ -111,6 +141,70 @@
     --warning: #fb923c;
     --warning-strong: #fb923c;
     --muted: #aebdce;
+
+    /* Dark variants belong to the dark theme. Keeping them here (instead of
+       redeclaring them later in :root) prevents the light palette from being
+       silently overwritten. */
+    --home-material-face-top: rgba(18, 28, 48, 0.82);
+    --home-material-face-mid: rgba(11, 18, 32, 0.2);
+    --home-material-face-bottom: rgba(20, 28, 44, 0.82);
+    --home-material-tint: rgba(37, 99, 235, 0.12);
+    --home-material-edge: rgba(255, 255, 255, 0.22);
+    --home-material-edge-accent: rgba(96, 165, 250, 0.2);
+    --home-material-shadow: rgba(0, 0, 0, 0.4);
+    --home-material-shadow-soft: rgba(0, 0, 0, 0.22);
+    --home-material-inner-top: rgba(255, 255, 255, 0.16);
+    --home-material-inner-bottom: rgba(148, 163, 184, 0.1);
+
+    --well-bg: rgba(255, 255, 255, 0.06);
+    --well-border: rgba(255, 255, 255, 0.12);
+    --well-inner: rgba(255, 255, 255, 0.08);
+    --well-shine: rgba(255, 255, 255, 0.04);
+    --panel-bg: rgba(255, 255, 255, 0.12);
+    --panel-border: rgba(255, 255, 255, 0.18);
+    --panel-inner: rgba(255, 255, 255, 0.1);
+    --panel-shine: rgba(255, 255, 255, 0.03);
+
+    --functional-card-background:
+        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 34%, rgba(255, 255, 255, 0) 58%),
+        linear-gradient(160deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.44) 55%, rgba(30, 64, 175, 0.18));
+    --functional-card-border: rgba(255, 255, 255, 0.16);
+    --functional-card-shadow:
+        0 20px 44px rgba(0, 0, 0, 0.32),
+        0 5px 14px rgba(0, 0, 0, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+        inset 0 -14px 28px rgba(37, 99, 235, 0.08);
+    --functional-card-hover-border: rgba(255, 255, 255, 0.22);
+    --functional-card-hover-shadow:
+        0 26px 56px rgba(0, 0, 0, 0.4),
+        0 8px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.36);
+    --functional-card-blur: 24px;
+    --functional-card-saturation: 154%;
+
+    --document-card-face-top: rgba(20, 29, 46, 0.5);
+    --document-card-face-sheen: rgba(30, 41, 59, 0.3);
+    --document-card-face-mid: rgba(11, 18, 32, 0.4);
+    --document-card-face-bottom: rgba(20, 28, 44, 0.52);
+    --document-card-shadow: rgba(0, 0, 0, 0.42);
+    --document-card-shadow-soft: rgba(0, 0, 0, 0.24);
+    --document-card-inner-top: rgba(255, 255, 255, 0.16);
+    --document-card-inner-bottom: rgba(148, 163, 184, 0.1);
+
+    --pill-rest-color: var(--text);
+    --pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(148, 163, 184, 0.08));
+    --pill-rest-border: rgba(255, 255, 255, 0.22);
+    --pill-rest-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.17),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+    --pill-lit-shadow:
+        0 9px 20px rgba(37, 99, 235, 0.3),
+        0 0 0 1px rgba(96, 165, 250, 0.58),
+        inset 0 1px 8px rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(15, 23, 42, 0.28);
 
     --surface: var(--panel-bg);
     --surface-highlight: var(--well-bg);
@@ -196,10 +290,12 @@ a { color: inherit; text-decoration: none; }
 
 .search-result-chip {
     font-size: 11px;
-    background: var(--surface-highlight);
-    color: var(--primary);
+    background: var(--pill-rest-background);
+    color: var(--pill-rest-color);
     padding: 2px 6px;
-    border-radius: 4px;
+    border: 1px solid var(--pill-rest-border);
+    border-radius: 999px;
+    box-shadow: var(--pill-rest-shadow);
 }
 
 /* --- Layout --- */
@@ -762,47 +858,30 @@ a { color: inherit; text-decoration: none; }
     --liquid-content-tint: var(--home-material-tint);
     --liquid-inner-highlight: var(--home-material-inner-top);
     --liquid-inner-shadow: var(--home-material-inner-bottom);
-    /* Functional sidebar cards draw from the same --home-material-* family as
-       the document card and carry a real backdrop-filter blur so they frost
-       the background the same way the doc card does. All sheen layers use
-       fixed anchors / fixed opacities, so no highlight follows the pointer. */
-    --home-material-face-top: rgba(255, 255, 255, 0.28);
-    --home-material-face-mid: rgba(255, 255, 255, 0.10);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.14);
-    --liquid-blur: 24px;
-    --liquid-saturation: 180%;
-    --liquid-brightness: 1.08;
+    /* Functional cards are the second of the site's three material roles.
+       Profile, News, filters, Login, and Upload utilities all inherit this
+       exact face instead of layering page-specific overrides. */
+    --liquid-blur: var(--functional-card-blur);
+    --liquid-saturation: var(--functional-card-saturation);
+    --liquid-brightness: 1.02;
     --liquid-displacement-scale: 25;
     --liquid-aberration: 1.8;
     position: relative;
     overflow: hidden;
     isolation: isolate;
     border-radius: 32px;
-    border: 1px solid var(--home-material-edge);
-    backdrop-filter: blur(30px) saturate(180%) contrast(1.08) brightness(1.04);
-    -webkit-backdrop-filter: blur(30px) saturate(180%) contrast(1.08) brightness(1.04);
-    background:
-        linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 42%, var(--home-material-face-bottom) 100%),
-        linear-gradient(180deg, var(--liquid-content-tint), transparent);
-    box-shadow:
-        0 14px 28px rgba(99, 112, 158, 0.075),
-        0 5px 12px rgba(99, 112, 158, 0.035),
-        inset 0 1px 0 var(--liquid-inner-highlight),
-        inset 0 -18px 34px var(--liquid-inner-shadow);
+    border: 1px solid var(--functional-card-border);
+    backdrop-filter: blur(var(--functional-card-blur)) saturate(var(--functional-card-saturation)) contrast(1.05) brightness(1.02);
+    -webkit-backdrop-filter: blur(var(--functional-card-blur)) saturate(var(--functional-card-saturation)) contrast(1.05) brightness(1.02);
+    background: var(--functional-card-background);
+    box-shadow: var(--functional-card-shadow);
     transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.38s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease;
 }
 
 .home-liquid-card:hover {
-    /* Hover lifts the card exactly like the document .home-glass card so the
-       two materials behave as one; no transform:none freeze, no dirty halo,
-       just a deeper, cleaner shadow that matches the intro card. */
-    transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.24);
-    box-shadow:
-        0 22px 48px rgba(73, 92, 138, 0.16),
-        0 10px 22px rgba(73, 92, 138, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.82),
-        inset 0 -18px 34px rgba(148, 163, 184, 0.12);
+    transform: translateY(-3px);
+    border-color: var(--functional-card-hover-border);
+    box-shadow: var(--functional-card-hover-shadow);
 }
 
 .home-liquid-card::before,
@@ -835,7 +914,7 @@ a { color: inherit; text-decoration: none; }
         linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    opacity: 0.22;
+    opacity: 0.4;
 }
 
 .home-liquid-warp {
@@ -976,20 +1055,22 @@ a { color: inherit; text-decoration: none; }
 }
 
 .home-glass {
-    --home-glass-blur: 38px;
-    --home-glass-face-top: rgba(255, 255, 255, 0.72);
-    --home-glass-face-sheen: rgba(255, 255, 255, 0.38);
-    --home-glass-face-mid: rgba(255, 255, 255, 0.24);
-    --home-glass-face-bottom: rgba(255, 255, 255, 0.44);
+    /* Document/article cards are the third material role. Home prose, Daily,
+       Publication, Gallery, Resume, and Upload content all inherit it. */
+    --home-glass-blur: var(--document-card-blur);
+    --home-glass-face-top: var(--document-card-face-top);
+    --home-glass-face-sheen: var(--document-card-face-sheen);
+    --home-glass-face-mid: var(--document-card-face-mid);
+    --home-glass-face-bottom: var(--document-card-face-bottom);
     --home-glass-edge-a: rgba(255, 255, 255, 1);
     --home-glass-edge-b: rgba(255, 255, 255, 0.82);
     --home-glass-edge-c: rgba(186, 230, 253, 0.34);
     --home-glass-edge-d: rgba(147, 197, 253, 0.64);
-    --home-glass-shadow: rgba(73, 92, 138, 0.22);
-    --home-glass-shadow-soft: rgba(73, 92, 138, 0.12);
+    --home-glass-shadow: var(--document-card-shadow);
+    --home-glass-shadow-soft: var(--document-card-shadow-soft);
     --home-glass-bottom-glow: rgba(96, 165, 250, 0.2);
-    --home-glass-inner-top: rgba(255, 255, 255, 0.9);
-    --home-glass-inner-bottom: rgba(255, 255, 255, 0.26);
+    --home-glass-inner-top: var(--document-card-inner-top);
+    --home-glass-inner-bottom: var(--document-card-inner-bottom);
     position: relative;
     overflow: hidden;
     isolation: isolate;
@@ -1015,13 +1096,11 @@ a { color: inherit; text-decoration: none; }
     pointer-events: none;
     z-index: 0;
     background:
-        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.72) 10%, rgba(255, 255, 255, 0.16) 22%, rgba(255, 255, 255, 0) 34%),
-        radial-gradient(circle at 82% 14%, rgba(191, 219, 254, 0.54) 0%, rgba(191, 219, 254, 0.26) 14%, rgba(191, 219, 254, 0) 34%),
-        radial-gradient(circle at 74% 74%, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.035) 18%, rgba(59, 130, 246, 0) 36%),
-        radial-gradient(circle at 50% 120%, var(--home-glass-bottom-glow) 0%, rgba(96, 165, 250, 0.02) 34%, rgba(96, 165, 250, 0) 50%),
-        linear-gradient(130deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.12) 34%, rgba(255, 255, 255, 0.02) 56%, rgba(255, 255, 255, 0.2) 100%);
+        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.1) 12%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 82% 14%, rgba(191, 219, 254, 0.16) 0%, rgba(191, 219, 254, 0.06) 16%, rgba(191, 219, 254, 0) 30%),
+        linear-gradient(130deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 34%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.08) 100%);
     mix-blend-mode: screen;
-    opacity: 1;
+    opacity: 0.6;
 }
 
 .home-glass::after {
@@ -1156,53 +1235,9 @@ a { color: inherit; text-decoration: none; }
         0 8px 18px rgba(73, 92, 138, 0.08);
 }
 
-/* Large-panel compensation: keep the article-card glass language but lower the
-   white face/highlight strength so this much taller home frame does not read
-   as a flat white slab. */
-.home-content {
-    /* Document card: slightly steadier than the sidebar card (a touch higher
-       alpha) so long-form text reads well, but still drawn from the same
-       --home-material-* family so the two cards read as one material, not as
-       a near-transparent sliver next to a near-opaque slab. */
-    --home-material-face-top: rgba(255, 255, 255, 0.40);
-    --home-material-face-mid: rgba(255, 255, 255, 0.14);
-    --home-material-face-bottom: rgba(255, 255, 255, 0.22);
-    --home-material-shadow: rgba(73, 92, 138, 0.18);
-    --home-material-shadow-soft: rgba(73, 92, 138, 0.09);
-    --home-material-inner-top: rgba(255, 255, 255, 0.62);
-    --home-material-inner-bottom: rgba(148, 163, 184, 0.1);
-    background:
-        linear-gradient(180deg, var(--home-material-face-top) 0%, rgba(255, 255, 255, 0.22) 16%, var(--home-material-face-mid) 42%, var(--home-material-face-bottom) 100%);
-    backdrop-filter: blur(var(--home-glass-blur)) saturate(180%) contrast(1.08) brightness(1.01);
-    -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(180%) contrast(1.08) brightness(1.01);
-    box-shadow:
-        0 30px 76px var(--home-material-shadow),
-        0 12px 28px var(--home-material-shadow-soft),
-        0 2px 0 rgba(255, 255, 255, 0.22),
-        inset 0 1px 0 var(--home-material-inner-top),
-        inset 0 -18px 28px var(--home-material-inner-bottom);
-}
-
-.home-content.home-glass::before {
-    background:
-        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.06) 12%, rgba(255, 255, 255, 0) 26%),
-        radial-gradient(circle at 82% 14%, rgba(226, 232, 240, 0.14) 0%, rgba(226, 232, 240, 0.05) 16%, rgba(226, 232, 240, 0) 30%),
-        linear-gradient(130deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.025) 34%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.055) 100%);
-    opacity: 0.52;
-}
-
-.home-content.home-glass::after {
-    opacity: 0.24;
-    filter: saturate(112%) brightness(102%);
-}
-
-[data-theme="dark"] .home-content.home-glass::before {
-    background:
-        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 12%, rgba(255, 255, 255, 0) 26%),
-        radial-gradient(circle at 82% 18%, rgba(148, 163, 184, 0.12) 0%, rgba(148, 163, 184, 0.04) 16%, rgba(148, 163, 184, 0) 30%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 36%, rgba(15, 23, 42, 0) 60%, rgba(148, 163, 184, 0.04) 100%);
-    opacity: 0.5;
-}
+/* .home-content is a layout role, not a fourth material. Its surface comes
+   directly from .home-glass so long-form prose and article cards remain one
+   document material throughout the site. */
 
 .home-content .home-glass-body {
     padding: 46px 42px;
@@ -1271,37 +1306,20 @@ a { color: inherit; text-decoration: none; }
     --liquid-content-tint: var(--home-material-tint);
     --liquid-inner-highlight: var(--home-material-inner-top);
     --liquid-inner-shadow: var(--home-material-inner-bottom);
-    /* Functional sidebar card dark variant: same unified material tokens, lower
-       alpha for the face so the card stays translucent and matches the doc card.
-       Sheen opacities are fixed (no var(--liquid-sheen-opacity) / glow calc).
-       backdrop-filter blur frosts the dark background like the doc card. */
-    --home-material-face-top: rgba(18, 27, 45, 0.34);
-    --home-material-face-mid: rgba(12, 18, 32, 0.2);
-    --home-material-face-bottom: rgba(18, 27, 45, 0.28);
-    --liquid-blur: 18px;
-    --liquid-saturation: 154%;
+    --liquid-blur: var(--functional-card-blur);
+    --liquid-saturation: var(--functional-card-saturation);
     --liquid-brightness: 1.02;
-    border-color: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(28px) saturate(160%) contrast(1.06) brightness(1.02);
-    -webkit-backdrop-filter: blur(28px) saturate(160%) contrast(1.06) brightness(1.02);
-    background:
-        linear-gradient(180deg, var(--home-material-face-top) 0%, var(--home-material-face-mid) 48%, var(--home-material-face-bottom) 100%),
-        linear-gradient(180deg, var(--liquid-content-tint), transparent);
-    box-shadow:
-        0 30px 60px rgba(0, 0, 0, 0.28),
-        0 12px 22px rgba(0, 0, 0, 0.12),
-        inset 0 1px 0 var(--liquid-inner-highlight),
-        inset 0 -18px 34px var(--liquid-inner-shadow);
+    border-color: var(--functional-card-border);
+    backdrop-filter: blur(var(--functional-card-blur)) saturate(var(--functional-card-saturation)) contrast(1.04) brightness(1.01);
+    -webkit-backdrop-filter: blur(var(--functional-card-blur)) saturate(var(--functional-card-saturation)) contrast(1.04) brightness(1.01);
+    background: var(--functional-card-background);
+    box-shadow: var(--functional-card-shadow);
 }
 
 [data-theme="dark"] .home-liquid-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.14);
-    box-shadow:
-        0 34px 68px rgba(0, 0, 0, 0.4),
-        0 14px 26px rgba(0, 0, 0, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2),
-        inset 0 -18px 34px rgba(148, 163, 184, 0.1);
+    transform: translateY(-3px);
+    border-color: var(--functional-card-hover-border);
+    box-shadow: var(--functional-card-hover-shadow);
 }
 
 [data-theme="dark"] .home-liquid-card::before {
@@ -1380,28 +1398,27 @@ a { color: inherit; text-decoration: none; }
 }
 
 [data-theme="dark"] .home-glass {
-    --home-glass-face-top: rgba(18, 28, 48, 0.82);
-    --home-glass-face-sheen: rgba(30, 41, 59, 0.46);
-    --home-glass-face-mid: rgba(11, 18, 32, 0.56);
-    --home-glass-face-bottom: rgba(20, 28, 44, 0.82);
+    --home-glass-face-top: var(--document-card-face-top);
+    --home-glass-face-sheen: var(--document-card-face-sheen);
+    --home-glass-face-mid: var(--document-card-face-mid);
+    --home-glass-face-bottom: var(--document-card-face-bottom);
     --home-glass-edge-a: rgba(255, 255, 255, 0.36);
     --home-glass-edge-b: rgba(191, 219, 254, 0.26);
     --home-glass-edge-c: rgba(96, 165, 250, 0.2);
     --home-glass-edge-d: rgba(147, 197, 253, 0.34);
-    --home-glass-shadow: rgba(0, 0, 0, 0.52);
-    --home-glass-shadow-soft: rgba(0, 0, 0, 0.3);
+    --home-glass-shadow: var(--document-card-shadow);
+    --home-glass-shadow-soft: var(--document-card-shadow-soft);
     --home-glass-bottom-glow: rgba(96, 165, 250, 0.24);
-    --home-glass-inner-top: rgba(255, 255, 255, 0.16);
-    --home-glass-inner-bottom: rgba(96, 165, 250, 0.12);
+    --home-glass-inner-top: var(--document-card-inner-top);
+    --home-glass-inner-bottom: var(--document-card-inner-bottom);
 }
 
 [data-theme="dark"] .home-glass::before {
     background:
-        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.11) 10%, rgba(255, 255, 255, 0.02) 22%, rgba(255, 255, 255, 0) 32%),
-        radial-gradient(circle at 82% 18%, rgba(96, 165, 250, 0.36) 0%, rgba(96, 165, 250, 0.16) 18%, rgba(96, 165, 250, 0) 38%),
-        radial-gradient(circle at 76% 76%, rgba(37, 99, 235, 0.12) 0%, rgba(37, 99, 235, 0.02) 20%, rgba(37, 99, 235, 0) 36%),
-        radial-gradient(circle at 50% 120%, rgba(37, 99, 235, 0.26) 0%, rgba(37, 99, 235, 0.04) 36%, rgba(37, 99, 235, 0) 52%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 36%, rgba(15, 23, 42, 0) 60%, rgba(96, 165, 250, 0.1) 100%);
+        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 12%, rgba(255, 255, 255, 0) 26%),
+        radial-gradient(circle at 82% 18%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.04) 16%, rgba(96, 165, 250, 0) 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 36%, rgba(15, 23, 42, 0) 60%, rgba(96, 165, 250, 0.04) 100%);
+    opacity: 0.5;
 }
 
 [data-theme="dark"] .home-glass:hover {
@@ -1606,50 +1623,8 @@ a { color: inherit; text-decoration: none; }
     padding: 0;
 }
 
-/* Article cards draw from the same unified --home-material-* family as the
-   introduction (.home-content) and sidebar (.home-liquid-card) cards so all
-   content cards read as one frosted-liquid material — only transparency
-   differs modestly per scene. The base .home-glass face-top (0.72) made
-   article cards read as a near-opaque white slab next to the introduction
-   card's 0.40, so we override the face gradient + inner highlights here to
-   the same --home-material-* tokens the doc card uses. */
-.home-glass.article-card {
-    --home-glass-face-top: rgba(255, 255, 255, 0.50);
-    --home-glass-face-sheen: rgba(255, 255, 255, 0.20);
-    --home-glass-face-mid: rgba(255, 255, 255, 0.16);
-    --home-glass-face-bottom: rgba(255, 255, 255, 0.28);
-    --home-glass-shadow: rgba(73, 92, 138, 0.18);
-    --home-glass-shadow-soft: rgba(73, 92, 138, 0.09);
-    --home-glass-inner-top: rgba(255, 255, 255, 0.62);
-    --home-glass-inner-bottom: rgba(148, 163, 184, 0.1);
-}
-
-[data-theme="dark"] .home-glass.article-card {
-    --home-glass-face-top: rgba(20, 29, 46, 0.50);
-    --home-glass-face-sheen: rgba(30, 41, 59, 0.30);
-    --home-glass-face-mid: rgba(11, 18, 32, 0.40);
-    --home-glass-face-bottom: rgba(20, 28, 44, 0.52);
-    --home-glass-shadow: rgba(0, 0, 0, 0.42);
-    --home-glass-shadow-soft: rgba(0, 0, 0, 0.24);
-    --home-glass-inner-top: rgba(255, 255, 255, 0.16);
-    --home-glass-inner-bottom: rgba(148, 163, 184, 0.1);
-}
-
-.home-glass.article-card::before {
-    background:
-        radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.1) 12%, rgba(255, 255, 255, 0) 26%),
-        radial-gradient(circle at 82% 14%, rgba(191, 219, 254, 0.16) 0%, rgba(191, 219, 254, 0.06) 16%, rgba(191, 219, 254, 0) 30%),
-        linear-gradient(130deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 34%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.08) 100%);
-    opacity: 0.6;
-}
-
-[data-theme="dark"] .home-glass.article-card::before {
-    background:
-        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 12%, rgba(255, 255, 255, 0) 26%),
-        radial-gradient(circle at 82% 18%, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.04) 16%, rgba(96, 165, 250, 0) 30%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 36%, rgba(15, 23, 42, 0) 60%, rgba(96, 165, 250, 0.04) 100%);
-    opacity: 0.5;
-}
+/* .article-card now supplies layout only. The visual surface comes from the
+   shared .home-glass document role, so page-specific cards cannot drift. */
 
 .article-card-title {
     margin: 0 0 12px 0;
@@ -1843,17 +1818,18 @@ a { color: inherit; text-decoration: none; }
     min-height: 34px;
     padding: 0 12px;
     border-radius: 999px;
-    border: 1px solid var(--well-border);
-    background: var(--well-bg);
+    border: 1px solid var(--pill-rest-border);
+    background: var(--pill-rest-background);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    color: var(--heading);
+    color: var(--pill-rest-color);
     font: inherit;
     font-size: 13px;
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
-    transition: transform 0.24s ease, background 0.24s ease, border-color 0.24s ease, color 0.24s ease;
+    box-shadow: var(--pill-rest-shadow);
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
 }
 
 .daily-action-icon {
@@ -1871,34 +1847,28 @@ a { color: inherit; text-decoration: none; }
 }
 
 .daily-action-button.action-glass {
-    color: var(--muted);
-    background: var(--well-bg);
-    border-color: var(--well-border);
-    box-shadow: inset 0 1px 8px var(--well-inner);
+    color: var(--pill-rest-color);
+    background: var(--pill-rest-background);
+    border-color: var(--pill-rest-border);
+    box-shadow: var(--pill-rest-shadow);
 }
 
 .daily-action-button.action-glass:not(.daily-action-dislike):hover,
 .daily-action-button.action-glass:not(.daily-action-dislike):active {
     transform: translateY(-1px);
     color: #fff;
-    border-color: rgba(37, 99, 235, 0.42);
-    background: var(--daily-action-blue-gradient);
-    box-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.2),
-        0 0 0 1px rgba(191, 219, 254, 0.58),
-        inset 0 1px 8px rgba(255, 255, 255, 0.28);
+    border-color: var(--pill-lit-border);
+    background: var(--pill-lit-background);
+    box-shadow: var(--pill-lit-shadow);
 }
 
 .daily-action-button.daily-action-like:hover,
 .daily-action-button.feedback.is-active {
     transform: translateY(-1px);
     color: #fff;
-    border-color: rgba(37, 99, 235, 0.42);
-    background: var(--daily-action-blue-gradient);
-    box-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.2),
-        0 0 0 1px rgba(191, 219, 254, 0.58),
-        inset 0 1px 8px rgba(255, 255, 255, 0.28);
+    border-color: var(--pill-lit-border);
+    background: var(--pill-lit-background);
+    box-shadow: var(--pill-lit-shadow);
 }
 
 .daily-action-button:disabled {
@@ -1908,8 +1878,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 .daily-action-button.feedback {
-    background: var(--well-bg);
-    border-color: var(--well-border);
+    background: var(--pill-rest-background);
+    border-color: var(--pill-rest-border);
 }
 
 .daily-action-button.daily-action-dislike {
@@ -2050,10 +2020,13 @@ a { color: inherit; text-decoration: none; }
     width: 28px;
     height: 28px;
     border-radius: 999px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    background: rgba(59, 130, 246, 0.07);
-    color: var(--muted);
-    transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+    border: 1px solid var(--pill-rest-border);
+    background: var(--pill-rest-background);
+    color: var(--pill-rest-color);
+    box-shadow: var(--pill-rest-shadow);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
 }
 
 .daily-type-button.daily-type-all {
@@ -2067,8 +2040,9 @@ a { color: inherit; text-decoration: none; }
 .daily-type-button:hover,
 .daily-type-button.is-active {
     color: #fff;
-    border-color: transparent;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-color: var(--pill-lit-border);
+    background: var(--pill-lit-background);
+    box-shadow: var(--pill-lit-shadow);
     transform: translateY(-1px);
 }
 
@@ -2191,28 +2165,31 @@ a { color: inherit; text-decoration: none; }
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1;
     text-decoration: none;
-    color: var(--muted);
-    background: var(--well-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--well-border);
-    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+    color: var(--pill-rest-color);
+    background: var(--pill-rest-background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--pill-rest-border);
+    box-shadow: var(--pill-rest-shadow);
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
 }
 
 .chip:hover {
     transform: translateY(-1px);
-    border-color: rgba(59, 130, 246, 0.35);
-    color: var(--heading);
+    color: #fff;
+    background: var(--pill-lit-background);
+    border-color: var(--pill-lit-border);
+    box-shadow: var(--pill-lit-shadow);
 }
 
 .chip.is-active {
-    background: var(--primary);
-    border-color: transparent;
     color: #fff;
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.22);
+    background: var(--pill-lit-background);
+    border-color: var(--pill-lit-border);
+    box-shadow: var(--pill-lit-shadow);
 }
 
 .chip.is-active span {
@@ -2233,30 +2210,19 @@ a { color: inherit; text-decoration: none; }
     min-height: 32px;
     padding: 6px 15px;
     font-size: 13px;
-    color: var(--text);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.66));
-    border-color: rgba(255, 255, 255, 0.96);
-    box-shadow:
-        0 6px 16px rgba(73, 92, 138, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    color: var(--pill-rest-color);
+    background: var(--pill-rest-background);
+    border-color: var(--pill-rest-border);
+    box-shadow: var(--pill-rest-shadow);
     cursor: default;
 }
 
 .article-tag-chip:hover {
     transform: none;
-    color: var(--text);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.66));
-    border-color: rgba(255, 255, 255, 0.96);
-}
-
-[data-theme="dark"] .article-tag-chip,
-[data-theme="dark"] .article-tag-chip:hover {
-    color: var(--text);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.1));
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow:
-        0 6px 16px rgba(0, 0, 0, 0.14),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    color: var(--pill-rest-color);
+    background: var(--pill-rest-background);
+    border-color: var(--pill-rest-border);
+    box-shadow: var(--pill-rest-shadow);
 }
 
 
@@ -2308,17 +2274,16 @@ a { color: inherit; text-decoration: none; }
     min-height: 25px;
     padding: 0 11px;
     border-radius: 999px;
-    background: var(--daily-action-blue-gradient);
-    color: #fff;
+    border: 1px solid var(--pill-rest-border);
+    background: var(--pill-rest-background);
+    color: var(--pill-rest-color);
     font-family: var(--font-ui);
     font-size: 12px;
     font-weight: 800;
     line-height: 1;
     letter-spacing: 0;
     white-space: nowrap;
-    box-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.2),
-        inset 0 1px 8px rgba(255, 255, 255, 0.28);
+    box-shadow: var(--pill-rest-shadow);
 }
 
 .publication-index {
@@ -2389,34 +2354,35 @@ a { color: inherit; text-decoration: none; }
     border-radius: 999px;
     font-family: var(--font-ui);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1;
     text-decoration: none;
-    color: var(--muted);
-    background: var(--well-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--well-border);
+    color: var(--pill-rest-color);
+    background: var(--pill-rest-background);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--pill-rest-border);
     white-space: nowrap;
-    box-shadow: none;
+    box-shadow: var(--pill-rest-shadow);
 }
 
 .prose a.publication-keyword {
-    color: var(--muted);
-    background: var(--well-bg);
+    color: var(--pill-rest-color);
+    background: var(--pill-rest-background);
     -webkit-background-clip: border-box;
     background-clip: border-box;
     -webkit-text-fill-color: currentColor;
     text-decoration: none;
-    font-weight: 500;
-    transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    font-weight: 600;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease;
 }
 
 .prose a.publication-keyword:hover {
     transform: translateY(-1px);
-    color: var(--primary);
-    background: color-mix(in srgb, var(--primary) 8%, var(--well-bg));
-    border-color: color-mix(in srgb, var(--primary) 28%, var(--well-border));
+    color: #fff;
+    background: var(--pill-lit-background);
+    border-color: var(--pill-lit-border);
+    box-shadow: var(--pill-lit-shadow);
     -webkit-text-fill-color: currentColor;
     text-decoration: none;
     filter: none;
@@ -2424,12 +2390,10 @@ a { color: inherit; text-decoration: none; }
 
 .prose a.publication-keyword.is-active {
     color: #fff;
-    background: var(--daily-action-blue-gradient);
-    border-color: rgba(37, 99, 235, 0.42);
+    background: var(--pill-lit-background);
+    border-color: var(--pill-lit-border);
     -webkit-text-fill-color: currentColor;
-    box-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.18),
-        inset 0 1px 8px rgba(255, 255, 255, 0.22);
+    box-shadow: var(--pill-lit-shadow);
 }
 
 .publication-links {
@@ -2481,12 +2445,6 @@ a { color: inherit; text-decoration: none; }
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
-}
-
-[data-theme="dark"] .publication-badge {
-    box-shadow:
-        0 7px 18px rgba(37, 99, 235, 0.22),
-        inset 0 1px 8px rgba(255, 255, 255, 0.18);
 }
 
 @media (max-width: 640px) {
@@ -2714,12 +2672,19 @@ a { color: inherit; text-decoration: none; }
 .github-repo-stat { display: flex; align-items: center; gap: 4px; font-weight: 500; }
 .github-repo-stat svg { color: var(--muted); }
 
-/* --- Animations --- */
-@keyframes pageLoad {
-    0% { opacity: 0; transform: translateY(16px); }
-    100% { opacity: 1; transform: translateY(0); }
+/* --- Animations ---
+   Entry motion lives on small content bodies selected by site-header.js.
+   Never transform a page shell containing backdrop-filter cards: that turns
+   a long page into one enormous off-screen texture and stalls navigation. */
+@keyframes pageContentEnter {
+    from { opacity: 0; transform: translate3d(0, 8px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
-.container.main-grid:not(.home-layout), .page-shell, .upload-grid { animation: pageLoad 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+.page-enter {
+    animation: pageContentEnter 360ms cubic-bezier(0.22, 1, 0.36, 1) var(--page-enter-delay, 0ms) both;
+    will-change: transform, opacity;
+}
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -2759,12 +2724,8 @@ a { color: inherit; text-decoration: none; }
     color: var(--heading);
     opacity: 0.84;
     transition:
-        transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-        color 0.3s ease,
-        background 0.3s ease,
-        border-color 0.3s ease,
-        box-shadow 0.3s ease,
-        opacity 0.3s ease;
+        transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.2s ease;
     position: relative;
 }
 
@@ -3885,10 +3846,16 @@ a { color: inherit; text-decoration: none; }
     color: var(--heading);
     font-weight: 600;
     transition:
-        transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
-        background 0.28s ease,
-        border-color 0.28s ease,
-        box-shadow 0.28s ease;
+        transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.2s ease;
+}
+
+/* Active-route attributes are assigned during bootstrap. Suppress that first
+   non-interactive transition so the new document does not repaint every nav
+   pill while its first frame is being composed. */
+.nav-booting .nav-links a,
+.nav-booting .nav-mobile-link {
+    transition: none !important;
 }
 
 .nav-mobile-link:hover,
@@ -5238,94 +5205,7 @@ footer {
     outline-offset: 2px;
 }
 
-/* --- Layered filter and publication materials -----------------------------
-   These task-focused cards borrow the navigation's bright upper rim and
-   grounded lower edge, but use a denser, quieter face so text and filters stay
-   readable. The chips are intentionally rendered as solid frosted layers
-   rather than starting another backdrop-filter sample inside a glass card. */
-.home-liquid-card.layered-filter-card,
-.home-liquid-card.daily-archive-card {
-    background:
-        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.16) 32%, rgba(255, 255, 255, 0) 56%),
-        linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(241, 245, 249, 0.18) 52%, rgba(219, 234, 254, 0.24));
-    border-color: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(26px) saturate(168%) contrast(1.05) brightness(1.02);
-    -webkit-backdrop-filter: blur(26px) saturate(168%) contrast(1.05) brightness(1.02);
-    box-shadow:
-        0 18px 42px rgba(73, 92, 138, 0.13),
-        0 4px 12px rgba(73, 92, 138, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.82),
-        inset 0 -1px 0 rgba(100, 116, 139, 0.12),
-        inset 0 -14px 28px rgba(96, 165, 250, 0.06);
-}
-
-.home-liquid-card.layered-filter-card::after,
-.home-liquid-card.daily-archive-card::after {
-    opacity: 0.4;
-}
-
-.publication-page-card.home-glass {
-    --home-glass-blur: 28px;
-    --home-glass-face-top: rgba(255, 255, 255, 0.58);
-    --home-glass-face-sheen: rgba(255, 255, 255, 0.28);
-    --home-glass-face-mid: rgba(255, 255, 255, 0.19);
-    --home-glass-face-bottom: rgba(219, 234, 254, 0.31);
-    --home-glass-inner-top: rgba(255, 255, 255, 0.72);
-    --home-glass-inner-bottom: rgba(100, 116, 139, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(var(--home-glass-blur)) saturate(168%) contrast(1.05) brightness(1.015);
-    -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(168%) contrast(1.05) brightness(1.015);
-    box-shadow:
-        0 20px 48px rgba(55, 65, 95, 0.14),
-        0 5px 14px rgba(55, 65, 95, 0.055),
-        inset 0 1px 0 var(--home-glass-inner-top),
-        inset 0 -1px 0 rgba(71, 85, 105, 0.1),
-        inset 0 -18px 30px var(--home-glass-inner-bottom);
-}
-
-.layered-filter-card .chip:not(.is-active),
-.daily-card .daily-keyword-list .chip:not(.is-active),
-.publication-page-card .publication-keyword:not(.is-active),
-.home-content .section-selected-publication .publication-keyword:not(.is-active) {
-    color: var(--text);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(226, 232, 240, 0.36));
-    border-color: rgba(255, 255, 255, 0.84);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    box-shadow:
-        0 5px 12px rgba(71, 85, 105, 0.09),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9),
-        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
-    font-weight: 600;
-}
-
-.layered-filter-card .chip.is-active,
-.daily-card .daily-keyword-list .chip.is-active,
-.publication-page-card .publication-keyword.is-active,
-.prose a.publication-keyword.is-active {
-    color: #fff;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    background-clip: border-box;
-    -webkit-background-clip: border-box;
-    -webkit-text-fill-color: currentColor;
-    border-color: rgba(30, 64, 175, 0.72);
-    box-shadow:
-        0 8px 18px rgba(30, 64, 175, 0.24),
-        inset 0 1px 0 rgba(255, 255, 255, 0.32),
-        inset 0 -1px 0 rgba(15, 23, 42, 0.2);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    font-weight: 650;
-}
-
-.daily-keywords-card .daily-type-button:is(:hover, .is-active),
-.publication-page-card .publication-badge {
-    color: #fff;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    border-color: rgba(30, 64, 175, 0.72);
-    -webkit-text-fill-color: currentColor;
-}
-
+/* The calendar grid is a nested well inside the shared functional card. */
 .daily-archive-card .anniversary-grid-wrap {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(241, 245, 249, 0.46));
     border-color: rgba(255, 255, 255, 0.78);
@@ -5333,54 +5213,6 @@ footer {
         0 8px 18px rgba(71, 85, 105, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.9),
         inset 0 -1px 0 rgba(100, 116, 139, 0.1);
-}
-
-[data-theme="dark"] .home-liquid-card.layered-filter-card,
-[data-theme="dark"] .home-liquid-card.daily-archive-card {
-    background:
-        radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 34%, rgba(255, 255, 255, 0) 58%),
-        linear-gradient(160deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.44) 55%, rgba(30, 64, 175, 0.18));
-    border-color: rgba(255, 255, 255, 0.16);
-    backdrop-filter: blur(24px) saturate(154%) contrast(1.04) brightness(1.01);
-    -webkit-backdrop-filter: blur(24px) saturate(154%) contrast(1.04) brightness(1.01);
-    box-shadow:
-        0 20px 44px rgba(0, 0, 0, 0.32),
-        0 5px 14px rgba(0, 0, 0, 0.16),
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
-        inset 0 -14px 28px rgba(37, 99, 235, 0.08);
-}
-
-[data-theme="dark"] .publication-page-card.home-glass {
-    --home-glass-face-top: rgba(30, 41, 59, 0.58);
-    --home-glass-face-sheen: rgba(30, 41, 59, 0.42);
-    --home-glass-face-mid: rgba(15, 23, 42, 0.4);
-    --home-glass-face-bottom: rgba(20, 28, 44, 0.54);
-    --home-glass-inner-top: rgba(255, 255, 255, 0.16);
-    --home-glass-inner-bottom: rgba(37, 99, 235, 0.08);
-    border-color: rgba(255, 255, 255, 0.16);
-    backdrop-filter: blur(26px) saturate(150%) contrast(1.04) brightness(1.01);
-    -webkit-backdrop-filter: blur(26px) saturate(150%) contrast(1.04) brightness(1.01);
-    box-shadow:
-        0 22px 50px rgba(0, 0, 0, 0.36),
-        0 6px 16px rgba(0, 0, 0, 0.18),
-        inset 0 1px 0 var(--home-glass-inner-top),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.32),
-        inset 0 -18px 30px var(--home-glass-inner-bottom);
-}
-
-[data-theme="dark"] .layered-filter-card .chip:not(.is-active),
-[data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
-[data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active),
-[data-theme="dark"] .home-content .section-selected-publication .publication-keyword:not(.is-active) {
-    color: var(--text);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(148, 163, 184, 0.075));
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow:
-        0 5px 14px rgba(0, 0, 0, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.16),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-    -webkit-text-fill-color: currentColor;
 }
 
 [data-theme="dark"] .daily-archive-card .anniversary-grid-wrap {
@@ -5392,234 +5224,125 @@ footer {
         inset 0 -1px 0 rgba(0, 0, 0, 0.24);
 }
 
-@media (hover: hover) and (pointer: fine) {
-    .home-liquid-card.layered-filter-card:hover,
-    .home-liquid-card.daily-archive-card:hover {
-        transform: translateY(-3px);
-        border-color: rgba(255, 255, 255, 0.84);
-        box-shadow:
-            0 24px 50px rgba(73, 92, 138, 0.16),
-            0 8px 18px rgba(73, 92, 138, 0.07),
-            inset 0 1px 0 rgba(255, 255, 255, 0.88),
-            inset 0 -1px 0 rgba(100, 116, 139, 0.13),
-            inset 0 -14px 28px rgba(96, 165, 250, 0.07);
-    }
-
-    .publication-page-card.home-glass:hover {
-        transform: translateY(-3px);
-        border-color: rgba(255, 255, 255, 0.82);
-        box-shadow:
-            0 26px 58px rgba(55, 65, 95, 0.17),
-            0 8px 18px rgba(55, 65, 95, 0.07),
-            inset 0 1px 0 rgba(255, 255, 255, 0.78),
-            inset 0 -1px 0 rgba(71, 85, 105, 0.11);
-    }
-
-    .layered-filter-card .chip:not(.is-active):hover,
-    .daily-card .daily-keyword-list .chip:not(.is-active):hover,
-    .publication-page-card .publication-keyword:not(.is-active):hover {
-        color: var(--heading);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(219, 234, 254, 0.48));
-        border-color: rgba(96, 165, 250, 0.48);
-        transform: translateY(-1px);
-        filter: none;
-        text-decoration: none;
-        -webkit-text-fill-color: currentColor;
-    }
-
-    [data-theme="dark"] .layered-filter-card .chip:not(.is-active):hover,
-    [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active):hover,
-    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active):hover {
-        background: linear-gradient(180deg, rgba(96, 165, 250, 0.2), rgba(37, 99, 235, 0.12));
-        border-color: rgba(96, 165, 250, 0.46);
-    }
-
-    [data-theme="dark"] .home-liquid-card.layered-filter-card:hover,
-    [data-theme="dark"] .home-liquid-card.daily-archive-card:hover {
-        border-color: rgba(255, 255, 255, 0.22);
-        box-shadow:
-            0 26px 56px rgba(0, 0, 0, 0.4),
-            0 8px 20px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.36);
-    }
-
-    [data-theme="dark"] .publication-page-card.home-glass:hover {
-        border-color: rgba(255, 255, 255, 0.22);
-        box-shadow:
-            0 28px 60px rgba(0, 0, 0, 0.42),
-            0 8px 20px rgba(0, 0, 0, 0.22),
-            inset 0 1px 0 rgba(255, 255, 255, 0.18),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.34);
-    }
-}
-
 @media (max-width: 800px) {
-    .home-liquid-card.layered-filter-card,
-    .home-liquid-card.daily-archive-card {
-        background:
-            radial-gradient(120% 80% at 18% -16%, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0) 52%),
-            linear-gradient(160deg, rgba(255, 255, 255, 0.4), rgba(241, 245, 249, 0.22) 54%, rgba(219, 234, 254, 0.28));
+    .home-liquid-card:not(.nav-island):not(.nav-mobile-panel) {
+        background: var(--functional-card-background);
+        border-color: var(--functional-card-border);
         backdrop-filter: blur(18px) saturate(158%);
         -webkit-backdrop-filter: blur(18px) saturate(158%);
-        box-shadow:
-            0 15px 32px rgba(73, 92, 138, 0.12),
-            0 4px 10px rgba(73, 92, 138, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.84),
-            inset 0 -1px 0 rgba(100, 116, 139, 0.12);
+        box-shadow: var(--functional-card-shadow);
     }
 
-    .publication-page-card.home-glass {
-        --home-glass-blur: 18px;
-        --home-glass-face-top: rgba(255, 255, 255, 0.64);
-        --home-glass-face-sheen: rgba(255, 255, 255, 0.34);
-        --home-glass-face-mid: rgba(255, 255, 255, 0.24);
-        --home-glass-face-bottom: rgba(219, 234, 254, 0.36);
+    .home-glass {
+        --home-glass-blur: var(--document-card-blur);
+        --home-glass-face-top: var(--document-card-face-top);
+        --home-glass-face-sheen: var(--document-card-face-sheen);
+        --home-glass-face-mid: var(--document-card-face-mid);
+        --home-glass-face-bottom: var(--document-card-face-bottom);
         background: linear-gradient(180deg, var(--home-glass-face-top) 0%, var(--home-glass-face-sheen) 18%, var(--home-glass-face-mid) 48%, var(--home-glass-face-bottom) 100%);
         backdrop-filter: blur(var(--home-glass-blur)) saturate(158%);
         -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(158%);
+        border: none;
         box-shadow:
-            0 16px 36px rgba(55, 65, 95, 0.13),
-            0 4px 12px rgba(55, 65, 95, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.78),
-            inset 0 -1px 0 rgba(71, 85, 105, 0.1);
-    }
-
-    [data-theme="dark"] .home-liquid-card.layered-filter-card,
-    [data-theme="dark"] .home-liquid-card.daily-archive-card {
-        background:
-            radial-gradient(120% 80% at 18% -16%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 54%),
-            linear-gradient(160deg, rgba(30, 41, 59, 0.62), rgba(15, 23, 42, 0.5) 56%, rgba(30, 64, 175, 0.2));
-        box-shadow:
-            0 16px 36px rgba(0, 0, 0, 0.3),
-            0 4px 12px rgba(0, 0, 0, 0.16),
-            inset 0 1px 0 rgba(255, 255, 255, 0.17),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.32);
-    }
-
-    [data-theme="dark"] .publication-page-card.home-glass {
-        --home-glass-face-top: rgba(30, 41, 59, 0.64);
-        --home-glass-face-sheen: rgba(30, 41, 59, 0.46);
-        --home-glass-face-mid: rgba(15, 23, 42, 0.44);
-        --home-glass-face-bottom: rgba(20, 28, 44, 0.58);
-        box-shadow:
-            0 18px 40px rgba(0, 0, 0, 0.34),
-            0 5px 14px rgba(0, 0, 0, 0.18),
-            inset 0 1px 0 rgba(255, 255, 255, 0.16),
-            inset 0 -1px 0 rgba(0, 0, 0, 0.32);
+            0 18px 40px var(--document-card-shadow),
+            0 5px 14px var(--document-card-shadow-soft),
+            inset 0 1px 0 var(--document-card-inner-top),
+            inset 0 -1px 0 var(--document-card-inner-bottom);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .home-liquid-card.layered-filter-card:hover,
-    .home-liquid-card.daily-archive-card:hover,
-    .publication-page-card.home-glass:hover,
-    .layered-filter-card .chip:hover,
-    .daily-card .daily-keyword-list .chip:hover,
-    .publication-page-card .publication-keyword:hover {
+    .home-liquid-card:hover,
+    .home-glass:hover,
+    .chip:hover,
+    .publication-keyword:hover,
+    .daily-type-button:hover {
         transform: none !important;
     }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-    .home-liquid-card.layered-filter-card::before,
-    .home-liquid-card.layered-filter-card::after,
-    .home-liquid-card.layered-filter-card .home-liquid-warp,
-    .home-liquid-card.daily-archive-card::before,
-    .home-liquid-card.daily-archive-card::after,
-    .home-liquid-card.daily-archive-card .home-liquid-warp,
-    .publication-page-card.home-glass::before,
-    .publication-page-card.home-glass::after {
-        display: none !important;
-    }
-
-    .layered-filter-card .chip:not(.is-active),
-    .daily-card .daily-keyword-list .chip:not(.is-active),
-    .publication-page-card .publication-keyword:not(.is-active),
-    .home-content .section-selected-publication .publication-keyword:not(.is-active) {
+    .chip:not(.is-active),
+    .publication-keyword:not(.is-active),
+    .publication-badge,
+    .daily-type-button:not(.is-active),
+    .article-tag-chip {
         background: #f8fafc !important;
         border-color: rgba(71, 85, 105, 0.42);
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
     }
 
-    [data-theme="dark"] .layered-filter-card .chip:not(.is-active),
-    [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
-    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active),
-    [data-theme="dark"] .home-content .section-selected-publication .publication-keyword:not(.is-active) {
+    [data-theme="dark"] .chip:not(.is-active),
+    [data-theme="dark"] .publication-keyword:not(.is-active),
+    [data-theme="dark"] .publication-badge,
+    [data-theme="dark"] .daily-type-button:not(.is-active),
+    [data-theme="dark"] .article-tag-chip {
         background: #0f172a !important;
         border-color: rgba(226, 232, 240, 0.34);
     }
 }
 
 @media (prefers-contrast: more) {
-    .home-liquid-card.layered-filter-card,
-    .home-liquid-card.daily-archive-card,
-    .publication-page-card.home-glass {
+    .home-liquid-card:not(.nav-island),
+    .home-glass {
         background: rgba(248, 250, 252, 0.98);
         border-color: rgba(15, 23, 42, 0.58);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
     }
 
-    .layered-filter-card .chip:not(.is-active),
-    .daily-card .daily-keyword-list .chip:not(.is-active),
-    .publication-page-card .publication-keyword:not(.is-active),
-    .home-content .section-selected-publication .publication-keyword:not(.is-active) {
+    .chip:not(.is-active),
+    .publication-keyword:not(.is-active),
+    .publication-badge,
+    .daily-type-button:not(.is-active),
+    .article-tag-chip {
         background: #fff;
         border-color: rgba(15, 23, 42, 0.68);
     }
 
-    [data-theme="dark"] .home-liquid-card.layered-filter-card,
-    [data-theme="dark"] .home-liquid-card.daily-archive-card,
-    [data-theme="dark"] .publication-page-card.home-glass {
+    [data-theme="dark"] .home-liquid-card:not(.nav-island),
+    [data-theme="dark"] .home-glass {
         background: rgba(7, 18, 33, 0.98);
         border-color: rgba(248, 250, 252, 0.62);
     }
 
-    [data-theme="dark"] .layered-filter-card .chip:not(.is-active),
-    [data-theme="dark"] .daily-card .daily-keyword-list .chip:not(.is-active),
-    [data-theme="dark"] .publication-page-card .publication-keyword:not(.is-active),
-    [data-theme="dark"] .home-content .section-selected-publication .publication-keyword:not(.is-active) {
+    [data-theme="dark"] .chip:not(.is-active),
+    [data-theme="dark"] .publication-keyword:not(.is-active),
+    [data-theme="dark"] .publication-badge,
+    [data-theme="dark"] .daily-type-button:not(.is-active),
+    [data-theme="dark"] .article-tag-chip {
         background: #0f172a;
         border-color: rgba(248, 250, 252, 0.58);
     }
 
-    .home-liquid-card.layered-filter-card::before,
-    .home-liquid-card.layered-filter-card::after,
-    .home-liquid-card.layered-filter-card .home-liquid-warp,
-    .home-liquid-card.daily-archive-card::before,
-    .home-liquid-card.daily-archive-card::after,
-    .home-liquid-card.daily-archive-card .home-liquid-warp,
-    .publication-page-card.home-glass::before,
-    .publication-page-card.home-glass::after {
+    .home-liquid-card:not(.nav-island)::before,
+    .home-liquid-card:not(.nav-island)::after,
+    .home-liquid-card:not(.nav-island) .home-liquid-warp,
+    .home-glass::before,
+    .home-glass::after {
         display: none;
     }
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .home-liquid-card.layered-filter-card,
-    .home-liquid-card.daily-archive-card,
-    .publication-page-card.home-glass {
+    .home-liquid-card:not(.nav-island),
+    .home-glass {
         background: rgba(248, 250, 252, 0.97);
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
     }
 
-    [data-theme="dark"] .home-liquid-card.layered-filter-card,
-    [data-theme="dark"] .home-liquid-card.daily-archive-card,
-    [data-theme="dark"] .publication-page-card.home-glass {
+    [data-theme="dark"] .home-liquid-card:not(.nav-island),
+    [data-theme="dark"] .home-glass {
         background: rgba(7, 18, 33, 0.97);
     }
 
-    .home-liquid-card.layered-filter-card::before,
-    .home-liquid-card.layered-filter-card::after,
-    .home-liquid-card.layered-filter-card .home-liquid-warp,
-    .home-liquid-card.daily-archive-card::before,
-    .home-liquid-card.daily-archive-card::after,
-    .home-liquid-card.daily-archive-card .home-liquid-warp,
-    .publication-page-card.home-glass::before,
-    .publication-page-card.home-glass::after {
+    .home-liquid-card:not(.nav-island)::before,
+    .home-liquid-card:not(.nav-island)::after,
+    .home-liquid-card:not(.nav-island) .home-liquid-warp,
+    .home-glass::before,
+    .home-glass::after {
         display: none;
     }
 }
@@ -5627,15 +5350,13 @@ footer {
 /* Keep forced-colors last so it also wins when the browser combines this
    preference with the no-backdrop-filter fallback above. */
 @media (forced-colors: active) {
-    .home-liquid-card.layered-filter-card,
-    .home-liquid-card.daily-archive-card,
-    .publication-page-card.home-glass,
-    .layered-filter-card .chip,
-    .daily-keywords-card .daily-type-button,
-    .daily-card .daily-keyword-list .chip,
-    .publication-page-card .publication-keyword,
-    .home-content .section-selected-publication .publication-keyword,
-    .publication-page-card .publication-badge,
+    .home-liquid-card:not(.nav-island),
+    .home-glass,
+    .chip,
+    .daily-type-button,
+    .publication-keyword,
+    .publication-badge,
+    .article-tag-chip,
     .daily-archive-card .anniversary-grid-wrap {
         color: CanvasText;
         background: Canvas;
@@ -5646,26 +5367,21 @@ footer {
         -webkit-text-fill-color: currentColor;
     }
 
-    .layered-filter-card .chip.is-active,
-    .daily-keywords-card .daily-type-button:is(:hover, .is-active),
-    .daily-card .daily-keyword-list .chip.is-active,
-    .publication-page-card .publication-keyword.is-active,
+    .chip.is-active,
+    .daily-type-button.is-active,
     .prose a.publication-keyword.is-active,
-    .publication-page-card .publication-badge {
+    .daily-action-button.feedback.is-active {
         color: HighlightText;
         background: Highlight;
         border-color: Highlight;
         -webkit-text-fill-color: HighlightText;
     }
 
-    .home-liquid-card.layered-filter-card::before,
-    .home-liquid-card.layered-filter-card::after,
-    .home-liquid-card.layered-filter-card .home-liquid-warp,
-    .home-liquid-card.daily-archive-card::before,
-    .home-liquid-card.daily-archive-card::after,
-    .home-liquid-card.daily-archive-card .home-liquid-warp,
-    .publication-page-card.home-glass::before,
-    .publication-page-card.home-glass::after {
+    .home-liquid-card:not(.nav-island)::before,
+    .home-liquid-card:not(.nav-island)::after,
+    .home-liquid-card:not(.nav-island) .home-liquid-warp,
+    .home-glass::before,
+    .home-glass::after {
         display: none;
     }
 }

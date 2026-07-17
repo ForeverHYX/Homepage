@@ -33,7 +33,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("spot.renderedMotionDuration !== motionDuration", source)
         self.assertIn("spot.renderedOpacity !== opacity", source)
         self.assertIn("spot.renderedTransform !== transform", source)
-        self.assertIn('src="/static/js/effects/lightfield.js?v=99"', BASE_HTML.read_text())
+        self.assertIn("window.requestIdleCallback(start, { timeout: 480 })", source)
+        self.assertIn('document.addEventListener("DOMContentLoaded", scheduleHomeLightfield)', source)
+        self.assertIn('src="/static/js/effects/lightfield.js?v=100"', BASE_HTML.read_text())
 
         spot_block = re.search(r"\.home-lightspot\s*\{(?P<body>.*?)\n\}", styles, re.S)
         self.assertIsNotNone(spot_block)
@@ -62,17 +64,21 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("is-static", source)
         self.assertNotIn(".home-lightfield.is-static", styles)
 
-    def test_scrolling_layers_release_after_entry_animation(self) -> None:
+    def test_page_entry_animates_only_visible_unfiltered_content_layers(self) -> None:
         styles = STYLES_CSS.read_text()
+        source = SITE_HEADER_JS.read_text()
 
-        page_load = re.search(
-            r"\.container\.main-grid:not\(\.home-layout\), \.page-shell, \.upload-grid \{(?P<body>.*?)\}",
-            styles,
-            re.S,
-        )
-        self.assertIsNotNone(page_load)
-        self.assertIn("animation: pageLoad", page_load.group("body"))
-        self.assertNotIn("forwards", page_load.group("body"))
+        self.assertNotIn("@keyframes pageLoad", styles)
+        self.assertNotIn(".page-shell { animation:", styles)
+        self.assertNotIn(".upload-grid { animation:", styles)
+        self.assertIn("@keyframes pageContentEnter", styles)
+        page_entry = re.search(r"^\.page-enter\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        self.assertIsNotNone(page_entry)
+        self.assertIn("will-change: transform, opacity", page_entry.group("body"))
+        self.assertIn("initPageEntry();", source)
+        self.assertIn('rect.height <= maxAnimatedHeight', source)
+        self.assertIn('body.classList.add("page-enter")', source)
+        self.assertIn('body.classList.remove("page-enter")', source)
         self.assertNotIn("content-visibility: auto", styles)
 
         site_main = re.search(r"^\.site-main\s*\{(?P<body>.*?)\}", styles, re.S | re.M)
@@ -124,7 +130,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("opacity: 0.68", lightfield_after)
         self.assertIn("blur(var(--spot-blur, 54px))", spot_block.group("body"))
         self.assertIn("opacity: var(--spot-opacity, 0.3)", spot_block.group("body"))
-        self.assertIn("0 14px 28px rgba(99, 112, 158, 0.075)", card_block.group("body"))
+        self.assertIn("box-shadow: var(--functional-card-shadow)", card_block.group("body"))
         self.assertNotIn("0 24px 52px rgba(99, 112, 158, 0.135)", card_block.group("body"))
 
     def test_liquid_glass_throttles_pointer_target_sync(self) -> None:
@@ -195,8 +201,8 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("-webkit-backdrop-filter: blur(var(--home-glass-blur))", glass_body)
 
         card_body = card_block.group("body")
-        self.assertIn("backdrop-filter: blur(30px)", card_body)
-        self.assertIn("-webkit-backdrop-filter: blur(30px)", card_body)
+        self.assertIn("backdrop-filter: blur(var(--functional-card-blur))", card_body)
+        self.assertIn("-webkit-backdrop-filter: blur(var(--functional-card-blur))", card_body)
         self.assertNotIn("backdrop-filter: none", card_body)
 
         # Mobile breakpoint keeps a blur on the sidebar / mobile panel too.
@@ -212,19 +218,17 @@ class HomepageEffectsPerformanceTests(TestCase):
 
     def test_liquid_card_hover_lifts_like_document_card(self) -> None:
         """The functional sidebar card must hover-lift the same way as the
-        document .home-glass card (translateY(-4px) + a clean, deeper shadow)
-        so the two materials read as one system. The old transform:none freeze
-        is gone; no dirty halo (no oversized far blur) is allowed."""
+        document .home-glass card with a clean, tokenized shadow. The old
+        transform:none freeze and page-specific hover variants stay gone."""
         styles = STYLES_CSS.read_text()
 
         hover_block = re.search(r"^\.home-liquid-card:hover\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
         self.assertIsNotNone(hover_block)
         hover_body = hover_block.group("body")
 
-        self.assertIn("transform: translateY(-4px)", hover_body)
-        # Clean shadow: a closer + a softer layer, both modest, no giant blur.
-        self.assertIn("0 22px 48px rgba(73, 92, 138, 0.16)", hover_body)
-        self.assertIn("0 10px 22px rgba(73, 92, 138, 0.08)", hover_body)
+        self.assertIn("transform: translateY(-3px)", hover_body)
+        self.assertIn("border-color: var(--functional-card-hover-border)", hover_body)
+        self.assertIn("box-shadow: var(--functional-card-hover-shadow)", hover_body)
         # No mouse-follow sheen var mutations on hover.
         self.assertNotIn("var(--liquid-sheen-opacity)", hover_body)
         self.assertNotIn("var(--liquid-rim-opacity)", hover_body)
@@ -273,8 +277,8 @@ class HomepageEffectsPerformanceTests(TestCase):
         card_body = card_block.group("body")
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
-        self.assertIn("inset 0 1px 0 var(--liquid-inner-highlight)", card_body)
-        self.assertIn("href=\"/static/css/styles.min.css?v=156\"", base)
+        self.assertIn("box-shadow: var(--functional-card-shadow)", card_body)
+        self.assertIn("href=\"/static/css/styles.min.css?v=157\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -383,71 +387,65 @@ class HomepageEffectsPerformanceTests(TestCase):
             for token in forbidden:
                 self.assertNotIn(token, body, f"{label} still tracks {token}")
 
-    def test_functional_and_doc_cards_share_unified_material_tokens(self) -> None:
-        """Both the sidebar functional card (.home-liquid-card) and the document
-        card (.home-content / .home-glass) must draw from the unified
-        --home-material-* token family so they read as one frosted-liquid
-        system instead of two unrelated materials."""
+    def test_site_exposes_three_stable_card_roles_and_unified_pills(self) -> None:
+        """Navigation, functional cards, and document cards are the only card
+        materials; page names must not introduce a fourth variant."""
         styles = STYLES_CSS.read_text()
         base = BASE_HTML.read_text()
 
-        # Root exposes the shared material tokens.
         root_block = re.search(r"^:root\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
         self.assertIsNotNone(root_block)
         root_body = root_block.group("body")
         for token in (
-            "--home-material-face-top",
-            "--home-material-face-mid",
-            "--home-material-face-bottom",
-            "--home-material-tint",
-            "--home-material-edge",
-            "--home-material-inner-top",
-            "--home-material-inner-bottom",
-            "--home-material-blur",
+            "--functional-card-background",
+            "--functional-card-border",
+            "--functional-card-shadow",
+            "--document-card-face-top",
+            "--document-card-face-bottom",
+            "--document-card-blur",
+            "--pill-rest-background",
+            "--pill-lit-background",
+            "--pill-lit-shadow",
         ):
             self.assertIn(token, root_body, f":root must declare {token}")
 
-        # Functional card references the shared tokens instead of hard-coded alphas.
         card_block = re.search(r"^\.home-liquid-card\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        glass_block = re.search(r"^\.home-glass\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        chip_block = re.search(r"^\.chip\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
         self.assertIsNotNone(card_block)
+        self.assertIsNotNone(glass_block)
+        self.assertIsNotNone(chip_block)
+
         card_body = card_block.group("body")
-        self.assertIn("var(--home-material-tint)", card_body)
-        self.assertIn("var(--home-material-inner-top)", card_body)
-        self.assertIn("var(--home-material-inner-bottom)", card_body)
-        self.assertIn("var(--home-material-edge)", card_body)
-        self.assertIn("var(--home-material-face-top)", card_body)
-        self.assertIn("var(--home-material-face-mid)", card_body)
-        self.assertIn("var(--home-material-face-bottom)", card_body)
+        self.assertIn("background: var(--functional-card-background)", card_body)
+        self.assertIn("box-shadow: var(--functional-card-shadow)", card_body)
+        self.assertIn("blur(var(--functional-card-blur))", card_body)
 
-        # Document card references the shared tokens too.
-        content_block = re.search(r"^\.home-content\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
-        self.assertIsNotNone(content_block)
-        content_body = content_block.group("body")
-        self.assertIn("var(--home-material-face-top)", content_body)
-        self.assertIn("var(--home-material-face-mid)", content_body)
-        self.assertIn("var(--home-material-face-bottom)", content_body)
-        self.assertIn("var(--home-material-shadow)", content_body)
+        glass_body = glass_block.group("body")
+        self.assertIn("var(--document-card-face-top)", glass_body)
+        self.assertIn("var(--document-card-shadow)", glass_body)
+        self.assertIn("var(--document-card-blur)", glass_body)
 
-        # Functional card sits at higher transparency (lower face-top alpha)
-        # than the document card so the doc area stays steadier for text.
-        card_face_alpha = re.search(
-            r"--home-material-face-top:\s*rgba\(255, 255, 255, ([\d.]+)\)",
-            card_body,
-        )
-        content_face_alpha = re.search(
-            r"--home-material-face-top:\s*rgba\(255, 255, 255, ([\d.]+)\)",
-            content_body,
-        )
-        self.assertIsNotNone(card_face_alpha)
-        self.assertIsNotNone(content_face_alpha)
-        self.assertLess(
-            float(card_face_alpha.group(1)),
-            float(content_face_alpha.group(1)),
-            "functional card face should be more transparent (lower alpha) than doc card",
-        )
+        chip_body = chip_block.group("body")
+        self.assertIn("var(--pill-rest-background)", chip_body)
+        self.assertIn("var(--pill-rest-shadow)", chip_body)
+        self.assertIn("backdrop-filter: none", chip_body)
+        self.assertNotIn("backdrop-filter: blur", chip_body)
 
-        # Cache-buster bumps when CSS material changes so clients refetch it.
-        self.assertIn('href="/static/css/styles.min.css?v=156"', base)
+        self.assertNotIn(".home-liquid-card.layered-filter-card", styles)
+        self.assertNotIn(".publication-page-card.home-glass", styles)
+        self.assertIsNone(re.search(r"^\.home-content\s*\{", styles, re.M))
+
+        home = HOME_HTML.read_text()
+        upload = (ROOT / "app/templates/pages/upload.html").read_text()
+        anniversary = (ROOT / "static/js/components/anniversary-calendar.js").read_text()
+        self.assertIn("card home-liquid-card home-profile-card", home)
+        self.assertIn("card home-liquid-card home-news-card", home)
+        self.assertIn("card home-liquid-card upload-sidebar", upload)
+        self.assertIn("card home-liquid-card anniversary-card", anniversary)
+        self.assertIn("card home-glass upload-panel", upload)
+
+        self.assertIn('href="/static/css/styles.min.css?v=157"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -577,7 +575,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.min.css?v=156"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=157"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
@@ -609,7 +607,7 @@ class HomepageEffectsPerformanceTests(TestCase):
 
         self.assertIn('fetch("/api/site/news"', source)
         self.assertNotIn('fetch("/api/site/home"', source)
-        self.assertIn('src="/static/js/components/site-header.js?v=101"', BASE_HTML.read_text())
+        self.assertIn('src="/static/js/components/site-header.js?v=102"', BASE_HTML.read_text())
         self.assertIn('overlay.className = "news-modal-overlay"', source)
         self.assertIn('card.className = "news-modal-card"', source)
         self.assertIn('wrap.className = "home-news-modal-content"', source)
@@ -637,6 +635,18 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("touch-action: manipulation", styles)
         self.assertIn("transform: scale(0.97)", styles)
         self.assertIn(".search-bar-container:focus-within", styles)
+        self.assertIn('root.classList.add("nav-booting")', source)
+        self.assertIn('root.classList.remove("nav-booting")', source)
+        self.assertIn(".nav-booting .nav-links a", styles)
+
+        nav_link = re.search(r"^\.nav-links a\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        self.assertIsNotNone(nav_link)
+        transition = re.search(r"transition:(?P<body>.*?);", nav_link.group("body"), re.S)
+        self.assertIsNotNone(transition)
+        self.assertIn("transform", transition.group("body"))
+        self.assertIn("opacity", transition.group("body"))
+        for repaint_property in ("background", "border-color", "box-shadow", "color"):
+            self.assertNotIn(repaint_property, transition.group("body"))
 
     def test_homepage_honors_apple_accessibility_preferences(self) -> None:
         source = SITE_HEADER_JS.read_text()

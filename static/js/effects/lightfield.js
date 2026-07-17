@@ -357,12 +357,27 @@
       spots.forEach((spot) => spot.element.remove());
     };
   }
-  // Auto-initialize on DOM ready
+  // Keep the static light-field gradients available for first paint, then add
+  // the six ambient moving spots once navigation/content entry has settled.
+  // This avoids creating large blurred compositor layers in the same frame as
+  // a newly navigated page while preserving the full ambient effect.
+  function scheduleHomeLightfield() {
+    var start = function () {
+      initHomeLightfield();
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(start, { timeout: 480 });
+    } else {
+      window.setTimeout(start, 320);
+    }
+  }
+
+  // Auto-initialize after DOM ready and the critical first frame.
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", initHomeLightfield);
+      document.addEventListener("DOMContentLoaded", scheduleHomeLightfield);
     } else {
-      initHomeLightfield();
+      scheduleHomeLightfield();
     }
   }
 })();

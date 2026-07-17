@@ -11,8 +11,9 @@
         <div class="article-grid publication-grid">
             <div class="page-stack">
                 {% if filter_keywords %}
-                <div class="card home-glass article-card publication-filter-card">
-                    <div class="home-glass-body article-filter-bar">
+                <div class="card home-liquid-card publication-filter-card">
+                    <span class="home-liquid-warp" aria-hidden="true"></span>
+                    <div class="home-liquid-body article-filter-bar">
                         <span class="article-filter-label">
                             Filtered by:
                             {% for keyword in filter_keywords %}
@@ -86,7 +87,7 @@
                 {% endif %}
             </div>
             <aside class="sidebar">
-                <div class="card home-liquid-card home-news-card layered-filter-card publication-keywords-card">
+                <div class="card home-liquid-card home-news-card publication-keywords-card">
                     <span class="home-liquid-warp" aria-hidden="true"></span>
                     <div class="home-liquid-body">
                         <h3 class="sidebar-card-title">Keywords</h3>
