@@ -29,6 +29,8 @@
 | Mobile | 100 | 0.9 s | 1.8 s | 0 | 0 ms | 98 | 100 | 100 |
 | Desktop | 100 | 0.3 s | 0.4 s | 0 | 0 ms | 98 | 100 | 100 |
 
+2026-07-17 增加上传访问控制与 token 分享后再次复测，生产 Lighthouse 仍为 Mobile 100、Desktop 100，FCP/LCP、CLS、TBT 与上表一致。服务器回环、每次新建 TLS 连接的 31 次中位数中，`/uploads/avatar.png` 从 Nginx 无鉴权直出的 25.087ms 变为 FastAPI 判定 + Nginx `X-Accel-Redirect` 的 26.055ms，增加 0.968ms；文件主体仍由 Nginx 发送。同期应用端中位数为：首页 0.839ms、Gallery 1.301ms、Search API 0.737ms，systemd cgroup 内存约 75.0MB。
+
 同一次生产切换中，systemd cgroup `MemoryCurrent` 从 165,724,160 bytes 降至 68,726,784 bytes，下降约 58.5%。预热后的服务器回环中位数为：首页 1.58ms、Publications 1.05ms、Daily 3.35ms、Gallery 1.57ms、Search API 0.93ms。
 
 服务层的 warm in-process payload 构建时间（用于比较 Python 端重复工作，不等同于公网 TTFB）：
