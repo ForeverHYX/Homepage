@@ -93,11 +93,24 @@ tags: Architecture, AI
         chip_material = styles.split(".chip {", 1)[1].split("}", 1)[0]
         self.assertIn("backdrop-filter: none", chip_material)
         self.assertIn("-webkit-backdrop-filter: none", chip_material)
+        badge_material = styles.split(".publication-badge {", 1)[1].split("}", 1)[0]
+        self.assertIn("color: #fff", badge_material)
+        self.assertIn("background: var(--pill-lit-background)", badge_material)
+        self.assertIn("border: 1px solid var(--pill-lit-border)", badge_material)
+        self.assertIn("box-shadow: var(--pill-lit-shadow)", badge_material)
+        self.assertIn("backdrop-filter: none", badge_material)
+        self.assertIn("cursor: default", badge_material)
+        self.assertNotIn(".publication-badge:hover", styles)
         self.assertIn("@media (prefers-reduced-transparency: reduce)", styles)
         self.assertIn("@media (prefers-contrast: more)", styles)
         self.assertIn("@media (forced-colors: active)", styles)
+        reduced_transparency = styles.rsplit(
+            "@media (prefers-reduced-transparency: reduce)", 1
+        )[1].split("@media (prefers-contrast: more)", 1)[0]
+        self.assertNotIn(".publication-badge", reduced_transparency)
         forced_colors = styles.rsplit("@media (forced-colors: active)", 1)[1]
         self.assertIn(".prose a.publication-keyword.is-active", forced_colors)
+        self.assertIn(".publication-badge", forced_colors)
         self.assertGreater(styles.rfind("@media (forced-colors: active)"), styles.rfind("@supports not"))
 
     def test_publication_filter_urls_toggle_encoded_multi_keywords(self) -> None:

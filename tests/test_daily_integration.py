@@ -1,6 +1,7 @@
 import unittest
 import json
 import os
+import re
 import tempfile
 import time
 from pathlib import Path
@@ -1357,7 +1358,7 @@ class DailyIntegrationTests(unittest.TestCase):
 
         self.assertIn('href="/daily"', base)
         self.assertIn("Daily", base)
-        self.assertIn('href="/static/css/styles.min.css?v=157"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=158"', base)
         self.assertIn("Paper", daily)
         self.assertIn("PDF", daily)
         self.assertIn("Code", daily)
@@ -1437,6 +1438,31 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn(".daily-action-button.daily-action-like:hover,\n.daily-action-button.feedback.is-active", styles)
         self.assertIn("background: var(--pill-lit-background);", styles)
         self.assertIn("border-color: var(--pill-lit-border);", styles)
+        dislike = re.search(
+            r"^\.daily-action-button\.daily-action-dislike\s*\{(?P<body>.*?)\n\}",
+            styles,
+            re.S | re.M,
+        )
+        dislike_hover = re.search(
+            r"^\.daily-action-button\.daily-action-dislike:hover\s*\{(?P<body>.*?)\n\}",
+            styles,
+            re.S | re.M,
+        )
+        self.assertIsNotNone(dislike)
+        self.assertIsNotNone(dislike_hover)
+        self.assertIn(
+            "background: var(--pill-warning-background)", dislike.group("body")
+        )
+        self.assertIn(
+            "border-color: var(--pill-warning-border)", dislike.group("body")
+        )
+        self.assertIn(
+            "box-shadow: var(--pill-warning-shadow)", dislike.group("body")
+        )
+        self.assertIn(
+            "linear-gradient(135deg, var(--warning), var(--danger))",
+            dislike_hover.group("body"),
+        )
         self.assertIn(".daily-archive-card", styles)
         self.assertIn(".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);", styles)
         self.assertIn(".daily-grid .sidebar {\n    gap: 24px;", styles)

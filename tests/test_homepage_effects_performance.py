@@ -278,7 +278,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("--liquid-content-tint", card_body)
         self.assertIn("--liquid-inner-shadow", card_body)
         self.assertIn("box-shadow: var(--functional-card-shadow)", card_body)
-        self.assertIn("href=\"/static/css/styles.min.css?v=157\"", base)
+        self.assertIn("href=\"/static/css/styles.min.css?v=158\"", base)
 
         warp_body = warp_block.group("body")
         self.assertIn("background-blend-mode: screen, overlay, normal", warp_body)
@@ -406,6 +406,9 @@ class HomepageEffectsPerformanceTests(TestCase):
             "--pill-rest-background",
             "--pill-lit-background",
             "--pill-lit-shadow",
+            "--pill-warning-background",
+            "--pill-warning-border",
+            "--pill-warning-shadow",
         ):
             self.assertIn(token, root_body, f":root must declare {token}")
 
@@ -445,7 +448,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("card home-liquid-card anniversary-card", anniversary)
         self.assertIn("card home-glass upload-panel", upload)
 
-        self.assertIn('href="/static/css/styles.min.css?v=157"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=158"', base)
 
     def test_nav_island_uses_dedicated_optical_material(self) -> None:
         source = LIQUID_GLASS_JS.read_text()
@@ -575,7 +578,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("max-width: none", edu_logo_body)
         self.assertIn("margin: 0", edu_logo_body)
         self.assertIn("border-radius: 0", edu_logo_body)
-        self.assertIn('href="/static/css/styles.min.css?v=157"', base)
+        self.assertIn('href="/static/css/styles.min.css?v=158"', base)
 
     def test_inline_code_avoids_backdrop_filter_line_artifacts(self) -> None:
         styles = STYLES_CSS.read_text()
