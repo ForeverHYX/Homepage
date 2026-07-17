@@ -38,6 +38,7 @@ FONT_STYLES = STATIC_DIR / "fonts" / "fonts.css"
 
 HEADER_MODULE_ORDER = (
     "core.js",
+    "anchored-popover.js",
     "navigation-search.js",
     "theme.js",
     "news-modal.js",

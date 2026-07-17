@@ -11,9 +11,11 @@
                 <div class="upload-sidebar-header">
                     <h2 class="upload-section-title">Upload Manager</h2>
                     <form action="/api/logout" method="POST" class="upload-logout-form">
-                        <button type="submit" class="upload-logout-btn" title="Log out">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
-                            <span>Log out</span>
+                        <button type="submit" class="daily-action-button action-glass daily-action-dislike" title="Log out">
+                            <span class="daily-action-icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
+                            </span>
+                            <span class="daily-action-label">Log out</span>
                         </button>
                     </form>
                 </div>
@@ -55,62 +57,95 @@
     <div id="toast" class="toast upload-toast"></div>
 </div>
 
-<!-- File rename modal -->
-<div id="renameModal" class="lightbox-overlay upload-meta-modal" role="dialog" aria-modal="true" aria-labelledby="renameModalTitle" style="display:none">
-    <div class="card lightbox-content upload-meta-card" onclick="event.stopPropagation()">
-        <div class="upload-meta-body">
-            <h2 class="upload-section-title" id="renameModalTitle">Rename File</h2>
+<!-- Anchored file rename popover -->
+<section id="renamePopover" class="anchored-popover card home-liquid-card upload-edit-popover upload-rename-popover" role="dialog" aria-labelledby="renamePopoverTitle" hidden inert>
+    <span class="home-liquid-warp" aria-hidden="true"></span>
+    <form id="renameForm" class="home-liquid-body upload-popover-body">
+        <header class="upload-popover-header">
+            <div>
+                <p class="popover-eyebrow">File</p>
+                <h2 class="upload-popover-title" id="renamePopoverTitle">Rename file</h2>
+            </div>
+            <button type="button" class="popover-close-btn" id="renameClose" aria-label="Close rename file">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </header>
+        <div class="upload-popover-content">
             <input type="hidden" id="renamePath">
-            <div class="form-row form-row--last">
+            <div class="upload-field">
                 <label class="form-label" for="renameName">File name</label>
                 <input id="renameName" class="form-input" autocomplete="off" spellcheck="false">
                 <p class="upload-field-hint">Keep the correct extension so the file remains previewable.</p>
             </div>
             <div class="upload-meta-actions">
-                <button class="btn upload-meta-cancel" id="renameCancel">Cancel</button>
-                <button class="btn btn-primary" id="renameSave">Rename</button>
+                <button type="button" class="btn upload-meta-cancel" id="renameCancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="renameSave">Rename</button>
             </div>
         </div>
-    </div>
-</div>
+    </form>
+</section>
 
-<!-- Metadata edit modal -->
-<div id="metaModal" class="lightbox-overlay upload-meta-modal" style="display:none">
-    <div class="card lightbox-content upload-meta-card" onclick="event.stopPropagation()">
-        <div class="upload-meta-body">
-            <h2 class="upload-section-title">Edit Folder Info</h2>
+<!-- Anchored folder settings popover -->
+<section id="metaPopover" class="anchored-popover card home-liquid-card upload-edit-popover upload-folder-popover" role="dialog" aria-labelledby="metaPopoverTitle" hidden inert>
+    <span class="home-liquid-warp" aria-hidden="true"></span>
+    <form id="metaForm" class="home-liquid-body upload-popover-body">
+        <header class="upload-popover-header">
+            <div>
+                <p class="popover-eyebrow">Gallery &amp; metadata</p>
+                <h2 class="upload-popover-title" id="metaPopoverTitle">Folder settings</h2>
+            </div>
+            <button type="button" class="popover-close-btn" id="metaClose" aria-label="Close folder settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </header>
+        <div class="upload-popover-content">
             <input type="hidden" id="metaPath">
-            <div class="form-row">
-                <label class="form-label" for="metaTitle">Title</label>
-                <input id="metaTitle" class="form-input">
-            </div>
-            <div class="form-row">
-                <label class="form-label" for="metaDate">Shoot Date</label>
-                <input type="date" id="metaDate" class="form-input">
-            </div>
-            <div class="form-row">
-                <label class="form-label" for="metaAuthor">Author</label>
-                <input id="metaAuthor" placeholder="Yixun Hong" class="form-input">
-            </div>
-            <div class="form-row">
-                <label class="form-label" for="metaGalleryVisibility">Gallery Visibility</label>
-                <select id="metaGalleryVisibility" class="form-input">
-                    <option value="hidden">Hidden</option>
-                    <option value="public">Public Gallery</option>
-                    <option value="private">Login-only Gallery</option>
-                </select>
-            </div>
-            <div class="form-row form-row--last">
-                <label class="form-label" for="metaDesc">Description</label>
-                <textarea id="metaDesc" rows="3" class="form-input upload-meta-desc"></textarea>
+            <div class="upload-meta-grid">
+                <div class="upload-field upload-field--wide">
+                    <label class="form-label" for="metaTitle">Title</label>
+                    <input id="metaTitle" class="form-input">
+                </div>
+                <div class="upload-field">
+                    <label class="form-label" for="metaDate">Shoot date</label>
+                    <input type="date" id="metaDate" class="form-input">
+                </div>
+                <div class="upload-field">
+                    <label class="form-label" for="metaAuthor">Author</label>
+                    <input id="metaAuthor" placeholder="Yixun Hong" class="form-input">
+                </div>
+                <fieldset class="upload-field upload-field--wide upload-visibility-field">
+                    <legend class="form-label">Gallery visibility</legend>
+                    <input type="hidden" id="metaGalleryVisibility" value="hidden">
+                    <div class="upload-visibility-options">
+                        <input class="visually-hidden upload-visibility-input" type="radio" name="metaGalleryVisibilityOption" id="visibilityHidden" value="hidden" checked>
+                        <label class="upload-visibility-option" for="visibilityHidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 4.2A10.5 10.5 0 0 1 12 4c5 0 9 4 10 8a12.7 12.7 0 0 1-2 3.8"/><path d="M6.6 6.6A12.3 12.3 0 0 0 2 12c1 4 5 8 10 8a10.5 10.5 0 0 0 5.4-1.5"/></svg>
+                            <span>Hidden</span>
+                        </label>
+                        <input class="visually-hidden upload-visibility-input" type="radio" name="metaGalleryVisibilityOption" id="visibilityPublic" value="public">
+                        <label class="upload-visibility-option" for="visibilityPublic">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+                            <span>Public</span>
+                        </label>
+                        <input class="visually-hidden upload-visibility-input" type="radio" name="metaGalleryVisibilityOption" id="visibilityPrivate" value="private">
+                        <label class="upload-visibility-option" for="visibilityPrivate">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <span>Login-only</span>
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="upload-field upload-field--wide">
+                    <label class="form-label" for="metaDesc">Description</label>
+                    <textarea id="metaDesc" rows="3" class="form-input upload-meta-desc"></textarea>
+                </div>
             </div>
             <div class="upload-meta-actions">
-                <button class="btn upload-meta-cancel" id="metaCancel">Cancel</button>
-                <button class="btn btn-primary" id="metaSave">Save</button>
+                <button type="button" class="btn upload-meta-cancel" id="metaCancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="metaSave">Save changes</button>
             </div>
         </div>
-    </div>
-</div>
+    </form>
+</section>
 {% endblock %}
 
 {% block scripts %}

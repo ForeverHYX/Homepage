@@ -112,7 +112,7 @@ Lighthouse 不足以发现玻璃重绘或滚动回载问题。Chrome DevTools Pe
 
 1. 首页加载完成后开始录制；
 2. 从顶部平滑滚到底部，再返回顶部；
-3. 打开/关闭搜索、News modal 和移动菜单；
+3. 打开/关闭搜索、News 锚定 Popover 和移动菜单；
 4. Gallery 滚出多个相册后返回，打开灯箱；
 5. 停止录制并检查 Long Tasks、Layout、Paint 和图片 decode。
 
@@ -160,4 +160,4 @@ make check
 make profile URL=http://127.0.0.1:8000
 ```
 
-随后手工/自动验证亮暗主题、桌面与移动导航、搜索、News modal、Daily filters、Gallery 滚动/灯箱、Resume、Login、匿名上传重定向，以及登录后 Copy link 的匿名可访问性。性能提升只有在这些行为全部不变时才成立。
+随后手工/自动验证亮暗主题、桌面与移动导航、搜索、News 锚定 Popover、Daily filters、Gallery 滚动/灯箱、Resume、Login、匿名上传重定向，以及登录后 Copy link 的匿名可访问性。性能提升只有在这些行为全部不变时才成立。

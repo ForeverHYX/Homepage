@@ -299,7 +299,7 @@
 
 .contact-icon::after,
 .news-expand-btn::after,
-.news-modal-close::after,
+.popover-close-btn::after,
 .site-header .action-btn::after {
     content: "";
     position: absolute;
@@ -318,7 +318,7 @@
     .site-header .action-btn,
     .contact-icon,
     .news-expand-btn,
-    .news-modal-close,
+    .popover-close-btn,
     .search-close-btn,
     .publication-link
 ) {
@@ -335,7 +335,7 @@
     .home-profile-card .avatar:hover,
     .contact-icon:hover,
     .news-expand-btn:hover,
-    .news-modal-close:hover,
+    .popover-close-btn:hover,
     .nav-links a:hover,
     .nav-mobile-link:hover,
     .site-header .action-btn:hover,
@@ -366,7 +366,7 @@
 .site-header .action-btn:active,
 .home-liquid-card .contact-icon:active,
 .home-liquid-card .news-expand-btn:active,
-.news-modal-close:active,
+.popover-close-btn:active,
 .search-close-btn:active,
 .prose a.publication-link:active {
     transform: scale(0.97);
@@ -392,7 +392,7 @@
     .avatar:hover,
     .contact-icon:hover,
     .news-expand-btn:hover,
-    .news-modal-close:hover,
+    .popover-close-btn:hover,
     .nav-links a:hover,
     .nav-mobile-link:hover,
     .site-header .action-btn:hover,
@@ -403,7 +403,7 @@
 
     .search-dropdown,
     .nav-mobile-panel,
-    .news-modal-overlay,
+    .anchored-popover,
     .lightbox-overlay,
     .toast {
         transform: none !important;
@@ -412,21 +412,18 @@
         transition-timing-function: ease-out !important;
     }
 
-    .news-modal-overlay,
     .nav-mobile-panel:not(.open) {
         transition:
             opacity 160ms ease-out,
             visibility 0s linear 160ms !important;
     }
 
-    .news-modal-overlay.is-active,
     .nav-mobile-panel.open {
         transition:
             opacity 160ms ease-out,
             visibility 0s linear 0s !important;
     }
 
-    .news-modal-card,
     .lightbox-content {
         transform: none !important;
     }
@@ -457,8 +454,6 @@
     .home-content,
     .search-dropdown,
     .nav-mobile-panel,
-    .news-modal-card,
-    .news-modal-header,
     .lightbox-content,
     .toast {
         background: var(--accessibility-surface) !important;
@@ -466,7 +461,6 @@
         -webkit-backdrop-filter: none !important;
     }
 
-    .news-modal-overlay,
     .lightbox-overlay {
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;

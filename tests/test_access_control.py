@@ -51,6 +51,10 @@ class AnonymousAccessBoundaryTests(TestCase):
         self.assertNotIn('class="nav-mobile-link" data-route="/upload"', response.text)
         self.assertIn("Upload Manager", response.text)
         self.assertIn('action="/api/logout"', response.text)
+        self.assertIn(
+            'class="daily-action-button action-glass daily-action-dislike"',
+            response.text,
+        )
         self.assertIn("Log out", response.text)
         self.assertEqual(response.headers["cache-control"], "private, no-store")
 

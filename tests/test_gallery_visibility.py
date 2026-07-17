@@ -340,14 +340,18 @@ class GalleryVisibilityTests(TestCase):
             self.assertEqual(response.headers["vary"], "Cookie")
             self.assertIn("No available albums.", response.text)
 
-    def test_upload_page_contains_visibility_editor_control(self) -> None:
+    def test_upload_page_contains_segmented_visibility_editor(self) -> None:
         with patch.object(pages, "get_current_user", return_value=True):
             response = TestClient(app).get("/upload")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["cache-control"], "private, no-store")
         self.assertIn('id="metaGalleryVisibility"', response.text)
-        self.assertIn("Login-only Gallery", response.text)
+        self.assertEqual(response.text.count('name="metaGalleryVisibilityOption"'), 3)
+        self.assertIn("Login-only", response.text)
+        self.assertNotIn('<select id="metaGalleryVisibility"', response.text)
+        self.assertIn('id="metaPopover"', response.text)
+        self.assertNotIn("lightbox-overlay upload-meta-modal", response.text)
 
     def test_news_cache_uses_gallery_config_mtime(self) -> None:
         with TemporaryDirectory() as temp_dir:

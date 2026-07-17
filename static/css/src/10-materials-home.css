@@ -5,7 +5,7 @@
 /* Base card primitive — thin shell only. .card fixes box model + radius
    + transition; every frosted surface brings its own material
    (.home-liquid-card / .home-glass / .toc / .lightbox-content /
-   .news-modal-card / .carousel-wrapper). .card itself must NOT paint a
+   .anchored-popover / .carousel-wrapper). .card itself must NOT paint a
    background/shadow, otherwise it silently reintroduces a competing material
    language under whichever modifier wins the cascade. */
 .card {

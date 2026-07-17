@@ -78,7 +78,7 @@ code: https://github.com/example/repo
 - **2026-05**: Won an award.
 ```
 
-首页展示最近 6 条，News modal 展示完整列表。公开 Gallery 相册元数据也会合并进 News；private/hidden 相册不会泄露到公开 feed。
+首页展示最近 6 条，News 锚定 Popover 展示完整列表。公开 Gallery 相册元数据也会合并进 News；private/hidden 相册不会泄露到公开 feed。
 
 ## Gallery
 

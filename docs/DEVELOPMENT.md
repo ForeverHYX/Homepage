@@ -59,7 +59,7 @@ make build
 
 ## 编辑 JavaScript
 
-- Header 的源码位于 `static/js/src/site-header/`，按 core、navigation/search、theme、news modal 拆分。
+- Header 的源码位于 `static/js/src/site-header/`，按 core、共享 anchored popover、navigation/search、theme、News popover 拆分。
 - Header bundle 和所有 `.min.js` 都是生成文件。
 - 其他组件与效果的可读 `.js` 是源码；构建器在原目录生成 `.min.js`。
 - 页面模板只引用 `.min.js`，并通过 `asset_url()` 获取内容指纹。

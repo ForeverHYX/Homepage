@@ -386,42 +386,6 @@
     margin: 0;
 }
 
-.upload-logout-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-height: 36px;
-    padding: 7px 10px;
-    border: 1px solid var(--well-border);
-    border-radius: 999px;
-    background: var(--surface-highlight);
-    color: var(--muted);
-    font: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition:
-        transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
-        color 0.2s ease,
-        border-color 0.2s ease,
-        background-color 0.2s ease;
-}
-
-.upload-logout-btn:hover {
-    color: var(--danger);
-    border-color: color-mix(in srgb, var(--danger) 28%, var(--well-border));
-    background: color-mix(in srgb, var(--danger) 8%, var(--surface-highlight));
-    transform: translateY(-1px);
-}
-
-.upload-logout-btn:active {
-    transform: scale(0.97);
-    transition-duration: 80ms;
-}
-
 .upload-path-block {
     margin-bottom: 16px;
 }
@@ -530,28 +494,144 @@
     z-index: 10000;
 }
 
-.upload-meta-card {
-    padding: 0;
-    max-width: 500px;
-    width: 90%;
+.upload-edit-popover {
+    width: min(540px, calc(100vw - 24px));
+    border-radius: 28px;
 }
 
-.upload-meta-body {
-    padding: 32px;
+.upload-rename-popover {
+    width: min(410px, calc(100vw - 24px));
+}
+
+.upload-popover-body {
+    max-height: var(--anchored-popover-max-height, calc(100vh - 24px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.upload-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 18px 14px 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.upload-popover-title {
+    margin: 0;
+    color: var(--heading);
+    font-size: 19px;
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.upload-popover-content {
+    padding: 18px 20px 20px;
+}
+
+.upload-meta-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+}
+
+.upload-field {
+    min-width: 0;
+}
+
+.upload-field--wide {
+    grid-column: 1 / -1;
+}
+
+.upload-field .form-label {
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.upload-field .form-input {
+    min-height: 42px;
+    padding: 9px 11px;
+    background: color-mix(in srgb, var(--well-bg) 74%, transparent);
 }
 
 .upload-meta-desc {
+    min-height: 82px;
     resize: vertical;
+}
+
+.upload-visibility-field {
+    padding: 0;
+    border: 0;
+}
+
+.upload-visibility-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.upload-visibility-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    min-height: 38px;
+    padding: 7px 8px;
+    border: 1px solid var(--pill-rest-border);
+    border-radius: 999px;
+    background: var(--pill-rest-background);
+    box-shadow: var(--pill-rest-shadow);
+    color: var(--pill-rest-color);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    transition:
+        transform 0.16s ease,
+        color 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        background 0.16s ease;
+}
+
+.upload-visibility-option:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--primary) 30%, var(--pill-rest-border));
+}
+
+.upload-visibility-input:focus-visible + .upload-visibility-option {
+    outline: 3px solid color-mix(in srgb, var(--primary) 42%, transparent);
+    outline-offset: 2px;
+}
+
+.upload-visibility-input:checked + .upload-visibility-option {
+    border-color: var(--pill-lit-border);
+    background: var(--pill-lit-background);
+    box-shadow: var(--pill-lit-shadow);
+    color: white;
+}
+
+.upload-visibility-input:checked + .upload-visibility-option:hover {
+    transform: none;
 }
 
 .upload-meta-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    margin-top: 18px;
 }
 
 .upload-meta-cancel {
-    background: var(--surface-highlight);
+    background: var(--pill-rest-background);
+    box-shadow: var(--pill-rest-shadow);
     color: var(--text);
 }
 
@@ -562,7 +642,34 @@
     line-height: 1.45;
 }
 
+[data-theme="dark"] .upload-popover-header {
+    border-bottom-color: rgba(255, 255, 255, 0.09);
+}
+
 @media (max-width: 640px) {
+    .upload-edit-popover,
+    .upload-rename-popover {
+        width: calc(100vw - 24px);
+        border-radius: 24px;
+    }
+
+    .upload-popover-header {
+        padding: 16px 16px 12px 18px;
+    }
+
+    .upload-popover-content {
+        padding: 16px 16px 18px;
+    }
+
+    .upload-meta-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .upload-field--wide {
+        grid-column: auto;
+    }
+
     .upload-panel .home-glass-body,
     .upload-panel-body {
         padding: 18px 14px;

@@ -1,184 +1,128 @@
   /* ---------------------------------------------------------------------------
-   * Home page "all news" modal
+   * Home page "all news" anchored popover
    *
-   * Only attached if #newsExpandBtn exists (home page). Creates a full-screen
-   * overlay with a dedicated news card, fetches /api/site/news and renders its
-   * all_news_html field. Closes on Escape / overlay click / close button click;
-   * locks body scroll while open.
+   * The expanded list uses the shared functional-card material and grows from
+   * the News control. It remains non-modal: no viewport scrim, body scroll
+   * lock, or focus trap. The fetched response is cached in the mounted panel.
    * ------------------------------------------------------------------------- */
-export function initNewsModal() {
-    var btn = document.getElementById("newsExpandBtn");
-    if (!btn) return;
+export function initNewsPopover() {
+    var button = document.getElementById("newsExpandBtn");
+    var controller = window.HomepageAnchoredPopover;
+    if (!button || !controller) return;
 
-    var overlay = null;
-    var closeBtn = null;
-    var modalCard = null;
-    var previousFocus = null;
-    var isModalClosing = false;
-    var savedOverflow = "";
-    var savedPaddingRight = "";
+    var popover = null;
+    var closeButton = null;
+    var popoverBody = null;
+    var newsLoaded = false;
+    var newsLoading = false;
 
-    function openModal() {
-      if (overlay) return; // already open
+    button.setAttribute("aria-expanded", "false");
+    button.setAttribute("aria-haspopup", "dialog");
 
-      overlay = document.createElement("div");
-      overlay.className = "news-modal-overlay";
-      previousFocus = document.activeElement;
+    function buildPopover() {
+      if (popover) return popover;
 
-      var card = document.createElement("div");
-      card.className = "news-modal-card";
-      card.setAttribute("role", "dialog");
-      card.setAttribute("aria-modal", "true");
-      card.setAttribute("aria-labelledby", "newsModalTitle");
-      card.tabIndex = -1;
-      modalCard = card;
-      // Keep clicks on the card from bubbling to the overlay (which closes).
-      card.addEventListener("click", function (e) {
-        e.stopPropagation();
-      });
+      popover = document.createElement("section");
+      popover.id = "newsPopover";
+      popover.className =
+        "anchored-popover card home-liquid-card news-popover";
+      popover.setAttribute("role", "dialog");
+      popover.setAttribute("aria-labelledby", "newsPopoverTitle");
+      popover.hidden = true;
+      popover.inert = true;
 
-      var header = document.createElement("div");
-      header.className = "news-modal-header";
+      var warp = document.createElement("span");
+      warp.className = "home-liquid-warp";
+      warp.setAttribute("aria-hidden", "true");
+      popover.appendChild(warp);
+
+      var surfaceBody = document.createElement("div");
+      surfaceBody.className = "home-liquid-body news-popover-surface";
+
+      var header = document.createElement("header");
+      header.className = "news-popover-header";
+      var headingGroup = document.createElement("div");
+      var eyebrow = document.createElement("p");
+      eyebrow.className = "popover-eyebrow";
+      eyebrow.textContent = "Latest updates";
       var title = document.createElement("h2");
-      title.id = "newsModalTitle";
-      title.className = "news-modal-title";
+      title.id = "newsPopoverTitle";
+      title.className = "news-popover-title";
       title.textContent = "News";
-      header.appendChild(title);
+      headingGroup.appendChild(eyebrow);
+      headingGroup.appendChild(title);
+      header.appendChild(headingGroup);
 
-      closeBtn = document.createElement("button");
-      closeBtn.type = "button";
-      closeBtn.className = "news-modal-close";
-      closeBtn.setAttribute("aria-label", "Close");
-      closeBtn.innerHTML = "&times;";
-      header.appendChild(closeBtn);
-      card.appendChild(header);
-
-      var body = document.createElement("div");
-      body.className = "news-modal-body";
-      card.appendChild(body);
-
-      // Loading placeholder while we fetch.
-      var loading = document.createElement("div");
-      loading.className = "news-modal-status";
-      loading.setAttribute("role", "status");
-      loading.textContent = "Loading…";
-      body.appendChild(loading);
-
-      overlay.appendChild(card);
-      document.body.appendChild(overlay);
-
-      // Lock body scroll (and compensate for the scrollbar width to avoid
-      // layout shift).
-      savedOverflow = document.body.style.overflow;
-      savedPaddingRight = document.body.style.paddingRight;
-      var scrollbarWidth =
-        window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.overflow = "hidden";
-      if (scrollbarWidth > 0) {
-        document.body.style.paddingRight = scrollbarWidth + "px";
-      }
-
-      // Force a frame so the CSS opacity transition kicks in.
-      window.requestAnimationFrame(function () {
-        if (overlay && !isModalClosing) {
-          overlay.classList.add("is-active");
-          closeBtn.focus({ preventScroll: true });
-        }
+      closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "popover-close-btn";
+      closeButton.setAttribute("aria-label", "Close news");
+      closeButton.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+      closeButton.addEventListener("click", function () {
+        controller.close(popover, true);
       });
+      header.appendChild(closeButton);
+      surfaceBody.appendChild(header);
 
-      // Wire up close interactions.
-      overlay.addEventListener("click", closeModal);
-      closeBtn.addEventListener("click", closeModal, { passive: true });
-      document.addEventListener("keydown", onKeydown);
+      popoverBody = document.createElement("div");
+      popoverBody.className = "news-popover-scroll";
+      surfaceBody.appendChild(popoverBody);
+      popover.appendChild(surfaceBody);
+      document.body.appendChild(popover);
+      return popover;
+    }
 
-      // Fetch news HTML.
+    function renderStatus(message, role) {
+      while (popoverBody.firstChild) popoverBody.removeChild(popoverBody.firstChild);
+      var status = document.createElement("div");
+      status.className = "news-popover-status";
+      status.setAttribute("role", role || "status");
+      status.textContent = message;
+      popoverBody.appendChild(status);
+    }
+
+    function loadNews() {
+      if (newsLoaded || newsLoading) return;
+      newsLoading = true;
+      renderStatus("Loading…", "status");
+
       fetch("/api/site/news", { headers: { Accept: "application/json" } })
         .then(function (response) {
           if (!response.ok) throw new Error("site/news failed");
           return response.json();
         })
         .then(function (data) {
-          if (!overlay) return;
-          // Replace the loading placeholder with the real news HTML.
-          while (body.firstChild) body.removeChild(body.firstChild);
+          while (popoverBody.firstChild) {
+            popoverBody.removeChild(popoverBody.firstChild);
+          }
           var wrap = document.createElement("div");
-          wrap.className = "home-news-modal-content";
+          wrap.className = "home-news-popover-content";
           wrap.innerHTML = data && data.all_news_html ? data.all_news_html : "";
-          body.appendChild(wrap);
+          popoverBody.appendChild(wrap);
+          newsLoaded = true;
+          controller.reposition();
         })
         .catch(function () {
-          if (!overlay) return;
-          while (body.firstChild) body.removeChild(body.firstChild);
-          var err = document.createElement("div");
-          err.className = "news-modal-status";
-          err.setAttribute("role", "alert");
-          err.textContent = "Failed to load news.";
-          body.appendChild(err);
+          renderStatus("Failed to load news.", "alert");
+        })
+        .then(function () {
+          newsLoading = false;
         });
     }
 
-    function closeModal() {
-      if (!overlay || isModalClosing) return;
-      isModalClosing = true;
-      var current = overlay;
-      var currentCloseBtn = closeBtn;
-      var returnFocus = previousFocus;
-
-      // Fade out, then remove.
-      current.classList.remove("is-active");
-      window.setTimeout(function () {
-        document.removeEventListener("keydown", onKeydown);
-        if (currentCloseBtn) {
-          currentCloseBtn.removeEventListener("click", closeModal);
-        }
-        if (current.parentNode) current.parentNode.removeChild(current);
-        overlay = null;
-        closeBtn = null;
-        modalCard = null;
-        previousFocus = null;
-        isModalClosing = false;
-        if (returnFocus && returnFocus.isConnected) {
-          returnFocus.focus({ preventScroll: true });
-        }
-        document.body.style.overflow = savedOverflow;
-        document.body.style.paddingRight = savedPaddingRight;
-      }, 300);
-    }
-
-    function onKeydown(event) {
-      if (isModalClosing) {
-        if (event.key === "Tab" || event.key === "Escape") {
-          event.preventDefault();
-        }
+    function togglePopover() {
+      buildPopover();
+      if (controller.isOpen(popover)) {
+        controller.close(popover, true);
         return;
       }
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeModal();
-        return;
-      }
-      if (event.key === "Tab" && modalCard) {
-        var focusable = Array.prototype.slice.call(
-          modalCard.querySelectorAll(
-            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          )
-        );
-        if (!focusable.length) {
-          event.preventDefault();
-          modalCard.focus();
-          return;
-        }
-        var first = focusable[0];
-        var last = focusable[focusable.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
+      controller.open(popover, button, {
+        placement: "right-start",
+        initialFocus: closeButton,
+      });
+      loadNews();
     }
 
-    btn.addEventListener("click", openModal);
+    button.addEventListener("click", togglePopover);
   }

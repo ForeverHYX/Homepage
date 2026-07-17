@@ -11,9 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 LIGHTFIELD_JS = ROOT / "static" / "js" / "effects" / "lightfield.js"
 LIQUID_GLASS_JS = ROOT / "static" / "js" / "effects" / "liquid-glass.js"
 SITE_HEADER_JS = ROOT / "static" / "js" / "components" / "site-header.js"
+UPLOAD_MANAGER_JS = ROOT / "static" / "js" / "components" / "upload-manager.js"
 STYLES_CSS = ROOT / "static" / "css" / "styles.css"
 BASE_HTML = ROOT / "app" / "templates" / "base.html"
 HOME_HTML = ROOT / "app" / "templates" / "pages" / "home.html"
+UPLOAD_HTML = ROOT / "app" / "templates" / "pages" / "upload.html"
 GALLERY_HTML = ROOT / "app" / "templates" / "pages" / "gallery.html"
 EDUCATION_PY = ROOT / "app" / "education.py"
 FAVICON_32 = ROOT / "static" / "images" / "site" / "favicon-32.png"
@@ -686,7 +688,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("-webkit-backdrop-filter: none", daily_action.group("body"))
         self.assertNotIn("backdrop-filter: blur", daily_action.group("body"))
 
-    def test_news_modal_uses_dedicated_layout_instead_of_generic_lightbox_card(self) -> None:
+    def test_news_expansion_uses_anchored_functional_popover(self) -> None:
         source = SITE_HEADER_JS.read_text()
         styles = STYLES_CSS.read_text()
 
@@ -696,18 +698,47 @@ class HomepageEffectsPerformanceTests(TestCase):
             "asset_url('js/components/site-header.min.js')",
             BASE_HTML.read_text(),
         )
-        self.assertIn('overlay.className = "news-modal-overlay"', source)
-        self.assertIn('card.className = "news-modal-card"', source)
-        self.assertIn('wrap.className = "home-news-modal-content"', source)
-        self.assertNotIn('card.className = "card home-liquid-card lightbox-content"', source)
+        self.assertIn('"anchored-popover card home-liquid-card news-popover"', source)
+        self.assertIn('wrap.className = "home-news-popover-content"', source)
+        self.assertIn('placement: "right-start"', source)
+        self.assertIn("window.HomepageAnchoredPopover", source)
+        self.assertIn("window.visualViewport", source)
+        self.assertIn("getBoundingClientRect()", source)
+        self.assertIn('".anchored-popover.is-positioned"', source)
+        self.assertNotIn("news-modal-overlay", source)
+        self.assertNotIn('document.body.style.overflow = "hidden"', source)
 
-        self.assertIn(".news-modal-overlay", styles)
-        self.assertIn(".news-modal-card", styles)
-        self.assertIn(".home-news-modal-content", styles)
-        modal_card = re.search(r"\.news-modal-card\s*\{(?P<body>.*?)\n\}", styles, re.S)
-        self.assertIsNotNone(modal_card)
-        self.assertIn("overflow: auto", modal_card.group("body"))
-        self.assertIn("max-height: min(82vh, 760px)", modal_card.group("body"))
+        self.assertIn(".anchored-popover.home-liquid-card", styles)
+        self.assertIn(".news-popover", styles)
+        self.assertIn(".home-news-popover-content", styles)
+        self.assertNotIn(".news-modal-overlay", styles)
+        popover = re.search(r"\.news-popover\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        self.assertIsNotNone(popover)
+        self.assertIn("width: min(460px, calc(100vw - 24px))", popover.group("body"))
+        self.assertNotIn("background:", popover.group("body"))
+        self.assertNotIn("backdrop-filter", popover.group("body"))
+
+    def test_upload_editors_share_anchored_popover_and_segmented_visibility(self) -> None:
+        source = UPLOAD_MANAGER_JS.read_text()
+        template = UPLOAD_HTML.read_text()
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn("popoverController.open(metaPopover, anchor", source)
+        self.assertIn("popoverController.open(renamePopover, anchor", source)
+        self.assertIn('placement: "bottom-end"', source)
+        self.assertNotIn('classList.add("active")', source)
+        self.assertIn(
+            'class="anchored-popover card home-liquid-card upload-edit-popover',
+            template,
+        )
+        self.assertNotIn("lightbox-overlay upload-meta-modal", template)
+        self.assertIn('class="upload-meta-grid"', template)
+        self.assertEqual(template.count('name="metaGalleryVisibilityOption"'), 3)
+        self.assertIn('value="hidden"', template)
+        self.assertIn('value="public"', template)
+        self.assertIn('value="private"', template)
+        self.assertNotIn('<select id="metaGalleryVisibility"', template)
+        self.assertIn(".upload-visibility-input:checked + .upload-visibility-option", styles)
 
     def test_navigation_details_cover_keyboard_touch_and_mobile_search(self) -> None:
         source = SITE_HEADER_JS.read_text()
@@ -741,8 +772,10 @@ class HomepageEffectsPerformanceTests(TestCase):
         liquid_source = LIQUID_GLASS_JS.read_text()
         styles = STYLES_CSS.read_text()
 
-        self.assertIn('card.setAttribute("role", "dialog")', source)
-        self.assertIn('card.setAttribute("aria-modal", "true")', source)
+        self.assertIn('popover.setAttribute("role", "dialog")', source)
+        self.assertIn('button.setAttribute("aria-haspopup", "dialog")', source)
+        self.assertIn("popover.inert = true", source)
+        self.assertNotIn('setAttribute("aria-modal", "true")', source)
         self.assertIn("prefers-reduced-transparency: reduce", styles)
         self.assertIn("prefers-contrast: more", styles)
         self.assertIn("forced-colors: active", styles)

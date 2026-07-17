@@ -19,9 +19,10 @@
         pathLabel, fileInput, dropZone, queueInfo, startBtn,
         fileList, refreshBtn, toast,
         folderNameInput, createFolderBtn, navHomeBtn,
-        metaModal, metaPath, metaTitle, metaDate, metaAuthor, metaDesc,
-        metaGalleryVisibility, metaSave, metaCancel,
-        renameModal, renamePath, renameName, renameSave, renameCancel;
+        metaPopover, metaForm, metaPath, metaTitle, metaDate, metaAuthor, metaDesc,
+        metaGalleryVisibility, metaVisibilityInputs, metaSave, metaCancel, metaClose,
+        renamePopover, renameForm, renamePath, renameName, renameSave,
+        renameCancel, renameClose, popoverController;
 
     // ---- Star icon SVGs (gallery toggle) -----------------------------------
     var STAR_GRAD_DEFS =
@@ -115,7 +116,7 @@
         btn.innerHTML = emojiOrSvg;
         btn.addEventListener("click", function (e) {
             e.stopPropagation();
-            onClick();
+            onClick(btn, e);
         });
         return btn;
     }
@@ -267,8 +268,8 @@
             var actions = document.createElement("div");
             actions.className = "file-item-actions";
 
-            actions.appendChild(iconButton(iconSvg("edit"), "Edit folder info", function () {
-                openMetaModal(item);
+            actions.appendChild(iconButton(iconSvg("edit"), "Edit folder info", function (anchor) {
+                openMetaPopover(item, anchor);
             }));
 
             actions.appendChild(iconButton(
@@ -321,8 +322,8 @@
             var actions = document.createElement("div");
             actions.className = "file-item-actions";
 
-            actions.appendChild(iconButton(iconSvg("edit"), "Rename file", function () {
-                openRenameModal(item);
+            actions.appendChild(iconButton(iconSvg("edit"), "Rename file", function (anchor) {
+                openRenamePopover(item, anchor);
             }));
 
             actions.appendChild(iconButton(iconSvg("copy"), "Copy link", function () {
@@ -393,23 +394,25 @@
             });
     }
 
-    function openRenameModal(item) {
-        if (!renameModal) return;
+    function openRenamePopover(item, anchor) {
+        if (!renamePopover || !popoverController) return;
         renamePath.value = item.path || "";
         renameName.value = item.name || "";
-        renameModal.classList.add("active");
-        renameModal.style.display = "";
-        window.setTimeout(function () {
-            renameName.focus();
+        popoverController.open(renamePopover, anchor, {
+            placement: "bottom-end",
+            initialFocus: function () {
+                return renameName;
+            }
+        });
+        window.requestAnimationFrame(function () {
             var dot = renameName.value.lastIndexOf(".");
             renameName.setSelectionRange(0, dot > 0 ? dot : renameName.value.length);
-        }, 0);
+        });
     }
 
-    function closeRenameModal() {
-        if (!renameModal) return;
-        renameModal.classList.remove("active");
-        renameModal.style.display = "none";
+    function closeRenamePopover(restoreFocus) {
+        if (!renamePopover || !popoverController) return;
+        popoverController.close(renamePopover, restoreFocus !== false);
     }
 
     function saveRename() {
@@ -429,7 +432,7 @@
             credentials: "include"
         })
             .then(function () {
-                closeRenameModal();
+                closeRenamePopover(false);
                 showToast("Renamed");
                 return refresh();
             })
@@ -563,29 +566,34 @@
             });
     }
 
-    // ---- Metadata modal ----------------------------------------------------
+    // ---- Anchored folder settings -----------------------------------------
 
-    function openMetaModal(item) {
-        if (!metaModal) return;
+    function setMetaVisibility(value) {
+        var normalized = value === "public" || value === "private" ? value : "hidden";
+        if (metaGalleryVisibility) metaGalleryVisibility.value = normalized;
+        if (!metaVisibilityInputs) return;
+        for (var index = 0; index < metaVisibilityInputs.length; index++) {
+            metaVisibilityInputs[index].checked = metaVisibilityInputs[index].value === normalized;
+        }
+    }
+
+    function openMetaPopover(item, anchor) {
+        if (!metaPopover || !popoverController) return;
         metaPath.value = item.path || "";
         metaTitle.value = item.title || "";
         metaDate.value = item.date || "";
         metaAuthor.value = item.author || "";
         metaDesc.value = item.description || item.desc || "";
-        if (metaGalleryVisibility) {
-            metaGalleryVisibility.value = item.gallery_visibility || (item.is_gallery ? "public" : "hidden");
-        }
-        // Use the .active class so the .lightbox-overlay opacity transition
-        // (opacity:0 -> 1) applies. Setting display alone leaves it invisible.
-        metaModal.classList.add("active");
-        metaModal.style.display = "";
+        setMetaVisibility(item.gallery_visibility || (item.is_gallery ? "public" : "hidden"));
+        popoverController.open(metaPopover, anchor, {
+            placement: "bottom-end",
+            initialFocus: metaTitle
+        });
     }
 
-    function closeMetaModal() {
-        if (metaModal) {
-            metaModal.classList.remove("active");
-            metaModal.style.display = "none";
-        }
+    function closeMetaPopover(restoreFocus) {
+        if (!metaPopover || !popoverController) return;
+        popoverController.close(metaPopover, restoreFocus !== false);
     }
 
     function saveMeta() {
@@ -598,6 +606,7 @@
         // The list payload maps it to "desc" for display only.
         formData.append("description", metaDesc.value);
 
+        metaSave.disabled = true;
         fetch("/api/folder/meta", {
             method: "POST",
             body: formData,
@@ -616,13 +625,16 @@
             })
             .then(function (res) {
                 if (!res.ok) throw new Error("Save visibility failed");
-                closeMetaModal();
-                refresh();
+                closeMetaPopover(false);
                 showToast("Saved");
+                return refresh();
             })
             .catch(function (err) {
                 console.error(err);
                 showToast("Save failed");
+            })
+            .then(function () {
+                metaSave.disabled = false;
             });
     }
 
@@ -677,21 +689,31 @@
         createFolderBtn = document.getElementById("createFolderBtn");
         navHomeBtn = document.querySelector("[data-nav-home]");
 
-        metaModal = document.getElementById("metaModal");
+        popoverController = window.HomepageAnchoredPopover;
+        if (!popoverController) return false;
+
+        metaPopover = document.getElementById("metaPopover");
+        metaForm = document.getElementById("metaForm");
         metaPath = document.getElementById("metaPath");
         metaTitle = document.getElementById("metaTitle");
         metaDate = document.getElementById("metaDate");
         metaAuthor = document.getElementById("metaAuthor");
         metaDesc = document.getElementById("metaDesc");
         metaGalleryVisibility = document.getElementById("metaGalleryVisibility");
+        metaVisibilityInputs = document.querySelectorAll(
+            'input[name="metaGalleryVisibilityOption"]'
+        );
         metaSave = document.getElementById("metaSave");
         metaCancel = document.getElementById("metaCancel");
+        metaClose = document.getElementById("metaClose");
 
-        renameModal = document.getElementById("renameModal");
+        renamePopover = document.getElementById("renamePopover");
+        renameForm = document.getElementById("renameForm");
         renamePath = document.getElementById("renamePath");
         renameName = document.getElementById("renameName");
         renameSave = document.getElementById("renameSave");
         renameCancel = document.getElementById("renameCancel");
+        renameClose = document.getElementById("renameClose");
 
         return true;
     }
@@ -711,28 +733,35 @@
 
         setupDropZone();
 
-        // Metadata modal
-        if (metaSave) metaSave.addEventListener("click", saveMeta);
-        if (metaCancel) metaCancel.addEventListener("click", closeMetaModal);
-        if (metaModal) {
-            metaModal.addEventListener("click", function (e) {
-                // Only close when clicking the overlay itself, not its children
-                if (e.target === metaModal) closeMetaModal();
+        // Anchored folder settings
+        if (metaForm) {
+            metaForm.addEventListener("submit", function (event) {
+                event.preventDefault();
+                saveMeta();
             });
+        }
+        if (metaCancel) metaCancel.addEventListener("click", closeMetaPopover);
+        if (metaClose) metaClose.addEventListener("click", closeMetaPopover);
+        if (metaVisibilityInputs) {
+            for (var index = 0; index < metaVisibilityInputs.length; index++) {
+                metaVisibilityInputs[index].addEventListener("change", function (event) {
+                    if (event.target.checked) setMetaVisibility(event.target.value);
+                });
+            }
         }
 
-        // File rename modal
-        if (renameSave) renameSave.addEventListener("click", saveRename);
-        if (renameCancel) renameCancel.addEventListener("click", closeRenameModal);
-        if (renameModal) {
-            renameModal.addEventListener("click", function (e) {
-                if (e.target === renameModal) closeRenameModal();
+        // Anchored file rename
+        if (renameForm) {
+            renameForm.addEventListener("submit", function (event) {
+                event.preventDefault();
+                saveRename();
             });
         }
+        if (renameCancel) renameCancel.addEventListener("click", closeRenamePopover);
+        if (renameClose) renameClose.addEventListener("click", closeRenamePopover);
         if (renameName) {
             renameName.addEventListener("keydown", function (e) {
-                if (e.key === "Enter") saveRename();
-                if (e.key === "Escape") closeRenameModal();
+                if (e.key === "Escape") closeRenamePopover();
             });
         }
 
