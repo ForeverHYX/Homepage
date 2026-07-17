@@ -493,6 +493,12 @@ class HomepageEffectsPerformanceTests(TestCase):
             "--pill-warning-background",
             "--pill-warning-border",
             "--pill-warning-shadow",
+            "--button-radius",
+            "--control-radius",
+            "--button-neutral-background",
+            "--button-primary-background",
+            "--button-warning-background",
+            "--button-danger-background",
         ):
             self.assertIn(token, root_body, f":root must declare {token}")
 
@@ -514,8 +520,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("var(--document-card-blur)", glass_body)
 
         chip_body = chip_block.group("body")
-        self.assertIn("var(--pill-rest-background)", chip_body)
-        self.assertIn("var(--pill-rest-shadow)", chip_body)
+        self.assertIn("var(--button-neutral-background)", chip_body)
+        self.assertIn("var(--button-neutral-shadow)", chip_body)
+        self.assertIn("border-radius: var(--button-radius)", chip_body)
         self.assertIn("backdrop-filter: none", chip_body)
         self.assertNotIn("backdrop-filter: blur", chip_body)
 
@@ -739,6 +746,39 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn('value="private"', template)
         self.assertNotIn('<select id="metaGalleryVisibility"', template)
         self.assertIn(".upload-visibility-input:checked + .upload-visibility-option", styles)
+
+    def test_site_actions_share_semantic_button_material_and_radius(self) -> None:
+        styles = STYLES_CSS.read_text()
+        upload = UPLOAD_HTML.read_text()
+
+        button = re.search(r"^\.btn\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        primary = re.search(r"^\.btn-primary\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+        like = re.search(
+            r"^\.daily-action-button\.daily-action-like\s*\{(?P<body>.*?)\n\}",
+            styles,
+            re.S | re.M,
+        )
+        field = re.search(r"^\.form-input\s*\{(?P<body>.*?)\n\}", styles, re.S | re.M)
+
+        self.assertIsNotNone(button)
+        self.assertIsNotNone(primary)
+        self.assertIsNotNone(like)
+        self.assertIsNotNone(field)
+        self.assertIn("border-radius: var(--button-radius)", button.group("body"))
+        self.assertIn("background: var(--button-neutral-background)", button.group("body"))
+        self.assertIn("box-shadow: var(--button-neutral-shadow)", button.group("body"))
+        self.assertIn("background: var(--button-primary-background)", primary.group("body"))
+        self.assertIn("border-color: var(--button-primary-border)", primary.group("body"))
+        self.assertIn("box-shadow: var(--button-primary-shadow)", primary.group("body"))
+        self.assertIn("background: var(--button-primary-background)", like.group("body"))
+        self.assertIn("border-radius: var(--control-radius)", field.group("body"))
+        self.assertNotIn("background: var(--primary)", primary.group("body"))
+
+        self.assertIn('class="btn btn-primary upload-folder-add"', upload)
+        self.assertIn('aria-label="Create folder"', upload)
+        self.assertIn('class="btn btn-primary btn-block upload-start"', upload)
+        self.assertIn('class="btn upload-quiet-action" data-nav-home', upload)
+        self.assertIn('class="btn upload-quiet-action" id="refreshBtn"', upload)
 
     def test_navigation_details_cover_keyboard_touch_and_mobile_search(self) -> None:
         source = SITE_HEADER_JS.read_text()

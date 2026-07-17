@@ -320,7 +320,12 @@
     .news-expand-btn,
     .popover-close-btn,
     .search-close-btn,
-    .publication-link
+    .publication-link,
+    .btn,
+    .daily-action-button,
+    .daily-type-button,
+    .chip,
+    .publication-keyword
 ) {
     touch-action: manipulation;
 }
@@ -368,7 +373,10 @@
 .home-liquid-card .news-expand-btn:active,
 .popover-close-btn:active,
 .search-close-btn:active,
-.prose a.publication-link:active {
+.prose a.publication-link:active,
+.daily-type-button:active,
+.chip:active,
+.prose a.publication-keyword:active {
     transform: scale(0.97);
     transition-duration: 80ms;
 }

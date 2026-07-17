@@ -1557,15 +1557,24 @@ class DailyIntegrationTests(unittest.TestCase):
             styles,
         )
         self.assertIn(
-            ".daily-action-button.action-glass:not(.daily-action-dislike):hover,\n.daily-action-button.action-glass:not(.daily-action-dislike):active",
+            ".daily-action-button.action-glass:not(.daily-action-dislike):not(.daily-action-like):hover",
             styles,
         )
+        like = re.search(
+            r"^\.daily-action-button\.daily-action-like\s*\{(?P<body>.*?)\n\}",
+            styles,
+            re.S | re.M,
+        )
+        self.assertIsNotNone(like)
+        self.assertIn("background: var(--button-primary-background)", like.group("body"))
+        self.assertIn("border-color: var(--button-primary-border)", like.group("body"))
+        self.assertIn("box-shadow: var(--button-primary-shadow)", like.group("body"))
         self.assertIn(
             ".daily-action-button.daily-action-like:hover,\n.daily-action-button.feedback.is-active",
             styles,
         )
-        self.assertIn("background: var(--pill-lit-background);", styles)
-        self.assertIn("border-color: var(--pill-lit-border);", styles)
+        self.assertIn("background: var(--button-primary-background);", styles)
+        self.assertIn("border-color: var(--button-primary-border);", styles)
         dislike = re.search(
             r"^\.daily-action-button\.daily-action-dislike\s*\{(?P<body>.*?)\n\}",
             styles,
@@ -1578,9 +1587,9 @@ class DailyIntegrationTests(unittest.TestCase):
         )
         self.assertIsNotNone(dislike)
         self.assertIsNotNone(dislike_hover)
-        self.assertIn("background: var(--pill-warning-background)", dislike.group("body"))
-        self.assertIn("border-color: var(--pill-warning-border)", dislike.group("body"))
-        self.assertIn("box-shadow: var(--pill-warning-shadow)", dislike.group("body"))
+        self.assertIn("background: var(--button-warning-background)", dislike.group("body"))
+        self.assertIn("border-color: var(--button-warning-border)", dislike.group("body"))
+        self.assertIn("box-shadow: var(--button-warning-shadow)", dislike.group("body"))
         self.assertIn(
             "linear-gradient(135deg, var(--warning), var(--danger))",
             dislike_hover.group("body"),

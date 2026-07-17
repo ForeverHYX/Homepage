@@ -1,34 +1,77 @@
 /* --- Buttons --- */
 .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 10px 20px; border-radius: var(--radius-xs); font-weight: 500;
-    cursor: pointer; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    font-size: 14px; text-decoration: none; border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: var(--button-min-height);
+    padding: 0 16px;
+    border: 1px solid var(--button-neutral-border);
+    border-radius: var(--button-radius);
+    background: var(--button-neutral-background);
+    box-shadow: var(--button-neutral-shadow);
+    color: var(--button-neutral-color);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+        transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
 }
 
 .btn-primary {
-    background: var(--primary); color: white;
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+    color: var(--button-primary-color);
+    border-color: var(--button-primary-border);
+    background: var(--button-primary-background);
+    box-shadow: var(--button-primary-shadow);
+}
+
+.btn-warning {
+    color: var(--button-warning-color);
+    border-color: var(--button-warning-border);
+    background: var(--button-warning-background);
+    box-shadow: var(--button-warning-shadow);
+}
+
+.btn-danger {
+    color: var(--button-danger-color);
+    border-color: var(--button-danger-border);
+    background: var(--button-danger-background);
+    box-shadow: var(--button-danger-shadow);
 }
 
 .btn-block {
     width: 100%;
 }
 
-.btn-primary:hover {
-    background: var(--primary-hover);
+.btn:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
 }
 
-.btn-primary:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25); }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 80ms;
+}
+
+.btn:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+    transform: none;
+}
 
 /* --- Form inputs (login) --- */
 .form-input {
     width: 100%;
     padding: 10px 12px;
-    border-radius: var(--radius-xs);
+    min-height: 44px;
+    border-radius: var(--control-radius);
     font-size: 16px;
     font-family: inherit;
     background: rgba(255, 255, 255, 0.5);
@@ -75,8 +118,9 @@
 }
 
 .action-btn {
-    background: transparent; border: none; padding: 6px; border-radius: var(--radius-xs);
+    background: transparent; border: none; padding: 6px; border-radius: var(--button-radius);
     cursor: pointer; color: var(--muted);
+    touch-action: manipulation;
     transition:
         transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
         color 0.3s ease,
@@ -95,7 +139,7 @@
     align-items: center;
     justify-content: center;
     color: var(--heading);
-    border-radius: 999px;
+    border-radius: var(--button-radius);
     border: 1px solid rgba(255, 255, 255, 0.18);
     background: rgba(255, 255, 255, 0.08);
     box-shadow:
@@ -155,11 +199,11 @@
 .lightbox-overlay.active .lightbox-content { transform: scale(1) translateY(0); }
 
 .lightbox-close {
-    position: absolute; top: 20px; right: 30px; color: white; font-size: 50px;
+    position: absolute; top: 20px; right: 30px; color: white; font-size: 32px;
     cursor: pointer; z-index: 10001; line-height: 0.8;
     background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: none; padding: 8px 16px; border-radius: 50%;
+    width: 44px; height: 44px; border: none; padding: 0; border-radius: var(--button-radius);
     font-family: serif; opacity: 0.8; transition: all 0.3s ease;
 }
 
@@ -231,10 +275,10 @@
     height: 36px;
     flex: 0 0 36px;
     padding: 0;
-    border: 1px solid var(--pill-rest-border);
-    border-radius: 50%;
-    background: var(--pill-rest-background);
-    box-shadow: var(--pill-rest-shadow);
+    border: 1px solid var(--button-neutral-border);
+    border-radius: var(--button-radius);
+    background: var(--button-neutral-background);
+    box-shadow: var(--button-neutral-shadow);
     color: var(--muted);
     cursor: pointer;
     touch-action: manipulation;
@@ -246,7 +290,7 @@
 
 .popover-close-btn:hover {
     color: var(--heading);
-    border-color: color-mix(in srgb, var(--primary) 32%, var(--pill-rest-border));
+    border-color: color-mix(in srgb, var(--primary) 32%, var(--button-neutral-border));
     transform: translateY(-1px);
 }
 
@@ -435,6 +479,7 @@
     height: 44px;
     flex: 0 0 44px;
     padding: 0;
+    border-radius: var(--button-radius);
     font-size: 20px;
     line-height: 1;
     display: inline-flex;

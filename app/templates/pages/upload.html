@@ -22,13 +22,13 @@
                 <div class="upload-path-block">
                     <div class="upload-path-label">Current Path:</div>
                     <div class="upload-path-bar">
-                        <button class="action-btn" data-nav-home>Home</button>
+                        <button type="button" class="btn upload-quiet-action" data-nav-home>Home</button>
                         <span id="currentPathLabel">/</span>
                     </div>
                 </div>
                 <div class="upload-folder-row">
                     <input id="folderName" type="text" placeholder="New Folder" class="form-input upload-folder-input">
-                    <button class="btn btn-primary upload-folder-add" id="createFolderBtn">+</button>
+                    <button type="button" class="btn btn-primary upload-folder-add" id="createFolderBtn" title="Create folder" aria-label="Create folder">+</button>
                 </div>
                 <div id="dropZone" class="upload-drop-zone">
                     <div class="upload-drop-icon">
@@ -38,7 +38,7 @@
                     <input id="fileInput" type="file" multiple class="upload-file-input">
                 </div>
                 <div id="queueInfo" class="upload-queue-info"></div>
-                <button class="btn btn-primary btn-block upload-start" id="startUploadBtn" disabled>Start Upload</button>
+                <button type="button" class="btn btn-primary btn-block upload-start" id="startUploadBtn" disabled>Start Upload</button>
             </div>
         </div>
         <div id="anniversaryCalendarMount"></div>
@@ -48,7 +48,7 @@
             <div class="home-glass-body upload-panel-body">
                 <div class="upload-panel-header">
                     <h2 class="upload-section-title upload-panel-title">Files &amp; Folders</h2>
-                    <button class="action-btn" id="refreshBtn">Refresh</button>
+                    <button type="button" class="btn upload-quiet-action" id="refreshBtn">Refresh</button>
                 </div>
                 <div id="fileList"></div>
             </div>

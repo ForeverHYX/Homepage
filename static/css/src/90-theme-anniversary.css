@@ -75,7 +75,7 @@
     color: var(--text);
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: var(--button-radius);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -320,6 +320,8 @@
 @media (prefers-reduced-motion: reduce) {
     .home-liquid-card:hover,
     .home-glass:hover,
+    .btn:hover,
+    .daily-action-button:hover,
     .chip:hover,
     .publication-keyword:hover,
     .daily-type-button:hover {
@@ -446,6 +448,7 @@
     .publication-badge,
     .article-tag-chip,
     .daily-action-button,
+    .btn,
     .daily-archive-card .anniversary-grid-wrap {
         color: CanvasText;
         background: Canvas;
@@ -460,6 +463,8 @@
     .daily-type-button.is-active,
     .prose a.publication-keyword.is-active,
     .publication-badge,
+    .btn-primary,
+    .daily-action-button.daily-action-like,
     .daily-action-button.feedback.is-active {
         color: HighlightText;
         background: Highlight;

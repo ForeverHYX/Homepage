@@ -702,7 +702,7 @@
     height: 34px;
     margin-left: auto;
     border: 1px solid rgba(255, 255, 255, 0.44);
-    border-radius: 999px;
+    border-radius: var(--button-radius);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.18));
     color: var(--muted);

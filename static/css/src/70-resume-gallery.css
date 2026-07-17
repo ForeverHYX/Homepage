@@ -23,9 +23,6 @@
 
 .resume-back-link {
     text-decoration: none;
-    padding-left: 0;
-    color: var(--text);
-    font-weight: 500;
 }
 
 .resume-title {
@@ -111,9 +108,6 @@
 
 .gallery-back-link {
     text-decoration: none;
-    padding-left: 0;
-    color: var(--text);
-    font-weight: 500;
 }
 
 .gallery-hero-title {

@@ -122,6 +122,31 @@
         0 6px 16px color-mix(in srgb, var(--warning) 14%, transparent),
         var(--pill-rest-shadow);
 
+    /* Semantic button system. Every text/action button uses one physical
+       shape and swaps only its semantic color. Icon-only controls remain
+       circular by using the same pill radius with equal width and height. */
+    --button-radius: 999px;
+    --control-radius: 14px;
+    --button-min-height: 40px;
+    --button-neutral-color: var(--pill-rest-color);
+    --button-neutral-background: var(--pill-rest-background);
+    --button-neutral-border: var(--pill-rest-border);
+    --button-neutral-shadow: var(--pill-rest-shadow);
+    --button-primary-color: #fff;
+    --button-primary-background: var(--pill-lit-background);
+    --button-primary-border: var(--pill-lit-border);
+    --button-primary-shadow: var(--pill-lit-shadow);
+    --button-warning-color: var(--warning-strong);
+    --button-warning-background: var(--pill-warning-background);
+    --button-warning-border: var(--pill-warning-border);
+    --button-warning-shadow: var(--pill-warning-shadow);
+    --button-danger-color: #fff;
+    --button-danger-background: linear-gradient(135deg, #fb7185, var(--danger));
+    --button-danger-border: color-mix(in srgb, var(--danger) 54%, transparent);
+    --button-danger-shadow:
+        0 8px 18px color-mix(in srgb, var(--danger) 24%, transparent),
+        inset 0 1px 8px rgba(255, 255, 255, 0.24);
+
     /* Legacy aliases — repointed to the unified well/panel tokens so any
        remaining consumer (upload-manager.js inline styles, search dropdown,
        anniversary nav, etc.) automatically participates in dark mode. */
@@ -296,12 +321,12 @@ a { color: inherit; text-decoration: none; }
 
 .search-result-chip {
     font-size: 11px;
-    background: var(--pill-rest-background);
-    color: var(--pill-rest-color);
+    background: var(--button-neutral-background);
+    color: var(--button-neutral-color);
     padding: 2px 6px;
-    border: 1px solid var(--pill-rest-border);
-    border-radius: 999px;
-    box-shadow: var(--pill-rest-shadow);
+    border: 1px solid var(--button-neutral-border);
+    border-radius: var(--button-radius);
+    box-shadow: var(--button-neutral-shadow);
 }
 
 /* --- Layout --- */
