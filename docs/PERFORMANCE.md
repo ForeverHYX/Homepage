@@ -6,14 +6,14 @@
 
 下表使用相同站点内容。Lighthouse 分数会受机器和网络波动影响，因此移动端/桌面端各跑三次并取中位数。
 
-| 指标 | 重构前生产 | 重构后本地候选版本 |
-| --- | ---: | ---: |
-| Mobile Performance | 92–93 | 94 |
-| Mobile CLS | 0.144 | 0 |
-| Desktop Performance | 95 | 100 |
-| Desktop CLS | 0.072 | 0 |
-| 滚动长任务 | 0 | 0 |
-| 最大捕获 timeline 事件 | 约 3.3 ms | 0.269 ms |
+| 指标 | 重构前生产 | 重构后本地候选版本 | 重构后生产 |
+| --- | ---: | ---: | ---: |
+| Mobile Performance | 92–93 | 94 | 100 |
+| Mobile CLS | 0.144 | 0 | 0 |
+| Desktop Performance | 95 | 100 | 100 |
+| Desktop CLS | 0.072 | 0 | 0 |
+| 滚动长任务 | 0 | 0 | 0 |
+| 最大捕获 timeline 事件 | 约 3.3 ms | 0.269 ms | — |
 
 重构后本地三轮中位数的详细结果：
 
@@ -21,6 +21,15 @@
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Mobile | 1.7 s | 2.9 s | 0 | 0 ms | 98 | 100 | 100 |
 | Desktop | 0.4 s | 0.6 s | 0 | 0 ms | 98 | 100 | 100 |
+
+发布后生产三轮中位数：
+
+| 设备 | Performance | FCP | LCP | CLS | TBT | Accessibility | Best Practices | SEO |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Mobile | 100 | 0.9 s | 1.8 s | 0 | 0 ms | 98 | 100 | 100 |
+| Desktop | 100 | 0.3 s | 0.4 s | 0 | 0 ms | 98 | 100 | 100 |
+
+同一次生产切换中，systemd cgroup `MemoryCurrent` 从 165,724,160 bytes 降至 68,726,784 bytes，下降约 58.5%。预热后的服务器回环中位数为：首页 1.58ms、Publications 1.05ms、Daily 3.35ms、Gallery 1.57ms、Search API 0.93ms。
 
 服务层的 warm in-process payload 构建时间（用于比较 Python 端重复工作，不等同于公网 TTFB）：
 
