@@ -114,6 +114,13 @@
         0 0 0 1px rgba(147, 197, 253, 0.72),
         inset 0 1px 8px rgba(255, 255, 255, 0.3),
         inset 0 -1px 0 rgba(30, 64, 175, 0.2);
+    --pill-primary-soft-background:
+        linear-gradient(180deg, color-mix(in srgb, var(--primary) 10%, transparent), color-mix(in srgb, var(--primary) 22%, transparent)),
+        var(--pill-rest-background);
+    --pill-primary-soft-border: color-mix(in srgb, var(--primary) 46%, var(--pill-rest-border));
+    --pill-primary-soft-shadow:
+        0 6px 16px color-mix(in srgb, var(--primary) 14%, transparent),
+        var(--pill-rest-shadow);
     --pill-warning-background:
         linear-gradient(180deg, color-mix(in srgb, var(--warning) 10%, transparent), color-mix(in srgb, var(--warning) 22%, transparent)),
         var(--pill-rest-background);
@@ -136,6 +143,10 @@
     --button-primary-background: var(--pill-lit-background);
     --button-primary-border: var(--pill-lit-border);
     --button-primary-shadow: var(--pill-lit-shadow);
+    --button-primary-soft-color: var(--primary-hover);
+    --button-primary-soft-background: var(--pill-primary-soft-background);
+    --button-primary-soft-border: var(--pill-primary-soft-border);
+    --button-primary-soft-shadow: var(--pill-primary-soft-shadow);
     --button-warning-color: var(--warning-strong);
     --button-warning-background: var(--pill-warning-background);
     --button-warning-border: var(--pill-warning-border);

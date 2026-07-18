@@ -57,7 +57,7 @@ make build
 
 选择器顺序属于视觉行为的一部分。新增规则应放入职责最接近的模块，不要依赖构建器重排声明。
 
-按钮统一使用 `00-foundations.css` 中的 `--button-*` 语义令牌：`.btn` 是 Neutral，`.btn-primary` 是论文会议徽标同款蓝色，Warning/Danger 只更换颜色，不另造形状或材质。文字操作使用胶囊圆角；等宽图标操作使用同一圆角得到圆形。表单和可点击区域使用 `--control-radius`，不要在页面模块内重新写一套按钮渐变、阴影或圆角。
+按钮统一使用 `00-foundations.css` 中的 `--button-*` 语义令牌：`.btn` 是 Neutral，`.btn-primary` 是论文会议徽标同款蓝色，Soft Primary 用于 Like 等尚未确认的蓝色操作，Warning/Danger 只更换颜色，不另造形状或材质。文字操作使用胶囊圆角；等宽图标操作使用同一圆角得到圆形。表单和可点击区域使用 `--control-radius`，不要在页面模块内重新写一套按钮渐变、阴影或圆角。
 
 ## 编辑 JavaScript
 

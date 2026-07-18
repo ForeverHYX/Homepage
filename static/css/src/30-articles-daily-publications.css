@@ -181,13 +181,15 @@
 }
 
 .daily-action-button.daily-action-like {
-    color: var(--button-primary-color);
-    border-color: var(--button-primary-border);
-    background: var(--button-primary-background);
-    box-shadow: var(--button-primary-shadow);
+    color: var(--button-primary-soft-color);
+    border-color: var(--button-primary-soft-border);
+    background: var(--button-primary-soft-background);
+    box-shadow: var(--button-primary-soft-shadow);
 }
 
 .daily-action-button.daily-action-like:hover,
+.daily-action-button.daily-action-like:active:not(:disabled),
+.daily-action-button.daily-action-like:disabled,
 .daily-action-button.feedback.is-active {
     transform: translateY(-1px);
     color: var(--button-primary-color);

@@ -1552,6 +1552,8 @@ class DailyIntegrationTests(unittest.TestCase):
             "--daily-action-blue-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);",
             styles,
         )
+        self.assertIn("--pill-primary-soft-background:", styles)
+        self.assertIn("--button-primary-soft-background:", styles)
         self.assertNotIn(
             ".daily-action-button.action-glass:not(.daily-action-dislike),\n.daily-action-button.feedback.daily-action-like",
             styles,
@@ -1566,11 +1568,16 @@ class DailyIntegrationTests(unittest.TestCase):
             re.S | re.M,
         )
         self.assertIsNotNone(like)
-        self.assertIn("background: var(--button-primary-background)", like.group("body"))
-        self.assertIn("border-color: var(--button-primary-border)", like.group("body"))
-        self.assertIn("box-shadow: var(--button-primary-shadow)", like.group("body"))
+        self.assertIn("color: var(--button-primary-soft-color)", like.group("body"))
+        self.assertIn("background: var(--button-primary-soft-background)", like.group("body"))
+        self.assertIn("border-color: var(--button-primary-soft-border)", like.group("body"))
+        self.assertIn("box-shadow: var(--button-primary-soft-shadow)", like.group("body"))
+        self.assertNotIn("background: var(--button-primary-background)", like.group("body"))
         self.assertIn(
-            ".daily-action-button.daily-action-like:hover,\n.daily-action-button.feedback.is-active",
+            ".daily-action-button.daily-action-like:hover,\n"
+            ".daily-action-button.daily-action-like:active:not(:disabled),\n"
+            ".daily-action-button.daily-action-like:disabled,\n"
+            ".daily-action-button.feedback.is-active",
             styles,
         )
         self.assertIn("background: var(--button-primary-background);", styles)

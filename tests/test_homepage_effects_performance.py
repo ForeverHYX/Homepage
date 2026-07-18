@@ -490,6 +490,9 @@ class HomepageEffectsPerformanceTests(TestCase):
             "--pill-rest-background",
             "--pill-lit-background",
             "--pill-lit-shadow",
+            "--pill-primary-soft-background",
+            "--pill-primary-soft-border",
+            "--pill-primary-soft-shadow",
             "--pill-warning-background",
             "--pill-warning-border",
             "--pill-warning-shadow",
@@ -497,6 +500,7 @@ class HomepageEffectsPerformanceTests(TestCase):
             "--control-radius",
             "--button-neutral-background",
             "--button-primary-background",
+            "--button-primary-soft-background",
             "--button-warning-background",
             "--button-danger-background",
         ):
@@ -770,7 +774,13 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("background: var(--button-primary-background)", primary.group("body"))
         self.assertIn("border-color: var(--button-primary-border)", primary.group("body"))
         self.assertIn("box-shadow: var(--button-primary-shadow)", primary.group("body"))
-        self.assertIn("background: var(--button-primary-background)", like.group("body"))
+        self.assertIn("background: var(--button-primary-soft-background)", like.group("body"))
+        self.assertIn("border-color: var(--button-primary-soft-border)", like.group("body"))
+        self.assertIn("box-shadow: var(--button-primary-soft-shadow)", like.group("body"))
+        self.assertNotIn("background: var(--button-primary-background)", like.group("body"))
+        self.assertIn(".daily-action-button.daily-action-like:hover,", styles)
+        self.assertIn(".daily-action-button.daily-action-like:active:not(:disabled),", styles)
+        self.assertIn(".daily-action-button.daily-action-like:disabled,", styles)
         self.assertIn("border-radius: var(--control-radius)", field.group("body"))
         self.assertNotIn("background: var(--primary)", primary.group("body"))
 
