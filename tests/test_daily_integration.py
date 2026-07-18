@@ -1582,6 +1582,15 @@ class DailyIntegrationTests(unittest.TestCase):
         )
         self.assertIn("background: var(--button-primary-background);", styles)
         self.assertIn("border-color: var(--button-primary-border);", styles)
+        active_feedback_rules = re.findall(
+            r"(?:^|[{}])([^{}]*\.daily-action-button\.feedback\.is-active[^{}]*)"
+            r"\{([^{}]*)\}",
+            styles,
+            re.S,
+        )
+        self.assertTrue(active_feedback_rules)
+        for _, body in active_feedback_rules:
+            self.assertNotRegex(body, r"(?:^|;)\s*outline(?:-offset)?\s*:")
         dislike = re.search(
             r"^\.daily-action-button\.daily-action-dislike\s*\{(?P<body>.*?)\n\}",
             styles,

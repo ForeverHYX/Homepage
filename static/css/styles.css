@@ -1915,11 +1915,6 @@ a { color: inherit; text-decoration: none; }
     box-shadow: var(--button-primary-shadow);
 }
 
-.daily-action-button.feedback.is-active {
-    outline: 2px solid color-mix(in srgb, var(--primary) 48%, transparent);
-    outline-offset: 2px;
-}
-
 .daily-action-button:disabled {
     cursor: wait;
     opacity: 0.68;
