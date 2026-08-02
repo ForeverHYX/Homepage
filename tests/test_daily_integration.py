@@ -1614,7 +1614,7 @@ class DailyIntegrationTests(unittest.TestCase):
         )
         self.assertIn(".daily-archive-card", styles)
         self.assertIn(
-            ".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);",
+            ".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, var(--accent-300), var(--accent-600));",
             styles,
         )
         self.assertIn(".daily-grid .sidebar {\n    gap: 24px;", styles)
@@ -1622,7 +1622,7 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn(".daily-profile-polygon", styles)
         self.assertNotIn(".daily-profile-values", styles)
         self.assertNotIn(
-            ".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, #93c5fd, #2563eb);\n    margin-top: 24px;",
+            ".daily-archive-card {\n    --anniv-grad: linear-gradient(135deg, var(--accent-300), var(--accent-600));\n    margin-top: 24px;",
             styles,
         )
         self.assertNotIn(".daily-archive-day.is-liked::after", styles)

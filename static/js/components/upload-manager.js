@@ -28,8 +28,8 @@
     var STAR_GRAD_DEFS =
         '<svg style="position:absolute;width:0;height:0"><defs>' +
         '<linearGradient id="star-grad" x1="0%" y1="0%" x2="100%" y2="100%">' +
-        '<stop offset="0%" stop-color="#93c5fd"/>' +
-        '<stop offset="100%" stop-color="#2563eb"/>' +
+        '<stop offset="0%" stop-color="var(--accent-300)"/>' +
+        '<stop offset="100%" stop-color="var(--accent-600)"/>' +
         '</linearGradient></defs></svg>';
 
     var STAR_POLYGON =

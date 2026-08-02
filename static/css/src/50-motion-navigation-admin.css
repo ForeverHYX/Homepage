@@ -106,7 +106,7 @@
 .prose a:hover {
     filter: brightness(1.2);
     text-decoration: underline;
-    text-decoration-color: #2563eb;
+    text-decoration-color: var(--accent-600);
     -webkit-text-fill-color: transparent;
 }
 
@@ -170,7 +170,7 @@
 
 .drop-zone:hover, .drop-zone.drag {
     border-color: var(--primary);
-    background: rgba(59, 130, 246, 0.06);
+    background: rgba(var(--accent-500-rgb), 0.06);
     border-style: solid;
 }
 
@@ -271,7 +271,7 @@
     stroke-width: 2.5;
 }
 
-.file-kind-folder { color: #3b82f6; }
+.file-kind-folder { color: var(--accent-500); }
 .file-kind-image { color: #0f9f78; }
 .file-kind-pdf { color: #dc4c4c; }
 .file-kind-document { color: #3478c9; }

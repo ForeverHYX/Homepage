@@ -87,6 +87,39 @@
     --accent-tertiary-900-rgb: 49, 46, 129;
     --accent-tertiary-950-rgb: 30, 27, 75;
 
+    /* Companion hues keep the original cyan/violet highlights and ambient
+       lightfield intact while allowing custom palettes to regenerate them. */
+    --accent-cyan-300: #67e8f9;
+    --accent-cyan-400: #22d3ee;
+    --accent-cyan-500: #06b6d4;
+    --accent-cyan-300-rgb: 103, 232, 249;
+    --accent-cyan-400-rgb: 34, 211, 238;
+    --accent-cyan-500-rgb: 6, 182, 212;
+    --accent-vivid-400: #c084fc;
+    --accent-vivid-500: #a855f7;
+    --accent-vivid-400-rgb: 192, 132, 252;
+    --accent-vivid-500-rgb: 168, 85, 247;
+    --accent-vivid-rgb: var(--accent-vivid-500-rgb);
+
+    --lightfield-1-a-rgb: 99, 102, 241;
+    --lightfield-1-b-rgb: 59, 130, 246;
+    --lightfield-1-c-rgb: 59, 130, 246;
+    --lightfield-2-a-rgb: 56, 189, 248;
+    --lightfield-2-b-rgb: 103, 232, 249;
+    --lightfield-2-c-rgb: 56, 189, 248;
+    --lightfield-3-a-rgb: 168, 85, 247;
+    --lightfield-3-b-rgb: 192, 132, 252;
+    --lightfield-3-c-rgb: 192, 132, 252;
+    --lightfield-4-a-rgb: 34, 197, 94;
+    --lightfield-4-b-rgb: 45, 212, 191;
+    --lightfield-4-c-rgb: 125, 211, 252;
+    --lightfield-5-a-rgb: 244, 114, 182;
+    --lightfield-5-b-rgb: 251, 191, 36;
+    --lightfield-5-c-rgb: 251, 191, 36;
+    --lightfield-6-a-rgb: 255, 255, 255;
+    --lightfield-6-b-rgb: 224, 242, 254;
+    --lightfield-6-c-rgb: 224, 242, 254;
+
     --theme-bg: #e8f1fb;
     --theme-text: #334155;
     --theme-heading: #0f172a;
@@ -146,21 +179,21 @@
        keep every other card role identical across pages. */
     --functional-card-background:
         radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.16) 32%, rgba(255, 255, 255, 0) 56%),
-        linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(241, 245, 249, 0.18) 52%, rgba(219, 234, 254, 0.24));
+        linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(241, 245, 249, 0.18) 52%, rgba(var(--accent-100-rgb), 0.24));
     --functional-card-border: rgba(255, 255, 255, 0.72);
     --functional-card-shadow:
         0 18px 42px rgba(73, 92, 138, 0.13),
         0 4px 12px rgba(73, 92, 138, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.82),
         inset 0 -1px 0 rgba(100, 116, 139, 0.12),
-        inset 0 -14px 28px rgba(96, 165, 250, 0.06);
+        inset 0 -14px 28px rgba(var(--accent-400-rgb), 0.06);
     --functional-card-hover-border: rgba(255, 255, 255, 0.84);
     --functional-card-hover-shadow:
         0 24px 50px rgba(73, 92, 138, 0.16),
         0 8px 18px rgba(73, 92, 138, 0.07),
         inset 0 1px 0 rgba(255, 255, 255, 0.88),
         inset 0 -1px 0 rgba(100, 116, 139, 0.13),
-        inset 0 -14px 28px rgba(96, 165, 250, 0.07);
+        inset 0 -14px 28px rgba(var(--accent-400-rgb), 0.07);
     --functional-card-blur: 26px;
     --functional-card-saturation: 168%;
 
@@ -265,6 +298,24 @@
     --warning: #fb923c;
     --warning-strong: #fb923c;
     --muted: var(--theme-muted);
+    --lightfield-1-a-rgb: 129, 140, 248;
+    --lightfield-1-b-rgb: 96, 165, 250;
+    --lightfield-1-c-rgb: 59, 130, 246;
+    --lightfield-2-a-rgb: 34, 211, 238;
+    --lightfield-2-b-rgb: 59, 130, 246;
+    --lightfield-2-c-rgb: 56, 189, 248;
+    --lightfield-3-a-rgb: 192, 132, 252;
+    --lightfield-3-b-rgb: 129, 140, 248;
+    --lightfield-3-c-rgb: 129, 140, 248;
+    --lightfield-4-a-rgb: 45, 212, 191;
+    --lightfield-4-b-rgb: 56, 189, 248;
+    --lightfield-4-c-rgb: 56, 189, 248;
+    --lightfield-5-a-rgb: 236, 72, 153;
+    --lightfield-5-b-rgb: 168, 85, 247;
+    --lightfield-5-c-rgb: 129, 140, 248;
+    --lightfield-6-a-rgb: 255, 255, 255;
+    --lightfield-6-b-rgb: 96, 165, 250;
+    --lightfield-6-c-rgb: 96, 165, 250;
 
     /* Dark variants belong to the dark theme. Keeping them here (instead of
        redeclaring them later in :root) prevents the light palette from being
@@ -272,9 +323,9 @@
     --home-material-face-top: rgba(18, 28, 48, 0.82);
     --home-material-face-mid: rgba(11, 18, 32, 0.2);
     --home-material-face-bottom: rgba(20, 28, 44, 0.82);
-    --home-material-tint: rgba(37, 99, 235, 0.12);
+    --home-material-tint: rgba(var(--accent-600-rgb), 0.12);
     --home-material-edge: rgba(255, 255, 255, 0.22);
-    --home-material-edge-accent: rgba(96, 165, 250, 0.2);
+    --home-material-edge-accent: rgba(var(--accent-400-rgb), 0.2);
     --home-material-shadow: rgba(0, 0, 0, 0.4);
     --home-material-shadow-soft: rgba(0, 0, 0, 0.22);
     --home-material-inner-top: rgba(255, 255, 255, 0.16);
@@ -291,14 +342,14 @@
 
     --functional-card-background:
         radial-gradient(125% 95% at 16% -18%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 34%, rgba(255, 255, 255, 0) 58%),
-        linear-gradient(160deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.44) 55%, rgba(30, 64, 175, 0.18));
+        linear-gradient(160deg, rgba(30, 41, 59, 0.58), rgba(15, 23, 42, 0.44) 55%, rgba(var(--accent-800-rgb), 0.18));
     --functional-card-border: rgba(255, 255, 255, 0.16);
     --functional-card-shadow:
         0 20px 44px rgba(0, 0, 0, 0.32),
         0 5px 14px rgba(0, 0, 0, 0.16),
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
         inset 0 -1px 0 rgba(0, 0, 0, 0.34),
-        inset 0 -14px 28px rgba(37, 99, 235, 0.08);
+        inset 0 -14px 28px rgba(var(--accent-600-rgb), 0.08);
     --functional-card-hover-border: rgba(255, 255, 255, 0.22);
     --functional-card-hover-shadow:
         0 26px 56px rgba(0, 0, 0, 0.4),
@@ -507,7 +558,7 @@ a { color: inherit; text-decoration: none; }
 .nav-island.home-liquid-card::before {
     background:
         radial-gradient(34% 145% at 17% -42%, rgba(255, 255, 255, 0.76) 0%, rgba(255, 255, 255, 0.2) 36%, rgba(255, 255, 255, 0) 68%),
-        radial-gradient(26% 120% at 89% 132%, rgba(191, 219, 254, 0.2) 0%, rgba(191, 219, 254, 0.05) 42%, rgba(191, 219, 254, 0) 72%),
+        radial-gradient(26% 120% at 89% 132%, rgba(var(--accent-200-rgb), 0.2) 0%, rgba(var(--accent-200-rgb), 0.05) 42%, rgba(var(--accent-200-rgb), 0) 72%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.13), transparent 46%, rgba(71, 85, 105, 0.045));
     opacity: 0.7;
 }

@@ -19,18 +19,8 @@
         y: [0.02, 0.22],
         scale: [0.92, 1.16],
         parallax: 32,
-        lightColors: [
-          "rgba(99, 102, 241, 0.72)",
-          "rgba(59, 130, 246, 0.46)",
-          "rgba(59, 130, 246, 0.12)",
-          "rgba(59, 130, 246, 0)"
-        ],
-        darkColors: [
-          "rgba(129, 140, 248, 0.74)",
-          "rgba(96, 165, 250, 0.48)",
-          "rgba(59, 130, 246, 0.14)",
-          "rgba(59, 130, 246, 0)"
-        ]
+        lightAlphas: [0.72, 0.46, 0.12, 0],
+        darkAlphas: [0.74, 0.48, 0.14, 0]
       },
       {
         size: [400, 560],
@@ -40,18 +30,8 @@
         y: [-0.04, 0.18],
         scale: [0.9, 1.18],
         parallax: 26,
-        lightColors: [
-          "rgba(56, 189, 248, 0.64)",
-          "rgba(103, 232, 249, 0.36)",
-          "rgba(56, 189, 248, 0.1)",
-          "rgba(56, 189, 248, 0)"
-        ],
-        darkColors: [
-          "rgba(34, 211, 238, 0.54)",
-          "rgba(59, 130, 246, 0.34)",
-          "rgba(56, 189, 248, 0.08)",
-          "rgba(56, 189, 248, 0)"
-        ]
+        lightAlphas: [0.64, 0.36, 0.1, 0],
+        darkAlphas: [0.54, 0.34, 0.08, 0]
       },
       {
         size: [360, 520],
@@ -61,18 +41,8 @@
         y: [0.14, 0.42],
         scale: [0.9, 1.14],
         parallax: 20,
-        lightColors: [
-          "rgba(168, 85, 247, 0.48)",
-          "rgba(192, 132, 252, 0.28)",
-          "rgba(192, 132, 252, 0.08)",
-          "rgba(192, 132, 252, 0)"
-        ],
-        darkColors: [
-          "rgba(192, 132, 252, 0.5)",
-          "rgba(129, 140, 248, 0.28)",
-          "rgba(129, 140, 248, 0.08)",
-          "rgba(129, 140, 248, 0)"
-        ]
+        lightAlphas: [0.48, 0.28, 0.08, 0],
+        darkAlphas: [0.5, 0.28, 0.08, 0]
       },
       {
         size: [380, 540],
@@ -82,18 +52,8 @@
         y: [0.58, 0.84],
         scale: [0.92, 1.2],
         parallax: 28,
-        lightColors: [
-          "rgba(34, 197, 94, 0.22)",
-          "rgba(45, 212, 191, 0.2)",
-          "rgba(125, 211, 252, 0.08)",
-          "rgba(125, 211, 252, 0)"
-        ],
-        darkColors: [
-          "rgba(45, 212, 191, 0.26)",
-          "rgba(56, 189, 248, 0.18)",
-          "rgba(56, 189, 248, 0.08)",
-          "rgba(56, 189, 248, 0)"
-        ]
+        lightAlphas: [0.22, 0.2, 0.08, 0],
+        darkAlphas: [0.26, 0.18, 0.08, 0]
       },
       {
         size: [420, 580],
@@ -103,18 +63,8 @@
         y: [0.54, 0.86],
         scale: [0.9, 1.16],
         parallax: 24,
-        lightColors: [
-          "rgba(244, 114, 182, 0.28)",
-          "rgba(251, 191, 36, 0.18)",
-          "rgba(251, 191, 36, 0.08)",
-          "rgba(251, 191, 36, 0)"
-        ],
-        darkColors: [
-          "rgba(236, 72, 153, 0.24)",
-          "rgba(168, 85, 247, 0.16)",
-          "rgba(129, 140, 248, 0.08)",
-          "rgba(129, 140, 248, 0)"
-        ]
+        lightAlphas: [0.28, 0.18, 0.08, 0],
+        darkAlphas: [0.24, 0.16, 0.08, 0]
       },
       {
         size: [300, 420],
@@ -124,18 +74,8 @@
         y: [0.34, 0.6],
         scale: [0.88, 1.12],
         parallax: 16,
-        lightColors: [
-          "rgba(255, 255, 255, 0.72)",
-          "rgba(224, 242, 254, 0.34)",
-          "rgba(224, 242, 254, 0.1)",
-          "rgba(224, 242, 254, 0)"
-        ],
-        darkColors: [
-          "rgba(255, 255, 255, 0.18)",
-          "rgba(96, 165, 250, 0.16)",
-          "rgba(96, 165, 250, 0.06)",
-          "rgba(96, 165, 250, 0)"
-        ]
+        lightAlphas: [0.72, 0.34, 0.1, 0],
+        darkAlphas: [0.18, 0.16, 0.06, 0]
       }
     ];
     const rand = (min, max) => min + Math.random() * (max - min);
@@ -156,7 +96,10 @@
       size: rand(config.size[0], config.size[1]),
       blur: rand(config.blur[0], config.blur[1])
     });
-    const renderGradient = (colors) => `radial-gradient(circle at 50% 50%, ${colors[0]} 0%, ${colors[1]} 28%, ${colors[2]} 58%, ${colors[3]} 80%)`;
+    const renderGradient = (spotIndex, alphas) => {
+      const prefix = `--lightfield-${spotIndex + 1}`;
+      return `radial-gradient(circle at 50% 50%, rgba(var(${prefix}-a-rgb), ${alphas[0]}) 0%, rgba(var(${prefix}-b-rgb), ${alphas[1]}) 28%, rgba(var(${prefix}-c-rgb), ${alphas[2]}) 58%, rgba(var(${prefix}-c-rgb), ${alphas[3]}) 80%)`;
+    };
     const pointer = { x: 0, y: 0 };
     let renderRafId = 0;
     let ambientTimerId = 0;
@@ -179,9 +122,10 @@
     };
     const applyPalette = () => {
       const dark = isDark();
-      spots.forEach((spot) => {
+      spots.forEach((spot, index) => {
         spot.element.style.background = renderGradient(
-          dark ? spot.config.darkColors : spot.config.lightColors
+          index,
+          dark ? spot.config.darkAlphas : spot.config.lightAlphas
         );
       });
     };
@@ -326,11 +270,16 @@
       applyPalette();
       updateAmbientTargets();
     });
+    const handleAccentChange = () => {
+      applyPalette();
+      updateAmbientTargets();
+    };
     themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"]
     });
     document.addEventListener("visibilitychange", handleVisibility);
+    document.addEventListener("homepage:accentchange", handleAccentChange);
     window.addEventListener("resize", handleResize, { passive: true });
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerleave", resetPointer);
@@ -344,6 +293,7 @@
     return () => {
       stop();
       document.removeEventListener("visibilitychange", handleVisibility);
+      document.removeEventListener("homepage:accentchange", handleAccentChange);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerleave", resetPointer);

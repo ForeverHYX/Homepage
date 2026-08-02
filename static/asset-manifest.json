@@ -1,6 +1,6 @@
 {
-  "css/styles.css": "/static/css/styles.css?v=7ca5c81be1a5",
-  "css/styles.min.css": "/static/css/styles.min.css?v=acc84d2d5137",
+  "css/styles.css": "/static/css/styles.css?v=a8f69beeb17b",
+  "css/styles.min.css": "/static/css/styles.min.css?v=7da5a5df9169",
   "fonts/dancing-script-latin-v29.woff2": "/static/fonts/dancing-script-latin-v29.woff2?v=ee95af0ab393",
   "fonts/fonts.css": "/static/fonts/fonts.css?v=f8f7dbd26c1c",
   "fonts/jetbrains-mono-latin-v24.woff2": "/static/fonts/jetbrains-mono-latin-v24.woff2?v=2c32b9b3ee35",
@@ -29,12 +29,12 @@
   "js/components/gallery-view.min.js": "/static/js/components/gallery-view.min.js?v=ae5761d5f3e6",
   "js/components/location-map.js": "/static/js/components/location-map.js?v=a36976e65953",
   "js/components/location-map.min.js": "/static/js/components/location-map.min.js?v=48aabf0d17d2",
-  "js/components/site-header.js": "/static/js/components/site-header.js?v=d1bf74f5f7d1",
-  "js/components/site-header.min.js": "/static/js/components/site-header.min.js?v=baf67a787f8f",
-  "js/components/upload-manager.js": "/static/js/components/upload-manager.js?v=a7feb31858da",
-  "js/components/upload-manager.min.js": "/static/js/components/upload-manager.min.js?v=8c815f51e9a6",
-  "js/effects/lightfield.js": "/static/js/effects/lightfield.js?v=00992d34860f",
-  "js/effects/lightfield.min.js": "/static/js/effects/lightfield.min.js?v=21311f2cea3d",
+  "js/components/site-header.js": "/static/js/components/site-header.js?v=a43b1a593e16",
+  "js/components/site-header.min.js": "/static/js/components/site-header.min.js?v=67ed192e18b1",
+  "js/components/upload-manager.js": "/static/js/components/upload-manager.js?v=cffc8cf7cf99",
+  "js/components/upload-manager.min.js": "/static/js/components/upload-manager.min.js?v=c64eb090a949",
+  "js/effects/lightfield.js": "/static/js/effects/lightfield.js?v=55bb92647f1c",
+  "js/effects/lightfield.min.js": "/static/js/effects/lightfield.min.js?v=72704821796c",
   "js/effects/liquid-glass.js": "/static/js/effects/liquid-glass.js?v=057342c8342d",
   "js/effects/liquid-glass.min.js": "/static/js/effects/liquid-glass.min.js?v=8813673ee316"
 }

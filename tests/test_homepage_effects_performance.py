@@ -42,6 +42,10 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("spot.renderedMotionDuration !== motionDuration", source)
         self.assertIn("spot.renderedOpacity !== opacity", source)
         self.assertIn("spot.renderedTransform !== transform", source)
+        self.assertIn(
+            'document.addEventListener("homepage:accentchange", handleAccentChange)', source
+        )
+        self.assertIn("--lightfield-${spotIndex + 1}", source)
         self.assertIn("window.requestIdleCallback(start, { timeout: 480 })", source)
         self.assertIn(
             'document.addEventListener("DOMContentLoaded", scheduleHomeLightfield)', source

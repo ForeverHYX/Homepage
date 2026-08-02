@@ -912,13 +912,24 @@ var ACCENT_PRESETS = [
   { id: "rose", label: "Rose", light: "#e11d48", dark: "#fb7185" },
 ];
 var ACCENT_VARIABLE_NAMES = (function () {
-  var names = ["--theme-bg", "--theme-text", "--theme-heading", "--theme-muted"];
+  var names = [
+    "--theme-bg", "--theme-text", "--theme-heading", "--theme-muted",
+    "--accent-cyan-300", "--accent-cyan-400", "--accent-cyan-500",
+    "--accent-cyan-300-rgb", "--accent-cyan-400-rgb", "--accent-cyan-500-rgb",
+    "--accent-vivid-400", "--accent-vivid-500", "--accent-vivid-400-rgb",
+    "--accent-vivid-500-rgb", "--accent-vivid-rgb",
+  ];
   ACCENT_FAMILIES.forEach(function (family) {
     ACCENT_SHADES.forEach(function (shade) {
       names.push("--" + family + "-" + shade);
       names.push("--" + family + "-" + shade + "-rgb");
     });
   });
+  for (var spot = 1; spot <= 6; spot++) {
+    ["a", "b", "c"].forEach(function (channel) {
+      names.push("--lightfield-" + spot + "-" + channel + "-rgb");
+    });
+  }
   return names;
 })();
 
@@ -1072,13 +1083,17 @@ function accentBuildScale(baseHex, mode) {
 function accentBuildVariables(baseHex, mode) {
   var base = accentHexToRgb(baseHex);
   var hsv = accentRgbToHsv(base);
-  var secondary = accentRgbToHex(accentHsvToRgb(hsv.h + 28, hsv.s * 0.94, hsv.v));
-  var tertiary = accentRgbToHex(accentHsvToRgb(hsv.h - 30, hsv.s * 0.9, hsv.v));
+  var secondary = accentRgbToHex(accentHsvToRgb(hsv.h - 18, hsv.s * 0.94, hsv.v));
+  var tertiary = accentRgbToHex(accentHsvToRgb(hsv.h + 22, hsv.s * 0.9, hsv.v));
+  var cyan = accentRgbToHex(accentHsvToRgb(hsv.h - 30, hsv.s * 0.96, hsv.v));
+  var vivid = accentRgbToHex(accentHsvToRgb(hsv.h + 54, hsv.s * 0.88, hsv.v));
   var scales = {
     accent: accentBuildScale(baseHex, mode),
     "accent-secondary": accentBuildScale(secondary, mode),
     "accent-tertiary": accentBuildScale(tertiary, mode),
   };
+  var cyanScale = accentBuildScale(cyan, mode);
+  var vividScale = accentBuildScale(vivid, mode);
   var variables = {};
   ACCENT_FAMILIES.forEach(function (family) {
     ACCENT_SHADES.forEach(function (shade) {
@@ -1088,6 +1103,48 @@ function accentBuildVariables(baseHex, mode) {
       variables["--" + family + "-" + shade + "-rgb"] = Math.round(rgb.r) + ", " + Math.round(rgb.g) + ", " + Math.round(rgb.b);
     });
   });
+  ["300", "400", "500"].forEach(function (shade) {
+    var cyanColor = accentHexToRgb(cyanScale[shade]);
+    variables["--accent-cyan-" + shade] = cyanScale[shade];
+    variables["--accent-cyan-" + shade + "-rgb"] = Math.round(cyanColor.r) + ", " + Math.round(cyanColor.g) + ", " + Math.round(cyanColor.b);
+  });
+  ["400", "500"].forEach(function (shade) {
+    var vividColor = accentHexToRgb(vividScale[shade]);
+    variables["--accent-vivid-" + shade] = vividScale[shade];
+    variables["--accent-vivid-" + shade + "-rgb"] = Math.round(vividColor.r) + ", " + Math.round(vividColor.g) + ", " + Math.round(vividColor.b);
+  });
+  variables["--accent-vivid-rgb"] = variables["--accent-vivid-500-rgb"];
+
+  function setLightfieldColor(spot, channel, color) {
+    variables["--lightfield-" + spot + "-" + channel + "-rgb"] =
+      Math.round(color.r) + ", " + Math.round(color.g) + ", " + Math.round(color.b);
+  }
+  function companion(offset, saturationMultiplier, value) {
+    return accentHsvToRgb(
+      hsv.h + offset,
+      accentClamp(hsv.s * saturationMultiplier, 0.42, 0.96),
+      accentClamp(value, 0, 1)
+    );
+  }
+  var modeValue = mode === "dark" ? Math.max(hsv.v, 0.82) : hsv.v;
+  setLightfieldColor(1, "a", accentHexToRgb(mode === "dark" ? scales["accent-tertiary"]["400"] : scales["accent-tertiary"]["500"]));
+  setLightfieldColor(1, "b", accentHexToRgb(mode === "dark" ? scales.accent["400"] : scales.accent["500"]));
+  setLightfieldColor(1, "c", accentHexToRgb(scales.accent["500"]));
+  setLightfieldColor(2, "a", accentHexToRgb(mode === "dark" ? cyanScale["400"] : scales["accent-secondary"]["400"]));
+  setLightfieldColor(2, "b", accentHexToRgb(mode === "dark" ? scales.accent["500"] : cyanScale["300"]));
+  setLightfieldColor(2, "c", accentHexToRgb(scales["accent-secondary"]["400"]));
+  setLightfieldColor(3, "a", accentHexToRgb(mode === "dark" ? vividScale["400"] : vividScale["500"]));
+  setLightfieldColor(3, "b", accentHexToRgb(mode === "dark" ? scales["accent-tertiary"]["400"] : vividScale["400"]));
+  setLightfieldColor(3, "c", accentHexToRgb(mode === "dark" ? scales["accent-tertiary"]["400"] : vividScale["400"]));
+  setLightfieldColor(4, "a", companion(-120, 0.9, modeValue));
+  setLightfieldColor(4, "b", companion(-78, 0.82, modeValue));
+  setLightfieldColor(4, "c", accentHexToRgb(mode === "dark" ? scales["accent-secondary"]["400"] : scales["accent-secondary"]["300"]));
+  setLightfieldColor(5, "a", companion(100, 0.78, modeValue));
+  setLightfieldColor(5, "b", companion(180, 0.86, modeValue));
+  setLightfieldColor(5, "c", accentHexToRgb(mode === "dark" ? scales["accent-tertiary"]["400"] : accentRgbToHex(companion(180, 0.86, modeValue))));
+  setLightfieldColor(6, "a", { r: 255, g: 255, b: 255 });
+  setLightfieldColor(6, "b", accentHexToRgb(mode === "dark" ? scales.accent["400"] : scales["accent-secondary"]["100"]));
+  setLightfieldColor(6, "c", accentHexToRgb(mode === "dark" ? scales.accent["400"] : scales["accent-secondary"]["100"]));
 
   if (mode === "dark") {
     variables["--theme-bg"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.54, 0.08));
