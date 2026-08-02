@@ -1,6 +1,6 @@
 {
-  "css/styles.css": "/static/css/styles.css?v=ff37c0736eb4",
-  "css/styles.min.css": "/static/css/styles.min.css?v=8058e963cc35",
+  "css/styles.css": "/static/css/styles.css?v=69a2b29678b1",
+  "css/styles.min.css": "/static/css/styles.min.css?v=b924fda73e3b",
   "fonts/dancing-script-latin-v29.woff2": "/static/fonts/dancing-script-latin-v29.woff2?v=ee95af0ab393",
   "fonts/fonts.css": "/static/fonts/fonts.css?v=f8f7dbd26c1c",
   "fonts/jetbrains-mono-latin-v24.woff2": "/static/fonts/jetbrains-mono-latin-v24.woff2?v=2c32b9b3ee35",
@@ -27,6 +27,8 @@
   "js/components/daily-feedback.min.js": "/static/js/components/daily-feedback.min.js?v=aa42df3bed0f",
   "js/components/gallery-view.js": "/static/js/components/gallery-view.js?v=43211d2d0d4a",
   "js/components/gallery-view.min.js": "/static/js/components/gallery-view.min.js?v=ae5761d5f3e6",
+  "js/components/location-map.js": "/static/js/components/location-map.js?v=a36976e65953",
+  "js/components/location-map.min.js": "/static/js/components/location-map.min.js?v=48aabf0d17d2",
   "js/components/site-header.js": "/static/js/components/site-header.js?v=8e517cef212e",
   "js/components/site-header.min.js": "/static/js/components/site-header.min.js?v=5f1eaff14562",
   "js/components/upload-manager.js": "/static/js/components/upload-manager.js?v=a7feb31858da",

@@ -251,15 +251,74 @@
     align-items: flex-start;
     justify-content: center;
     gap: 8px;
+    width: 100%;
     color: var(--muted);
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    font: inherit;
     font-size: 14px;
-    margin-top: 20px;
+    margin-top: 12px;
     text-align: left;
     line-height: 1.4;
-    padding: 0 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+        color 0.18s ease,
+        border-color 0.18s ease,
+        background 0.18s ease,
+        transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.location svg { flex-shrink: 0; margin-top: 2px; }
+.location svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: color 0.18s ease, transform 0.18s ease;
+}
+
+.location:hover,
+.location:focus-visible,
+.location[aria-expanded="true"] {
+    color: var(--heading);
+    border-color: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.08);
+    transform: translateY(-1px);
+}
+
+.location:hover svg,
+.location:focus-visible svg,
+.location[aria-expanded="true"] svg {
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.location:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--primary) 62%, transparent);
+    outline-offset: 2px;
+}
+
+.location:active {
+    transform: scale(0.985);
+    transition-duration: 80ms;
+}
+
+@media (hover: none), (pointer: coarse) {
+    .location:hover {
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .location:hover,
+    .location:focus-visible,
+    .location[aria-expanded="true"],
+    .location:hover svg,
+    .location:focus-visible svg,
+    .location[aria-expanded="true"] svg {
+        transform: none;
+    }
+}
 
 /* --- Home Liquid Glass --- */
 .home-layout {

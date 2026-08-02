@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LIGHTFIELD_JS = ROOT / "static" / "js" / "effects" / "lightfield.js"
 LIQUID_GLASS_JS = ROOT / "static" / "js" / "effects" / "liquid-glass.js"
 SITE_HEADER_JS = ROOT / "static" / "js" / "components" / "site-header.js"
+LOCATION_MAP_JS = ROOT / "static" / "js" / "components" / "location-map.js"
 UPLOAD_MANAGER_JS = ROOT / "static" / "js" / "components" / "upload-manager.js"
 STYLES_CSS = ROOT / "static" / "css" / "styles.css"
 BASE_HTML = ROOT / "app" / "templates" / "base.html"
@@ -728,6 +729,35 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("width: min(460px, calc(100vw - 24px))", popover.group("body"))
         self.assertNotIn("background:", popover.group("body"))
         self.assertNotIn("backdrop-filter", popover.group("body"))
+
+    def test_profile_location_uses_lazy_accessible_yuquan_map_popover(self) -> None:
+        source = LOCATION_MAP_JS.read_text()
+        template = HOME_HTML.read_text()
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn("Zhejiang University, Yuquan Campus", template)
+        self.assertIn("Hangzhou, 310027, China", template)
+        self.assertIn('id="locationMapTrigger"', template)
+        self.assertIn('aria-haspopup="dialog"', template)
+        self.assertIn('id="locationMapPopover"', template)
+        self.assertIn('role="dialog"', template)
+        self.assertIn('loading="lazy"', template)
+        self.assertIn("openstreetmap.org/export/embed.html", template)
+        self.assertIn("openstreetmap.org/way/28907128", template)
+        self.assertIn("asset_url('js/components/location-map.min.js')", template)
+
+        self.assertIn("window.HomepageAnchoredPopover", source)
+        self.assertIn('trigger.addEventListener("pointerenter", openFromPointer)', source)
+        self.assertIn('event.pointerType === "touch"', source)
+        self.assertIn('placement: "right-start"', source)
+        self.assertIn('frame.setAttribute("src", source)', source)
+        self.assertIn('frame.removeAttribute("data-src")', source)
+        self.assertIn("controller.close(popover, restoreFocus)", source)
+
+        self.assertIn(".location-map-popover", styles)
+        self.assertIn("width: min(420px, calc(100vw - 24px))", styles)
+        self.assertIn(".location-map-frame-shell", styles)
+        self.assertIn("@media (prefers-reduced-motion: reduce)", styles)
 
     def test_upload_editors_share_anchored_popover_and_segmented_visibility(self) -> None:
         source = UPLOAD_MANAGER_JS.read_text()
