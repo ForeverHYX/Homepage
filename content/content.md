@@ -1,6 +1,6 @@
 # Introduction
 
-I am **Yixun Hong**, a junior student at Zhejiang University majoring in **Information Security**. My research interests focus on **full-stack design for Computer Architecture** and **GPU microarchitecture and simulator**.
+I am **Yixun Hong**, a senior student at Zhejiang University majoring in **Information Security**. My research interests focus on **full-stack design for Computer Architecture** and **GPU microarchitecture and simulator**.
 
 I go to the gym regularly and also enjoy cycling, badminton, hiking, and [photography](/gallery) in my spare time.
 
@@ -18,9 +18,9 @@ title: FlashGPU-sim: Enabling GPU Modeling for Modern Architectures and AI Workl
 venue: In Proceedings of the 59th Annual IEEE/ACM International Symposium on Microarchitecture (MICRO59)
 venue_short: MICRO59
 authors: S. Yu, **Y. Hong**, G. Qiu, F. Gu, C. Geng, Z. Wang, C. Zhang, and B. Yu.
-keywords: GPU Modeling | AI Workloads | GPU Microarchitecture | Simulation
+keywords: GPU Modeling | GPU Microarchitecture | Simulation
 paper:
-code:
+github: https://github.com/FlashGPU-Sim/FlashGPU-Sim
 :::
 
 # Awards

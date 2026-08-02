@@ -54,9 +54,8 @@ def _publication_icon(kind: str) -> str:
         )
     return (
         '<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="15" height="15" '
-        'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
-        'stroke-linecap="round" stroke-linejoin="round">'
-        '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>'
+        'viewBox="0 0 24 24" fill="currentColor">'
+        '<path d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.11.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.47.11-3.05 0 0 .97-.31 3.16 1.18a10.95 10.95 0 0 1 5.75 0c2.2-1.49 3.16-1.18 3.16-1.18.63 1.58.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.38-5.29 5.67.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/>'
         "</svg>"
     )
 
@@ -117,6 +116,12 @@ def _build_publication(fields: dict[str, str], counters: dict[str, int]) -> dict
     publication_kind = _publication_kind(fields, venue)
     index_label = _publication_index_label(publication_kind, counters)
     venue_label = _publication_venue_label(fields, venue)
+    github = (
+        fields.get("github")
+        or fields.get("repository")
+        or fields.get("repo")
+        or fields.get("code", "")
+    ).strip()
 
     return {
         "title": title,
@@ -130,6 +135,7 @@ def _build_publication(fields: dict[str, str], counters: dict[str, int]) -> dict
         "index_label": index_label,
         "venue_label": venue_label,
         "paper": fields.get("paper", "").strip(),
+        "github": github,
         "code": fields.get("code", "").strip(),
     }
 
@@ -155,18 +161,22 @@ def _render_publication_data(publication: dict[str, object]) -> str:
     tag_group = f'<div class="publication-keywords">{tag_html}</div>' if tag_html else ""
 
     links = []
-    for kind, label in (("paper", "Paper"), ("code", "Code")):
-        href = str(publication[kind])
+    for kind, label, accessible_label in (
+        ("paper", "Paper", "Paper"),
+        ("github", "Code", "GitHub repository"),
+    ):
+        href = str(publication.get(kind, ""))
         if href:
             safe_href = escape(href, quote=True)
             links.append(
-                f'<a class="publication-link publication-link-{kind}" href="{safe_href}" '
-                f'target="_blank" rel="noreferrer" title="{label}" aria-label="{label}">'
+                f'<a class="publication-keyword publication-link publication-link-{kind}" '
+                f'href="{safe_href}" target="_blank" rel="noopener noreferrer" '
+                f'title="{accessible_label}" aria-label="{accessible_label}">'
                 f'{_publication_icon(kind)}<span class="publication-link-label">{label}</span></a>'
             )
     link_group = f'<div class="publication-links">{"".join(links)}</div>' if links else ""
     footer = (
-        f'<div class="publication-footer">{tag_group}{link_group}</div>'
+        f'<div class="publication-footer">{link_group}{tag_group}</div>'
         if tag_group or link_group
         else ""
     )

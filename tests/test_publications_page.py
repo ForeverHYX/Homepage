@@ -26,7 +26,7 @@ authors: A. Author, **Y. Hong**,
   and B. Author
 keywords: GPU Modeling | Simulation
 paper: https://example.com/paper.pdf
-code: https://github.com/example/code
+github: https://github.com/example/code
 :::
 
 :::publication
@@ -51,8 +51,28 @@ tags: Architecture, AI
         self.assertEqual(publications[0]["keywords"], ["GPU Modeling", "Simulation"])
         self.assertIn("and B. Author", publications[0]["authors"])
         self.assertEqual(publications[0]["slug"], "first-gpu-paper")
-        self.assertIn('class="publication-link publication-link-paper"', publications[0]["html"])
+        self.assertEqual(publications[0]["github"], "https://github.com/example/code")
+        self.assertIn("publication-link-paper", publications[0]["html"])
+        self.assertIn("publication-link-github", publications[0]["html"])
+        self.assertIn('<span class="publication-link-label">Code</span>', publications[0]["html"])
+        self.assertGreater(
+            publications[0]["html"].index('class="publication-links"'),
+            publications[0]["html"].index('class="publication-authors"'),
+        )
+        self.assertLess(
+            publications[0]["html"].index('class="publication-links"'),
+            publications[0]["html"].index('class="publication-keywords"'),
+        )
+        self.assertNotIn('class="publication-links"', publications[1]["html"])
         self.assertIn("<strong>Y. Hong</strong>", publications[1]["authors_html"])
+
+    def test_legacy_code_field_remains_a_github_alias(self) -> None:
+        publication = markdown_utils._build_publication(
+            {"title": "Legacy", "code": "https://github.com/example/legacy"},
+            {"conference": 0, "journal": 0},
+        )
+
+        self.assertEqual(publication["github"], "https://github.com/example/legacy")
 
     def test_publications_page_reuses_article_layout_and_filters_by_keyword(self) -> None:
         client = TestClient(app)
@@ -66,6 +86,8 @@ tags: Architecture, AI
         self.assertIn("FlashGPU-sim: Enabling GPU Modeling", response.text)
         self.assertIn("Keywords", response.text)
         self.assertIn("GPU Modeling", response.text)
+        self.assertIn('class="publication-links"', response.text)
+        self.assertIn('<span class="publication-link-label">Code</span>', response.text)
 
         filtered = client.get("/publications", params={"keywords": "GPU Modeling,Simulation"})
         self.assertEqual(filtered.status_code, 200)
@@ -102,6 +124,17 @@ tags: Architecture, AI
         self.assertIn("backdrop-filter: none", badge_material)
         self.assertIn("cursor: default", badge_material)
         self.assertNotIn(".publication-badge:hover", styles)
+        keyword_material = styles.split(".publication-keyword {", 1)[1].split("}", 1)[0]
+        self.assertIn("0 3px 6px rgba(15, 23, 42, 0.08)", keyword_material)
+        self.assertIn("var(--button-neutral-shadow)", keyword_material)
+        self.assertIn('[data-theme="dark"] .publication-keyword {', styles)
+        self.assertIn(
+            'class="publication-keyword publication-link publication-link-github"', template
+        )
+        github_material = styles.split(".prose a.publication-link-github {", 1)[1].split("}", 1)[0]
+        self.assertIn("background: var(--button-primary-soft-background)", github_material)
+        self.assertIn("border-color: var(--button-primary-soft-border)", github_material)
+        self.assertIn("box-shadow: var(--button-primary-soft-shadow)", github_material)
         self.assertIn("@media (prefers-reduced-transparency: reduce)", styles)
         self.assertIn("@media (prefers-contrast: more)", styles)
         self.assertIn("@media (forced-colors: active)", styles)

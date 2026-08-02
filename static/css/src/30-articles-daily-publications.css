@@ -667,7 +667,7 @@
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 7px;
     margin-top: 2px;
 }
 
@@ -695,7 +695,15 @@
     -webkit-backdrop-filter: none;
     border: 1px solid var(--button-neutral-border);
     white-space: nowrap;
-    box-shadow: var(--button-neutral-shadow);
+    box-shadow:
+        0 3px 6px rgba(15, 23, 42, 0.08),
+        var(--button-neutral-shadow);
+}
+
+[data-theme="dark"] .publication-keyword {
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.18),
+        var(--button-neutral-shadow);
 }
 
 .prose a.publication-keyword {
@@ -732,36 +740,28 @@
 .publication-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
 }
 
 .prose a.publication-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--button-radius);
-    border: 1px solid var(--well-border);
-    background: var(--well-bg);
-    color: var(--primary);
-    -webkit-background-clip: border-box;
-    background-clip: border-box;
-    -webkit-text-fill-color: currentColor;
-    box-shadow: inset 0 1px 8px var(--well-inner);
-    transition: transform 0.24s ease, background 0.24s ease, border-color 0.24s ease, color 0.24s ease;
+    gap: 5px;
 }
 
-.prose a.publication-link:hover {
-    transform: translateY(-1px);
-    color: #fff;
-    background: var(--daily-action-blue-gradient);
-    border-color: rgba(37, 99, 235, 0.42);
-    filter: none;
-    text-decoration: none;
-    box-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.2),
-        inset 0 1px 8px rgba(255, 255, 255, 0.28);
+.prose a.publication-link-github {
+    color: var(--button-primary-soft-color);
+    background: var(--button-primary-soft-background);
+    border-color: var(--button-primary-soft-border);
+    box-shadow: var(--button-primary-soft-shadow);
+    -webkit-text-fill-color: currentColor;
+}
+
+.prose a.publication-link-github:hover,
+.prose a.publication-link-github:active {
+    color: var(--button-primary-color);
+    background: var(--button-primary-background);
+    border-color: var(--button-primary-border);
+    box-shadow: var(--button-primary-shadow);
+    -webkit-text-fill-color: currentColor;
 }
 
 .publication-link svg {
@@ -769,15 +769,7 @@
 }
 
 .publication-link-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
     white-space: nowrap;
-    border: 0;
 }
 
 @media (max-width: 640px) {
@@ -816,6 +808,5 @@
 
     .publication-footer {
         align-items: flex-start;
-        flex-direction: column;
     }
 }

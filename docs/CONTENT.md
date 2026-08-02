@@ -58,13 +58,14 @@ venue_short: CONF 2026
 authors: A. Author, **Your Name**, B. Author
 keywords: GPU | Architecture | Simulation
 paper: https://example.com/paper.pdf
-code: https://github.com/example/repo
+github: https://github.com/example/repo
 :::
 ```
 
 - `type` 常用 `conference` 或 `journal`。
 - `keywords` 用 `|` 分隔，驱动 `/publications` filter。
-- `paper`、`code` 可留空；空链接不会输出按钮。
+- `paper`、`github` 可留空；分别控制论文和 GitHub 仓库胶囊链接，空链接不会输出胶囊。
+- 旧的 `code` 字段仍兼容，并作为 `github` 的别名解析。
 - 标题会生成稳定 slug，用于站内搜索锚点。
 
 修改后无需手工清缓存；下一个请求检测到文件签名变化会重新解析。
