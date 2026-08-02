@@ -124,13 +124,33 @@
     --theme-text: #334155;
     --theme-heading: #0f172a;
     --theme-muted: #475569;
+    --theme-bright: #f8fafc;
+    --accent-foreground: #fff;
+    --accent-ink: var(--accent-500);
+    --accent-link: var(--accent-600);
+    --accent-link-strong: var(--accent-700);
+    --theme-material-tint: rgba(148, 163, 184, 0.14);
+    --theme-material-edge-accent: rgba(148, 163, 184, 0.26);
+    --theme-material-inner-bottom: rgba(148, 163, 184, 0.1);
+    --theme-well-bg: rgba(255, 255, 255, 0.18);
+    --theme-well-border: rgba(255, 255, 255, 0.7);
+    --theme-well-inner: rgba(255, 255, 255, 0.25);
+    --theme-panel-bg: rgba(255, 255, 255, 0.55);
+    --theme-panel-border: rgba(255, 255, 255, 0.85);
+    --theme-panel-inner: rgba(255, 255, 255, 0.4);
+    --theme-pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(226, 232, 240, 0.5));
+    --theme-pill-rest-border: rgba(255, 255, 255, 0.92);
+    --theme-pill-rest-shadow:
+        0 6px 16px rgba(71, 85, 105, 0.09),
+        inset 0 1px 0 rgba(255, 255, 255, 0.94),
+        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
     --bg: var(--theme-bg);
     --bg-gradient: none;
     --text: var(--theme-text);
     --heading: var(--theme-heading);
     --primary: var(--accent-500);
-    --primary-hover: var(--accent-600);
-    --link-gradient: linear-gradient(135deg, var(--accent-600), var(--accent-700));
+    --primary-hover: var(--accent-link);
+    --link-gradient: linear-gradient(135deg, var(--accent-link), var(--accent-link-strong));
     --danger: #ef4444;
     --warning: #f97316;
     --warning-strong: #ea580c;
@@ -145,13 +165,13 @@
     --home-material-face-top: rgba(255, 255, 255, 0.72);
     --home-material-face-mid: rgba(255, 255, 255, 0.10);
     --home-material-face-bottom: rgba(255, 255, 255, 0.44);
-    --home-material-tint: rgba(148, 163, 184, 0.14);
+    --home-material-tint: var(--theme-material-tint);
     --home-material-edge: rgba(255, 255, 255, 0.82);
-    --home-material-edge-accent: rgba(148, 163, 184, 0.26);
+    --home-material-edge-accent: var(--theme-material-edge-accent);
     --home-material-shadow: rgba(73, 92, 138, 0.18);
     --home-material-shadow-soft: rgba(73, 92, 138, 0.09);
     --home-material-inner-top: rgba(255, 255, 255, 0.62);
-    --home-material-inner-bottom: rgba(148, 163, 184, 0.1);
+    --home-material-inner-bottom: var(--theme-material-inner-bottom);
     --home-material-blur: 38px;
     --home-material-saturate: 184%;
     --home-material-contrast: 1.1;
@@ -164,13 +184,13 @@
        frosted-liquid system without competing with the primary cards:
          --well-*  — translucent well (chips, code, table, TOC, drop zone)
          --panel-*  — denser panel (lightbox, search dropdown, carousel) */
-    --well-bg: rgba(255, 255, 255, 0.18);
-    --well-border: rgba(255, 255, 255, 0.7);
-    --well-inner: rgba(255, 255, 255, 0.25);
+    --well-bg: var(--theme-well-bg);
+    --well-border: var(--theme-well-border);
+    --well-inner: var(--theme-well-inner);
     --well-shine: rgba(255, 255, 255, 0.12);
-    --panel-bg: rgba(255, 255, 255, 0.55);
-    --panel-border: rgba(255, 255, 255, 0.85);
-    --panel-inner: rgba(255, 255, 255, 0.4);
+    --panel-bg: var(--theme-panel-bg);
+    --panel-border: var(--theme-panel-border);
+    --panel-inner: var(--theme-panel-inner);
     --panel-shine: rgba(255, 255, 255, 0.08);
 
     /* Card roles. The site intentionally exposes exactly three material
@@ -204,19 +224,16 @@
     --document-card-shadow: rgba(73, 92, 138, 0.18);
     --document-card-shadow-soft: rgba(73, 92, 138, 0.09);
     --document-card-inner-top: rgba(255, 255, 255, 0.62);
-    --document-card-inner-bottom: rgba(148, 163, 184, 0.1);
+    --document-card-inner-bottom: var(--theme-material-inner-bottom);
     --document-card-blur: 18px;
 
     /* Pills are solid frosted sub-layers. They deliberately avoid a nested
        backdrop sample, which keeps text crisp and prevents dozens of tiny
        filters from repainting while a card moves. */
     --pill-rest-color: var(--text);
-    --pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(226, 232, 240, 0.5));
-    --pill-rest-border: rgba(255, 255, 255, 0.92);
-    --pill-rest-shadow:
-        0 6px 16px rgba(71, 85, 105, 0.09),
-        inset 0 1px 0 rgba(255, 255, 255, 0.94),
-        inset 0 -1px 0 rgba(100, 116, 139, 0.1);
+    --pill-rest-background: var(--theme-pill-rest-background);
+    --pill-rest-border: var(--theme-pill-rest-border);
+    --pill-rest-shadow: var(--theme-pill-rest-shadow);
     --pill-lit-background: var(--daily-action-blue-gradient);
     --pill-lit-border: rgba(var(--accent-600-rgb), 0.58);
     --pill-lit-shadow:
@@ -249,7 +266,7 @@
     --button-neutral-background: var(--pill-rest-background);
     --button-neutral-border: var(--pill-rest-border);
     --button-neutral-shadow: var(--pill-rest-shadow);
-    --button-primary-color: #fff;
+    --button-primary-color: var(--accent-foreground);
     --button-primary-background: var(--pill-lit-background);
     --button-primary-border: var(--pill-lit-border);
     --button-primary-shadow: var(--pill-lit-shadow);
@@ -287,13 +304,31 @@
     --theme-text: #cbd5e1;
     --theme-heading: #f1f5f9;
     --theme-muted: #aebdce;
+    --theme-material-tint: rgba(var(--accent-600-rgb), 0.12);
+    --theme-material-edge-accent: rgba(var(--accent-400-rgb), 0.2);
+    --theme-material-inner-bottom: rgba(148, 163, 184, 0.1);
+    --theme-well-bg: rgba(255, 255, 255, 0.06);
+    --theme-well-border: rgba(255, 255, 255, 0.12);
+    --theme-well-inner: rgba(255, 255, 255, 0.08);
+    --theme-panel-bg: rgba(255, 255, 255, 0.12);
+    --theme-panel-border: rgba(255, 255, 255, 0.18);
+    --theme-panel-inner: rgba(255, 255, 255, 0.1);
+    --theme-pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(148, 163, 184, 0.08));
+    --theme-pill-rest-border: rgba(255, 255, 255, 0.22);
+    --theme-pill-rest-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.17),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.22);
     --bg: var(--theme-bg);
     --bg-gradient: none;
     --text: var(--theme-text);
     --heading: var(--theme-heading);
     --primary: var(--accent-400);
-    --primary-hover: var(--accent-300);
-    --link-gradient: linear-gradient(135deg, var(--accent-300), var(--accent-400));
+    --accent-ink: var(--accent-400);
+    --accent-link: var(--accent-300);
+    --accent-link-strong: var(--accent-400);
+    --primary-hover: var(--accent-link);
+    --link-gradient: linear-gradient(135deg, var(--accent-link), var(--accent-link-strong));
     --danger: #f87171;
     --warning: #fb923c;
     --warning-strong: #fb923c;
@@ -323,21 +358,21 @@
     --home-material-face-top: rgba(18, 28, 48, 0.82);
     --home-material-face-mid: rgba(11, 18, 32, 0.2);
     --home-material-face-bottom: rgba(20, 28, 44, 0.82);
-    --home-material-tint: rgba(var(--accent-600-rgb), 0.12);
+    --home-material-tint: var(--theme-material-tint);
     --home-material-edge: rgba(255, 255, 255, 0.22);
-    --home-material-edge-accent: rgba(var(--accent-400-rgb), 0.2);
+    --home-material-edge-accent: var(--theme-material-edge-accent);
     --home-material-shadow: rgba(0, 0, 0, 0.4);
     --home-material-shadow-soft: rgba(0, 0, 0, 0.22);
     --home-material-inner-top: rgba(255, 255, 255, 0.16);
-    --home-material-inner-bottom: rgba(148, 163, 184, 0.1);
+    --home-material-inner-bottom: var(--theme-material-inner-bottom);
 
-    --well-bg: rgba(255, 255, 255, 0.06);
-    --well-border: rgba(255, 255, 255, 0.12);
-    --well-inner: rgba(255, 255, 255, 0.08);
+    --well-bg: var(--theme-well-bg);
+    --well-border: var(--theme-well-border);
+    --well-inner: var(--theme-well-inner);
     --well-shine: rgba(255, 255, 255, 0.04);
-    --panel-bg: rgba(255, 255, 255, 0.12);
-    --panel-border: rgba(255, 255, 255, 0.18);
-    --panel-inner: rgba(255, 255, 255, 0.1);
+    --panel-bg: var(--theme-panel-bg);
+    --panel-border: var(--theme-panel-border);
+    --panel-inner: var(--theme-panel-inner);
     --panel-shine: rgba(255, 255, 255, 0.03);
 
     --functional-card-background:
@@ -366,15 +401,12 @@
     --document-card-shadow: rgba(0, 0, 0, 0.42);
     --document-card-shadow-soft: rgba(0, 0, 0, 0.24);
     --document-card-inner-top: rgba(255, 255, 255, 0.16);
-    --document-card-inner-bottom: rgba(148, 163, 184, 0.1);
+    --document-card-inner-bottom: var(--theme-material-inner-bottom);
 
     --pill-rest-color: var(--text);
-    --pill-rest-background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(148, 163, 184, 0.08));
-    --pill-rest-border: rgba(255, 255, 255, 0.22);
-    --pill-rest-shadow:
-        0 6px 16px rgba(0, 0, 0, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.17),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+    --pill-rest-background: var(--theme-pill-rest-background);
+    --pill-rest-border: var(--theme-pill-rest-border);
+    --pill-rest-shadow: var(--theme-pill-rest-shadow);
     --pill-lit-shadow:
         0 9px 20px rgba(var(--accent-600-rgb), 0.3),
         0 0 0 1px rgba(var(--accent-400-rgb), 0.58),

@@ -914,6 +914,13 @@ var ACCENT_PRESETS = [
 var ACCENT_VARIABLE_NAMES = (function () {
   var names = [
     "--theme-bg", "--theme-text", "--theme-heading", "--theme-muted",
+    "--theme-bright", "--accent-foreground", "--accent-ink",
+    "--accent-link", "--accent-link-strong",
+    "--theme-material-tint", "--theme-material-edge-accent",
+    "--theme-material-inner-bottom", "--theme-well-bg", "--theme-well-border",
+    "--theme-well-inner", "--theme-panel-bg", "--theme-panel-border",
+    "--theme-panel-inner", "--theme-pill-rest-background",
+    "--theme-pill-rest-border", "--theme-pill-rest-shadow",
     "--accent-cyan-300", "--accent-cyan-400", "--accent-cyan-500",
     "--accent-cyan-300-rgb", "--accent-cyan-400-rgb", "--accent-cyan-500-rgb",
     "--accent-vivid-400", "--accent-vivid-500", "--accent-vivid-400-rgb",
@@ -968,6 +975,36 @@ function accentMix(color, target, amount) {
     g: color.g + (target.g - color.g) * amount,
     b: color.b + (target.b - color.b) * amount,
   };
+}
+
+function accentRelativeLuminance(color) {
+  var channels = [color.r, color.g, color.b].map(function (channel) {
+    var normalized = channel / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : Math.pow((normalized + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function accentContrastRatio(first, second) {
+  var firstLuminance = accentRelativeLuminance(first);
+  var secondLuminance = accentRelativeLuminance(second);
+  var lighter = Math.max(firstLuminance, secondLuminance);
+  var darker = Math.min(firstLuminance, secondLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function accentEnsureContrast(color, background, mode) {
+  var target = mode === "dark"
+    ? { r: 255, g: 255, b: 255 }
+    : { r: 0, g: 0, b: 0 };
+  var candidate = color;
+  for (var amount = 0; amount <= 0.84; amount += 0.04) {
+    candidate = accentMix(color, target, amount);
+    if (accentContrastRatio(candidate, background) >= 4.5) break;
+  }
+  return candidate;
 }
 
 function accentRgbToHsv(color) {
@@ -1095,6 +1132,8 @@ function accentBuildVariables(baseHex, mode) {
   var cyanScale = accentBuildScale(cyan, mode);
   var vividScale = accentBuildScale(vivid, mode);
   var variables = {};
+  var luminance = accentRelativeLuminance(base);
+  variables["--accent-foreground"] = luminance > 0.24 ? "#0f172a" : "#ffffff";
   ACCENT_FAMILIES.forEach(function (family) {
     ACCENT_SHADES.forEach(function (shade) {
       var value = scales[family][shade];
@@ -1151,12 +1190,51 @@ function accentBuildVariables(baseHex, mode) {
     variables["--theme-text"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.2, 0.82));
     variables["--theme-heading"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.28, 0.94));
     variables["--theme-muted"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.18, 0.73));
+    variables["--theme-bright"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.2, 0.98));
+    variables["--theme-material-tint"] = "rgba(" + variables["--accent-600-rgb"] + ", 0.14)";
+    variables["--theme-material-edge-accent"] = "rgba(" + variables["--accent-400-rgb"] + ", 0.23)";
+    variables["--theme-material-inner-bottom"] = "rgba(" + variables["--accent-800-rgb"] + ", 0.14)";
+    variables["--theme-well-bg"] = "rgba(" + variables["--accent-400-rgb"] + ", 0.08)";
+    variables["--theme-well-border"] = "rgba(" + variables["--accent-300-rgb"] + ", 0.18)";
+    variables["--theme-well-inner"] = "rgba(" + variables["--accent-200-rgb"] + ", 0.1)";
+    variables["--theme-panel-bg"] = "rgba(" + variables["--accent-400-rgb"] + ", 0.12)";
+    variables["--theme-panel-border"] = "rgba(" + variables["--accent-200-rgb"] + ", 0.2)";
+    variables["--theme-panel-inner"] = "rgba(" + variables["--accent-200-rgb"] + ", 0.12)";
+    variables["--theme-pill-rest-background"] = "linear-gradient(180deg, rgba(" + variables["--accent-300-rgb"] + ", 0.16), rgba(" + variables["--accent-700-rgb"] + ", 0.12))";
+    variables["--theme-pill-rest-border"] = "rgba(" + variables["--accent-300-rgb"] + ", 0.24)";
+    variables["--theme-pill-rest-shadow"] = "0 6px 16px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(" + variables["--accent-100-rgb"] + ", 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.22)";
   } else {
     variables["--theme-bg"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.58, 0.95));
     variables["--theme-text"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.22, 0.28));
     variables["--theme-heading"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.38, 0.11));
     variables["--theme-muted"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.16, 0.43));
+    variables["--theme-bright"] = accentRgbToHex(accentHslToRgb(hsv.h, 0.18, 0.98));
+    variables["--theme-material-tint"] = "rgba(" + variables["--accent-400-rgb"] + ", 0.12)";
+    variables["--theme-material-edge-accent"] = "rgba(" + variables["--accent-300-rgb"] + ", 0.28)";
+    variables["--theme-material-inner-bottom"] = "rgba(" + variables["--accent-200-rgb"] + ", 0.12)";
+    variables["--theme-well-bg"] = "rgba(" + variables["--accent-50-rgb"] + ", 0.2)";
+    variables["--theme-well-border"] = "rgba(" + variables["--accent-200-rgb"] + ", 0.58)";
+    variables["--theme-well-inner"] = "rgba(" + variables["--accent-50-rgb"] + ", 0.3)";
+    variables["--theme-panel-bg"] = "rgba(" + variables["--accent-50-rgb"] + ", 0.58)";
+    variables["--theme-panel-border"] = "rgba(" + variables["--accent-100-rgb"] + ", 0.76)";
+    variables["--theme-panel-inner"] = "rgba(" + variables["--accent-50-rgb"] + ", 0.44)";
+    variables["--theme-pill-rest-background"] = "linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(" + variables["--accent-100-rgb"] + ", 0.5))";
+    variables["--theme-pill-rest-border"] = "rgba(" + variables["--accent-100-rgb"] + ", 0.84)";
+    variables["--theme-pill-rest-shadow"] = "0 6px 16px rgba(" + variables["--accent-800-rgb"] + ", 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.94), inset 0 -1px 0 rgba(" + variables["--accent-600-rgb"] + ", 0.1)";
   }
+  var contrastTarget = mode === "dark"
+    ? { r: 255, g: 255, b: 255 }
+    : { r: 0, g: 0, b: 0 };
+  var accentInk = accentEnsureContrast(
+    base,
+    accentHexToRgb(variables["--theme-bg"]),
+    mode
+  );
+  variables["--accent-ink"] = accentRgbToHex(accentInk);
+  variables["--accent-link"] = variables["--accent-ink"];
+  variables["--accent-link-strong"] = accentRgbToHex(
+    accentMix(accentInk, contrastTarget, 0.16)
+  );
   return variables;
 }
 
@@ -1198,7 +1276,7 @@ function accentNormalizeDescriptor(value, mode) {
 
 function accentNormalizeState(raw) {
   var state = {
-    version: 1,
+    version: 2,
     sync: !(raw && raw.sync === false),
     light: accentNormalizeDescriptor(raw && raw.light, "light"),
     dark: accentNormalizeDescriptor(raw && raw.dark, "dark"),
@@ -1233,6 +1311,10 @@ function accentApplyState(state) {
 function initAccentTheme() {
   var bootstrap = window.__homepageAccentTheme || {};
   var state = accentNormalizeState(bootstrap.state);
+  var normalizedStateChanged = Boolean(
+    bootstrap.invalid ||
+      (bootstrap.state && JSON.stringify(bootstrap.state) !== JSON.stringify(state))
+  );
   var root = document.documentElement;
   var trigger = document.getElementById("accentThemeToggle");
   var popover = document.getElementById("accentPalettePopover");
@@ -1371,6 +1453,7 @@ function initAccentTheme() {
 
   accentApplyState(state);
   exposeState();
+  if (normalizedStateChanged) persist();
   if (!trigger || !popover || !window.HomepageAnchoredPopover) return;
 
   trigger.addEventListener("click", function () {

@@ -138,7 +138,7 @@
 .article-card-link {
     display: inline-flex;
     margin-top: 16px;
-    color: var(--primary);
+    color: var(--accent-ink);
     font-weight: 600;
     font-size: 14px;
     text-decoration: none;

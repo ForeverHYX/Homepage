@@ -218,7 +218,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: var(--primary);
+    color: var(--accent-ink);
     border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
     border-radius: 10px;
     background: color-mix(in srgb, currentColor 8%, transparent);
@@ -267,7 +267,7 @@
 }
 
 .file-download-badge svg {
-    color: white;
+    color: var(--accent-foreground);
     stroke-width: 2.5;
 }
 
@@ -309,7 +309,7 @@
 }
 
 .file-item-name--link:hover {
-    color: var(--primary);
+    color: var(--accent-ink);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -341,7 +341,7 @@
 }
 
 .file-action-btn:hover {
-    color: var(--primary);
+    color: var(--accent-ink);
     border-color: color-mix(in srgb, var(--primary) 18%, transparent);
     background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
@@ -444,7 +444,7 @@
 }
 
 .upload-drop-icon {
-    color: var(--primary);
+    color: var(--accent-ink);
     margin-bottom: 12px;
 }
 

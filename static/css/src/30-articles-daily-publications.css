@@ -303,7 +303,7 @@
 }
 
 .daily-repo-source-meta a {
-    color: var(--primary);
+    color: var(--accent-ink);
     font-weight: 700;
 }
 
@@ -316,7 +316,7 @@
 }
 
 .daily-paper-links a {
-    color: var(--primary);
+    color: var(--accent-ink);
     font-size: 13px;
     font-weight: 700;
 }

@@ -107,7 +107,7 @@
     padding: 0.2em 0.4em;
     border-radius: 4px;
     font-size: 0.9em;
-    color: var(--primary);
+    color: var(--accent-ink);
     border: 1px solid var(--well-border);
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;

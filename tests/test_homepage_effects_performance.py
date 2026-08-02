@@ -766,6 +766,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("state.sync = !state.sync", source)
         self.assertIn("state.dark = accentDeriveDarkDescriptor(state.light)", source)
         self.assertIn("localStorage.setItem(ACCENT_STORAGE_KEY, JSON.stringify(state))", source)
+        self.assertIn("function accentEnsureContrast", source)
+        self.assertIn('variables["--accent-ink"]', source)
+        self.assertIn("normalizedStateChanged", source)
         self.assertIn('new CustomEvent("homepage:accentchange"', source)
         self.assertIn('new CustomEvent("homepage:popoverclose"', source)
         self.assertIn("setPointerCapture(event.pointerId)", source)
@@ -779,6 +782,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn(".accent-color-field", styles)
         self.assertIn("linear-gradient(to top, #000, transparent)", styles)
         self.assertIn(".accent-hue-slider", styles)
+        self.assertIn("--accent-foreground: #fff", styles)
+        self.assertIn("--theme-pill-rest-background:", styles)
+        self.assertIn("--accent-ink: var(--accent-500)", styles)
 
     def test_profile_location_uses_lazy_accessible_yuquan_map_popover(self) -> None:
         source = LOCATION_MAP_JS.read_text()

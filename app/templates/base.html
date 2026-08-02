@@ -14,14 +14,20 @@
       (function () {
         var root = document.documentElement;
         var storageKey = "homepage_accent_theme_v1";
+        var theme = "light";
         try {
           var saved = localStorage.getItem("theme");
           var sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-          var theme = saved === "dark" || (!saved && sysDark) ? "dark" : "light";
-          root.setAttribute("data-theme", theme);
-          root.style.colorScheme = theme;
+          theme = saved === "dark" || (!saved && sysDark) ? "dark" : "light";
+        } catch (e) {
+          theme = "light";
+        }
+        root.setAttribute("data-theme", theme);
+        root.style.colorScheme = theme;
 
-          var accentState = JSON.parse(localStorage.getItem(storageKey) || "null");
+        var accentState = null;
+        try {
+          accentState = JSON.parse(localStorage.getItem(storageKey) || "null");
           var palette = accentState && accentState[theme];
           var variables = palette && palette.vars;
           if (variables && typeof variables === "object") {
@@ -38,11 +44,13 @@
             state: accentState
           };
         } catch (e) {
-          root.setAttribute("data-theme", "light");
-          root.style.colorScheme = "light";
           root.dataset.accentTheme = "default";
           root.dataset.accentSync = "true";
-          window.__homepageAccentTheme = { storageKey: storageKey, state: null };
+          window.__homepageAccentTheme = {
+            storageKey: storageKey,
+            state: null,
+            invalid: true
+          };
         }
       })();
     </script>
