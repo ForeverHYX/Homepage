@@ -14,18 +14,95 @@
     --font-hand-en: 'Dancing Script', 'Segoe Script', 'Snell Roundhand', cursive;
     --font-hand-cn: 'Zhi Mang Xing', 'STXingkai', 'Xingkai SC', 'Kaiti SC', 'KaiTi', 'FZKai-Z03', 'Noto Serif SC', serif;
 
-    --bg: #e8f1fb;
+    /* Accent theme foundation. The default values intentionally mirror the
+       site's original blue/sky/indigo palette exactly. Runtime palette
+       choices only override these semantic tokens, so selecting “Default”
+       remains pixel-for-pixel identical to the pre-picker appearance. */
+    --accent-50: #eff6ff;
+    --accent-100: #dbeafe;
+    --accent-200: #bfdbfe;
+    --accent-300: #93c5fd;
+    --accent-400: #60a5fa;
+    --accent-500: #3b82f6;
+    --accent-600: #2563eb;
+    --accent-700: #1d4ed8;
+    --accent-800: #1e40af;
+    --accent-900: #1e3a8a;
+    --accent-950: #172554;
+    --accent-50-rgb: 239, 246, 255;
+    --accent-100-rgb: 219, 234, 254;
+    --accent-200-rgb: 191, 219, 254;
+    --accent-300-rgb: 147, 197, 253;
+    --accent-400-rgb: 96, 165, 250;
+    --accent-500-rgb: 59, 130, 246;
+    --accent-600-rgb: 37, 99, 235;
+    --accent-700-rgb: 29, 78, 216;
+    --accent-800-rgb: 30, 64, 175;
+    --accent-900-rgb: 30, 58, 138;
+    --accent-950-rgb: 23, 37, 84;
+
+    --accent-secondary-50: #f0f9ff;
+    --accent-secondary-100: #e0f2fe;
+    --accent-secondary-200: #bae6fd;
+    --accent-secondary-300: #7dd3fc;
+    --accent-secondary-400: #38bdf8;
+    --accent-secondary-500: #0ea5e9;
+    --accent-secondary-600: #0284c7;
+    --accent-secondary-700: #0369a1;
+    --accent-secondary-800: #075985;
+    --accent-secondary-900: #0c4a6e;
+    --accent-secondary-950: #082f49;
+    --accent-secondary-50-rgb: 240, 249, 255;
+    --accent-secondary-100-rgb: 224, 242, 254;
+    --accent-secondary-200-rgb: 186, 230, 253;
+    --accent-secondary-300-rgb: 125, 211, 252;
+    --accent-secondary-400-rgb: 56, 189, 248;
+    --accent-secondary-500-rgb: 14, 165, 233;
+    --accent-secondary-600-rgb: 2, 132, 199;
+    --accent-secondary-700-rgb: 3, 105, 161;
+    --accent-secondary-800-rgb: 7, 89, 133;
+    --accent-secondary-900-rgb: 12, 74, 110;
+    --accent-secondary-950-rgb: 8, 47, 73;
+
+    --accent-tertiary-50: #eef2ff;
+    --accent-tertiary-100: #e0e7ff;
+    --accent-tertiary-200: #c7d2fe;
+    --accent-tertiary-300: #a5b4fc;
+    --accent-tertiary-400: #818cf8;
+    --accent-tertiary-500: #6366f1;
+    --accent-tertiary-600: #4f46e5;
+    --accent-tertiary-700: #4338ca;
+    --accent-tertiary-800: #3730a3;
+    --accent-tertiary-900: #312e81;
+    --accent-tertiary-950: #1e1b4b;
+    --accent-tertiary-50-rgb: 238, 242, 255;
+    --accent-tertiary-100-rgb: 224, 231, 255;
+    --accent-tertiary-200-rgb: 199, 210, 254;
+    --accent-tertiary-300-rgb: 165, 180, 252;
+    --accent-tertiary-400-rgb: 129, 140, 248;
+    --accent-tertiary-500-rgb: 99, 102, 241;
+    --accent-tertiary-600-rgb: 79, 70, 229;
+    --accent-tertiary-700-rgb: 67, 56, 202;
+    --accent-tertiary-800-rgb: 55, 48, 163;
+    --accent-tertiary-900-rgb: 49, 46, 129;
+    --accent-tertiary-950-rgb: 30, 27, 75;
+
+    --theme-bg: #e8f1fb;
+    --theme-text: #334155;
+    --theme-heading: #0f172a;
+    --theme-muted: #475569;
+    --bg: var(--theme-bg);
     --bg-gradient: none;
-    --text: #334155;
-    --heading: #0f172a;
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --link-gradient: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --text: var(--theme-text);
+    --heading: var(--theme-heading);
+    --primary: var(--accent-500);
+    --primary-hover: var(--accent-600);
+    --link-gradient: linear-gradient(135deg, var(--accent-600), var(--accent-700));
     --danger: #ef4444;
     --warning: #f97316;
     --warning-strong: #ea580c;
-    --daily-action-blue-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
-    --muted: #475569;
+    --daily-action-blue-gradient: linear-gradient(135deg, var(--accent-400) 0%, var(--accent-600) 100%);
+    --muted: var(--theme-muted);
 
     /* Unified frosted-liquid material system.
        Both the document card (.home-glass/.home-content) and the functional
@@ -108,12 +185,12 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.94),
         inset 0 -1px 0 rgba(100, 116, 139, 0.1);
     --pill-lit-background: var(--daily-action-blue-gradient);
-    --pill-lit-border: rgba(37, 99, 235, 0.58);
+    --pill-lit-border: rgba(var(--accent-600-rgb), 0.58);
     --pill-lit-shadow:
-        0 8px 18px rgba(37, 99, 235, 0.24),
-        0 0 0 1px rgba(147, 197, 253, 0.72),
+        0 8px 18px rgba(var(--accent-600-rgb), 0.24),
+        0 0 0 1px rgba(var(--accent-300-rgb), 0.72),
         inset 0 1px 8px rgba(255, 255, 255, 0.3),
-        inset 0 -1px 0 rgba(30, 64, 175, 0.2);
+        inset 0 -1px 0 rgba(var(--accent-800-rgb), 0.2);
     --pill-primary-soft-background:
         linear-gradient(180deg, color-mix(in srgb, var(--primary) 10%, transparent), color-mix(in srgb, var(--primary) 22%, transparent)),
         var(--pill-rest-background);
@@ -173,17 +250,21 @@
 }
 
 [data-theme="dark"] {
-    --bg: #071221;
+    --theme-bg: #071221;
+    --theme-text: #cbd5e1;
+    --theme-heading: #f1f5f9;
+    --theme-muted: #aebdce;
+    --bg: var(--theme-bg);
     --bg-gradient: none;
-    --text: #cbd5e1;
-    --heading: #f1f5f9;
-    --primary: #60a5fa;
-    --primary-hover: #93c5fd;
-    --link-gradient: linear-gradient(135deg, #93c5fd, #60a5fa);
+    --text: var(--theme-text);
+    --heading: var(--theme-heading);
+    --primary: var(--accent-400);
+    --primary-hover: var(--accent-300);
+    --link-gradient: linear-gradient(135deg, var(--accent-300), var(--accent-400));
     --danger: #f87171;
     --warning: #fb923c;
     --warning-strong: #fb923c;
-    --muted: #aebdce;
+    --muted: var(--theme-muted);
 
     /* Dark variants belong to the dark theme. Keeping them here (instead of
        redeclaring them later in :root) prevents the light palette from being
@@ -244,8 +325,8 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.17),
         inset 0 -1px 0 rgba(0, 0, 0, 0.22);
     --pill-lit-shadow:
-        0 9px 20px rgba(37, 99, 235, 0.3),
-        0 0 0 1px rgba(96, 165, 250, 0.58),
+        0 9px 20px rgba(var(--accent-600-rgb), 0.3),
+        0 0 0 1px rgba(var(--accent-400-rgb), 0.58),
         inset 0 1px 8px rgba(255, 255, 255, 0.2),
         inset 0 -1px 0 rgba(15, 23, 42, 0.28);
     --surface: var(--panel-bg);

@@ -1549,9 +1549,11 @@ class DailyIntegrationTests(unittest.TestCase):
         self.assertIn(".daily-action-button.daily-action-dislike", styles)
         self.assertIn(".daily-action-button.daily-action-like:hover", styles)
         self.assertIn(
-            "--daily-action-blue-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);",
+            "--daily-action-blue-gradient: linear-gradient(135deg, var(--accent-400) 0%, var(--accent-600) 100%);",
             styles,
         )
+        self.assertIn("--accent-400: #60a5fa;", styles)
+        self.assertIn("--accent-600: #2563eb;", styles)
         self.assertIn("--pill-primary-soft-background:", styles)
         self.assertIn("--button-primary-soft-background:", styles)
         self.assertNotIn(
