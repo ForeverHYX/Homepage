@@ -1,5 +1,6 @@
 import { initActiveRoutes, initPageEntry, setFooterYear } from "./core.js";
 import { initHeader } from "./navigation-search.js";
+import { initAccentTheme } from "./accent-theme.js";
 import { initThemeToggle } from "./theme.js";
 import { initNewsPopover } from "./news-modal.js";
 
@@ -9,6 +10,7 @@ export function initSiteHeader() {
   initPageEntry();
   initHeader();
   initThemeToggle();
+  initAccentTheme();
   initNewsPopover();
 }
 

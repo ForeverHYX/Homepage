@@ -730,6 +730,52 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertNotIn("background:", popover.group("body"))
         self.assertNotIn("backdrop-filter", popover.group("body"))
 
+    def test_navigation_palette_supports_synced_and_independent_themes(self) -> None:
+        source = SITE_HEADER_JS.read_text()
+        template = BASE_HTML.read_text()
+        styles = STYLES_CSS.read_text()
+
+        theme_position = template.index('id="themeToggle"')
+        palette_position = template.index('id="accentThemeToggle"')
+        account_position = template.index('class="action-btn nav-account-link"')
+        self.assertLess(theme_position, palette_position)
+        self.assertLess(palette_position, account_position)
+
+        self.assertIn('id="accentPalettePopover"', template)
+        self.assertIn('aria-labelledby="accentPaletteTitle"', template)
+        self.assertIn('id="accentSyncToggle"', template)
+        self.assertIn('role="switch"', template)
+        self.assertIn('aria-checked="true"', template)
+        self.assertIn('id="accentModeSelector"', template)
+        self.assertIn('data-accent-mode="light"', template)
+        self.assertIn('data-accent-mode="dark"', template)
+        self.assertEqual(template.count("data-accent-preset="), 6)
+        self.assertIn('id="accentColorField"', template)
+        self.assertIn('id="accentHueSlider"', template)
+        self.assertIn('id="accentHexInput"', template)
+        self.assertLess(
+            template.index("homepage_accent_theme_v1"),
+            template.index("asset_url('css/styles.min.css')"),
+        )
+
+        self.assertIn('var ACCENT_STORAGE_KEY = "homepage_accent_theme_v1"', source)
+        self.assertIn("state.sync = !state.sync", source)
+        self.assertIn("state.dark = accentDeriveDarkDescriptor(state.light)", source)
+        self.assertIn("localStorage.setItem(ACCENT_STORAGE_KEY, JSON.stringify(state))", source)
+        self.assertIn('new CustomEvent("homepage:accentchange"', source)
+        self.assertIn('new CustomEvent("homepage:popoverclose"', source)
+        self.assertIn("setPointerCapture(event.pointerId)", source)
+        self.assertIn("originalTheme = accentCurrentTheme()", source)
+        self.assertIn('root.setAttribute("data-theme", originalTheme)', source)
+
+        self.assertIn(".accent-palette-popover", styles)
+        self.assertIn(".accent-sync-switch.is-on", styles)
+        self.assertIn(".accent-mode-selector[hidden]", styles)
+        self.assertIn("grid-template-columns: repeat(6, minmax(0, 1fr))", styles)
+        self.assertIn(".accent-color-field", styles)
+        self.assertIn("linear-gradient(to top, #000, transparent)", styles)
+        self.assertIn(".accent-hue-slider", styles)
+
     def test_profile_location_uses_lazy_accessible_yuquan_map_popover(self) -> None:
         source = LOCATION_MAP_JS.read_text()
         template = HOME_HTML.read_text()

@@ -243,6 +243,11 @@ export function createAnchoredPopoverController() {
       closing.anchor.setAttribute("aria-expanded", "false");
       popover.classList.remove("is-open");
       popover.inert = true;
+      popover.dispatchEvent(
+        new CustomEvent("homepage:popoverclose", {
+          detail: { anchor: closing.anchor, restoreFocus: Boolean(restoreFocus) },
+        })
+      );
 
       if (restoreFocus && closing.anchor.isConnected) {
         closing.anchor.focus({ preventScroll: true });
@@ -295,6 +300,9 @@ export function createAnchoredPopoverController() {
         anchor: anchor,
         placement: options.placement || "bottom-end",
       };
+      popover.dispatchEvent(
+        new CustomEvent("homepage:popoveropen", { detail: { anchor: anchor } })
+      );
       bindPositioningListeners();
       positionActivePopover();
       void popover.offsetWidth;

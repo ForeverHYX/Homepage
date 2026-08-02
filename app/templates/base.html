@@ -10,22 +10,44 @@
     <link rel="preload" href="{{ asset_url('fonts/source-sans-3-latin-v19.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ asset_url('fonts/source-serif-4-latin-v14.woff2') }}" as="font" type="font/woff2" crossorigin>
     {% block font_preloads %}{% endblock %}
-    <link rel="stylesheet" href="{{ asset_url('fonts/fonts.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('css/styles.min.css') }}">
     <script>
       (function () {
+        var root = document.documentElement;
+        var storageKey = "homepage_accent_theme_v1";
         try {
           var saved = localStorage.getItem("theme");
           var sysDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           var theme = saved === "dark" || (!saved && sysDark) ? "dark" : "light";
-          document.documentElement.setAttribute("data-theme", theme);
-          document.documentElement.style.colorScheme = theme;
+          root.setAttribute("data-theme", theme);
+          root.style.colorScheme = theme;
+
+          var accentState = JSON.parse(localStorage.getItem(storageKey) || "null");
+          var palette = accentState && accentState[theme];
+          var variables = palette && palette.vars;
+          if (variables && typeof variables === "object") {
+            Object.keys(variables).forEach(function (name) {
+              if (/^--(?:accent|theme|lightfield)-/.test(name)) {
+                root.style.setProperty(name, variables[name]);
+              }
+            });
+          }
+          root.dataset.accentTheme = palette && palette.id ? palette.id : "default";
+          root.dataset.accentSync = accentState && accentState.sync === false ? "false" : "true";
+          window.__homepageAccentTheme = {
+            storageKey: storageKey,
+            state: accentState
+          };
         } catch (e) {
-          document.documentElement.setAttribute("data-theme", "light");
-          document.documentElement.style.colorScheme = "light";
+          root.setAttribute("data-theme", "light");
+          root.style.colorScheme = "light";
+          root.dataset.accentTheme = "default";
+          root.dataset.accentSync = "true";
+          window.__homepageAccentTheme = { storageKey: storageKey, state: null };
         }
       })();
     </script>
+    <link rel="stylesheet" href="{{ asset_url('fonts/fonts.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('css/styles.min.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -67,6 +89,9 @@
                                     <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
                                     <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                                 </button>
+                                <button type="button" id="accentThemeToggle" class="action-btn nav-accent-toggle" title="Customize site colors" aria-label="Customize site colors" aria-haspopup="dialog" aria-expanded="false" aria-controls="accentPalettePopover">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="0.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="0.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="0.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="0.5" fill="currentColor"/><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm0 0c-1.1 0-2-.9-2-2s.9-2 2-2h1.5a2.5 2.5 0 0 1 0 5H12Z"/></svg>
+                                </button>
                                 {% set account_href = '/upload' if show_upload_navigation else '/login?next=%2Fupload' %}
                                 {% set account_label = 'Open Upload Manager' if show_upload_navigation else 'Sign in to Upload Manager' %}
                                 <a href="{{ account_href }}" class="action-btn nav-account-link" title="{{ account_label }}" aria-label="{{ account_label }}">
@@ -91,6 +116,87 @@
             </div>
         </div>
     </header>
+    <section id="accentPalettePopover"
+             class="anchored-popover card home-liquid-card accent-palette-popover"
+             role="dialog"
+             aria-modal="false"
+             aria-labelledby="accentPaletteTitle"
+             hidden
+             inert>
+        <div class="accent-palette-surface">
+            <header class="accent-palette-header">
+                <div>
+                    <p class="popover-eyebrow">Appearance</p>
+                    <h2 id="accentPaletteTitle" class="accent-palette-title">Color palette</h2>
+                </div>
+                <div class="accent-sync-wrap">
+                    <span class="accent-sync-label">Sync dark</span>
+                    <button type="button"
+                            id="accentSyncToggle"
+                            class="accent-sync-switch"
+                            role="switch"
+                            aria-checked="true"
+                            aria-label="Sync color palette with dark mode">
+                        <span class="accent-sync-knob" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </header>
+
+            <div id="accentModeSelector" class="accent-mode-selector" role="group" aria-label="Palette to edit" hidden>
+                <button type="button" class="accent-mode-button" data-accent-mode="light" aria-pressed="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    Light
+                </button>
+                <button type="button" class="accent-mode-button" data-accent-mode="dark" aria-pressed="false">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                    Dark
+                </button>
+            </div>
+
+            <div class="accent-palette-body">
+                <div class="accent-field-heading">
+                    <span>Gradient presets</span>
+                    <span id="accentEditingLabel" class="accent-editing-label">Synced</span>
+                </div>
+                <div class="accent-presets" role="group" aria-label="Gradient color presets">
+                    <button type="button" class="accent-preset" data-accent-preset="default" aria-label="Default blue palette" aria-pressed="true"><span>Default</span></button>
+                    <button type="button" class="accent-preset" data-accent-preset="ocean" aria-label="Ocean palette" aria-pressed="false"><span>Ocean</span></button>
+                    <button type="button" class="accent-preset" data-accent-preset="violet" aria-label="Violet palette" aria-pressed="false"><span>Violet</span></button>
+                    <button type="button" class="accent-preset" data-accent-preset="sunset" aria-label="Sunset palette" aria-pressed="false"><span>Sunset</span></button>
+                    <button type="button" class="accent-preset" data-accent-preset="forest" aria-label="Forest palette" aria-pressed="false"><span>Forest</span></button>
+                    <button type="button" class="accent-preset" data-accent-preset="rose" aria-label="Rose palette" aria-pressed="false"><span>Rose</span></button>
+                </div>
+
+                <div class="accent-field-heading accent-custom-heading">
+                    <span>Custom color</span>
+                    <span class="accent-live-label"><span class="accent-live-dot" aria-hidden="true"></span>Live preview</span>
+                </div>
+                <div id="accentColorField"
+                     class="accent-color-field"
+                     role="slider"
+                     tabindex="0"
+                     aria-label="Color saturation and brightness"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="100"
+                     aria-valuetext="100% saturation, 100% brightness">
+                    <span id="accentColorMarker" class="accent-color-marker" aria-hidden="true"></span>
+                </div>
+                <label class="accent-hue-row" for="accentHueSlider">
+                    <span>Hue</span>
+                    <input id="accentHueSlider" class="accent-hue-slider" type="range" min="0" max="359" step="1" value="217" aria-label="Color hue">
+                </label>
+                <div class="accent-value-row">
+                    <span id="accentColorPreview" class="accent-color-preview" aria-hidden="true"></span>
+                    <label class="accent-hex-control" for="accentHexInput">
+                        <span>HEX</span>
+                        <input id="accentHexInput" type="text" value="#3B82F6" maxlength="7" inputmode="text" autocomplete="off" spellcheck="false" aria-label="Custom color hexadecimal value">
+                    </label>
+                    <button type="button" id="accentResetButton" class="accent-reset-button">Reset</button>
+                </div>
+            </div>
+        </div>
+    </section>
     <main class="site-main">
         {% block content %}{% endblock %}
     </main>
