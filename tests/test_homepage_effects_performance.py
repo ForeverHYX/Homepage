@@ -663,6 +663,14 @@ class HomepageEffectsPerformanceTests(TestCase):
             self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
             self.assertEqual(struct.unpack(">II", data[16:24]), (expected_size, expected_size))
 
+    def test_education_date_aligns_with_section_content_on_desktop(self) -> None:
+        styles = STYLES_CSS.read_text()
+        date_rule = re.search(r"\.edu-timeline-date\s*\{(?P<body>.*?)\n\}", styles, re.S)
+
+        self.assertIsNotNone(date_rule)
+        self.assertIn("text-align: left;", date_rule.group("body"))
+        self.assertNotIn("text-align: right;", date_rule.group("body"))
+
     def test_education_logo_overrides_generic_prose_image_style(self) -> None:
         styles = STYLES_CSS.read_text()
         base = BASE_HTML.read_text()
