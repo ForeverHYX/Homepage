@@ -21,6 +21,8 @@ GALLERY_HTML = ROOT / "app" / "templates" / "pages" / "gallery.html"
 EDUCATION_PY = ROOT / "app" / "education.py"
 FAVICON_32 = ROOT / "static" / "images" / "site" / "favicon-32.png"
 FAVICON_64 = ROOT / "static" / "images" / "site" / "favicon-64.png"
+BRAND_MARK_64 = ROOT / "static" / "images" / "site" / "brand-mark-64.png"
+BRAND_SOURCE_512 = ROOT / "assets" / "images" / "forever-hyx-512.png"
 ZJU_LOGO_52 = ROOT / "static" / "images" / "site" / "zju-logo-52.png"
 ZJU_LOGO_104 = ROOT / "static" / "images" / "site" / "zju-logo-104.png"
 ZJU_LOGO_156 = ROOT / "static" / "images" / "site" / "zju-logo-156.png"
@@ -620,17 +622,30 @@ class HomepageEffectsPerformanceTests(TestCase):
             self.assertTrue(font_path.exists())
             self.assertGreater(font_path.stat().st_size, 1000)
 
-    def test_favicon_uses_right_sized_static_assets(self) -> None:
+    def test_brand_mark_and_favicon_use_right_sized_static_assets(self) -> None:
         base = BASE_HTML.read_text()
+        styles = STYLES_CSS.read_text()
 
         self.assertIn("asset_url('images/site/favicon-32.png')", base)
         self.assertIn("asset_url('images/site/favicon-64.png')", base)
+        self.assertIn("asset_url('images/site/brand-mark-64.png')", base)
+        self.assertIn('class="nav-brand-icon"', base)
+        self.assertNotIn('<svg class="nav-brand-icon"', base)
         self.assertNotIn("/uploads/favicon.png", base)
+        nav_icon = re.search(r"\.nav-brand-icon\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        self.assertIsNotNone(nav_icon)
+        self.assertIn("width: 32px;", nav_icon.group("body"))
+        self.assertIn("height: auto;", nav_icon.group("body"))
 
-        for path, expected_size in ((FAVICON_32, 32), (FAVICON_64, 64)):
+        for path, expected_size in (
+            (FAVICON_32, (32, 32)),
+            (FAVICON_64, (64, 64)),
+            (BRAND_MARK_64, (64, 29)),
+            (BRAND_SOURCE_512, (512, 512)),
+        ):
             data = path.read_bytes()
             self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
-            self.assertEqual(struct.unpack(">II", data[16:24]), (expected_size, expected_size))
+            self.assertEqual(struct.unpack(">II", data[16:24]), expected_size)
 
     def test_page_images_reserve_layout_and_decode_asynchronously(self) -> None:
         home = HOME_HTML.read_text()
