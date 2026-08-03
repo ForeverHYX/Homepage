@@ -653,17 +653,9 @@ a { color: inherit; text-decoration: none; }
 
 .nav-brand-icon {
     display: block;
-    width: 32px;
+    width: 44px;
     height: auto;
     flex-shrink: 0;
-}
-
-.nav-brand-label {
-    white-space: nowrap;
-}
-
-.nav-brand-label-short {
-    display: none;
 }
 
 .nav-main {

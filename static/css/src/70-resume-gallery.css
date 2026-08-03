@@ -265,14 +265,6 @@ footer {
     .nav-cluster {
         width: 100%;
     }
-
-    .nav-brand-label-full {
-        display: none;
-    }
-
-    .nav-brand-label-short {
-        display: inline;
-    }
 }
 
 @media (max-width: 920px) {
@@ -323,10 +315,6 @@ footer {
         padding-right: 0;
     }
 
-    .nav-island.search-mode .nav-brand-label {
-        display: none;
-    }
-
     .nav-island.search-mode .search-bar-container {
         flex-basis: min(100%, 240px);
         max-width: min(100%, 240px);
@@ -342,12 +330,6 @@ footer {
         width: 100%;
     }
 
-    .nav-brand-label-short {
-        max-width: 108px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
     .nav-mobile-panel {
         left: 0;
         right: 0;
@@ -357,11 +339,5 @@ footer {
     .nav-island.search-mode .search-bar-container {
         flex-basis: min(100%, 180px);
         max-width: min(100%, 180px);
-    }
-}
-
-@media (max-width: 400px) {
-    .nav-brand-label-short {
-        display: none;
     }
 }

@@ -1,6 +1,6 @@
 {
-  "css/styles.css": "/static/css/styles.css?v=882308f0d0e6",
-  "css/styles.min.css": "/static/css/styles.min.css?v=bcab2a04d719",
+  "css/styles.css": "/static/css/styles.css?v=522f6484507c",
+  "css/styles.min.css": "/static/css/styles.min.css?v=1a4f04b21aac",
   "fonts/dancing-script-latin-v29.woff2": "/static/fonts/dancing-script-latin-v29.woff2?v=ee95af0ab393",
   "fonts/fonts.css": "/static/fonts/fonts.css?v=f8f7dbd26c1c",
   "fonts/jetbrains-mono-latin-v24.woff2": "/static/fonts/jetbrains-mono-latin-v24.woff2?v=2c32b9b3ee35",
@@ -10,7 +10,7 @@
   "fonts/zhi-mang-xing-hyx-v19.woff2": "/static/fonts/zhi-mang-xing-hyx-v19.woff2?v=7de77c1b4df5",
   "images/articles/homepage-data-flow.svg": "/static/images/articles/homepage-data-flow.svg?v=9532509c990c",
   "images/articles/homepage-system-architecture.svg": "/static/images/articles/homepage-system-architecture.svg?v=89b96d431e10",
-  "images/site/brand-mark-64.png": "/static/images/site/brand-mark-64.png?v=6847aff735b8",
+  "images/site/brand-mark-88.png": "/static/images/site/brand-mark-88.png?v=8991453c5be0",
   "images/site/favicon-32.png": "/static/images/site/favicon-32.png?v=c5b1b74c261e",
   "images/site/favicon-64.png": "/static/images/site/favicon-64.png?v=adc5258d89e2",
   "images/site/zju-logo-104.png": "/static/images/site/zju-logo-104.png?v=594c024933aa",
