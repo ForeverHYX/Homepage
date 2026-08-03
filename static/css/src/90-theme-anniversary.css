@@ -22,9 +22,6 @@
     text-decoration-color: var(--accent-400);
 }
 
-[data-theme="dark"] .news-item a {
-    border-bottom-color: var(--accent-400);
-}
 /* ============================================
    Anniversary Calendar (wall-calendar style)
    ============================================ */

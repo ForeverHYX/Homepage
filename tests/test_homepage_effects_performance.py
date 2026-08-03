@@ -34,6 +34,20 @@ CHINESE_NAME_FONT = ROOT / "static" / "fonts" / "zhi-mang-xing-hyx-v19.woff2"
 
 
 class HomepageEffectsPerformanceTests(TestCase):
+    def test_news_links_match_standard_content_link_treatment(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        news_link = re.search(r"\.news-item a\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        news_hover = re.search(r"\.news-item a:hover\s*\{(?P<body>.*?)\n\}", styles, re.S)
+
+        self.assertIsNotNone(news_link)
+        self.assertIsNotNone(news_hover)
+        self.assertIn("background: var(--link-gradient);", news_link.group("body"))
+        self.assertIn("font-weight: 500;", news_link.group("body"))
+        self.assertNotIn("border-bottom", news_link.group("body"))
+        self.assertIn("text-decoration: underline;", news_hover.group("body"))
+        self.assertNotIn("border-bottom", news_hover.group("body"))
+
     def test_lightfield_uses_low_frequency_css_driven_motion(self) -> None:
         source = LIGHTFIELD_JS.read_text()
         styles = STYLES_CSS.read_text()

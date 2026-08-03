@@ -138,12 +138,14 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
     text-decoration: none;
-    border-bottom: 1px dashed var(--accent-300);
-    transition: filter 0.3s ease, border-color 0.3s ease;
+    font-weight: 500;
+    transition: filter 0.3s ease;
 }
 .news-item a:hover {
     filter: brightness(1.2);
-    border-bottom-color: var(--accent-600);
+    text-decoration: underline;
+    text-decoration-color: var(--accent-600);
+    -webkit-text-fill-color: transparent;
 }
 
 .profile-name {
