@@ -648,12 +648,13 @@ a { color: inherit; text-decoration: none; }
 .nav-brand {
     flex: 0 1 auto;
     min-width: 0;
+    margin-left: 4px;
     padding-right: 6px;
 }
 
 .nav-brand-icon {
     display: block;
-    width: 44px;
+    width: 52px;
     height: auto;
     flex-shrink: 0;
 }

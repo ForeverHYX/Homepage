@@ -326,6 +326,10 @@ footer {
         margin-bottom: 24px;
     }
 
+    .nav-island.search-mode .nav-brand {
+        display: none;
+    }
+
     .nav-cluster {
         width: 100%;
     }
