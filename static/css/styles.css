@@ -5449,7 +5449,9 @@ footer {
 
 .edu-timeline-item {
     display: grid;
-    grid-template-columns: 150px 40px 1fr;
+    /* Preserve the 190px lead-in while shifting the marker left so it sits
+       midway between the date text and the education content. */
+    grid-template-columns: 110px 80px 1fr;
     align-items: start;
     position: relative;
 }
@@ -5462,7 +5464,7 @@ footer {
 .edu-timeline-item::after {
     content: '';
     position: absolute;
-    left: calc(150px + 19px);
+    left: calc(110px + 39px);
     top: 22px;
     bottom: -32px;
     width: 2px;
@@ -5479,6 +5481,7 @@ footer {
     text-align: left;
     padding-right: 16px;
     padding-top: 2px;
+    white-space: nowrap;
     font-size: 0.88rem;
     color: var(--muted);
     font-weight: 500;

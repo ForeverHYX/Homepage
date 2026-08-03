@@ -665,11 +665,20 @@ class HomepageEffectsPerformanceTests(TestCase):
 
     def test_education_date_aligns_with_section_content_on_desktop(self) -> None:
         styles = STYLES_CSS.read_text()
+        item_rule = re.search(r"\.edu-timeline-item\s*\{(?P<body>.*?)\n\}", styles, re.S)
         date_rule = re.search(r"\.edu-timeline-date\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        connector_rule = re.search(
+            r"\.edu-timeline-item::after\s*\{(?P<body>.*?)\n\}", styles, re.S
+        )
 
+        self.assertIsNotNone(item_rule)
         self.assertIsNotNone(date_rule)
+        self.assertIsNotNone(connector_rule)
+        self.assertIn("grid-template-columns: 110px 80px 1fr;", item_rule.group("body"))
         self.assertIn("text-align: left;", date_rule.group("body"))
+        self.assertIn("white-space: nowrap;", date_rule.group("body"))
         self.assertNotIn("text-align: right;", date_rule.group("body"))
+        self.assertIn("left: calc(110px + 39px);", connector_rule.group("body"))
 
     def test_education_logo_overrides_generic_prose_image_style(self) -> None:
         styles = STYLES_CSS.read_text()
