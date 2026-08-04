@@ -905,6 +905,7 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn('class="campus-gate-link"', template)
         self.assertIn('href="http://www.cs.zju.edu.cn/"', template)
         self.assertIn('class="yuquan-gate-silhouette"', template)
+        self.assertIn('preserveAspectRatio="none"', template)
         self.assertIn('fill="currentColor" mask="url(#yuquanGateMask)"', template)
         self.assertIn('id="locationMapTrigger"', template)
         self.assertIn('aria-haspopup="dialog"', template)
