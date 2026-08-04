@@ -21,8 +21,8 @@ HOME_HTML = ROOT / "app" / "templates" / "pages" / "home.html"
 UPLOAD_HTML = ROOT / "app" / "templates" / "pages" / "upload.html"
 GALLERY_HTML = ROOT / "app" / "templates" / "pages" / "gallery.html"
 EDUCATION_PY = ROOT / "app" / "education.py"
-FAVICON_32 = ROOT / "static" / "images" / "site" / "favicon-32.png"
-FAVICON_64 = ROOT / "static" / "images" / "site" / "favicon-64.png"
+FAVICON_HX_32 = ROOT / "static" / "images" / "site" / "favicon-hx-32.png"
+FAVICON_HX_64 = ROOT / "static" / "images" / "site" / "favicon-hx-64.png"
 BRAND_MARK_104 = ROOT / "static" / "images" / "site" / "brand-mark-104.png"
 BRAND_SOURCE_512 = ROOT / "assets" / "images" / "forever-hyx-512.png"
 ZJU_LOGO_52 = ROOT / "static" / "images" / "site" / "zju-logo-52.png"
@@ -642,8 +642,10 @@ class HomepageEffectsPerformanceTests(TestCase):
         base = BASE_HTML.read_text()
         styles = STYLES_CSS.read_text()
 
-        self.assertIn("asset_url('images/site/favicon-32.png')", base)
-        self.assertIn("asset_url('images/site/favicon-64.png')", base)
+        self.assertIn("asset_url('images/site/favicon-hx-32.png')", base)
+        self.assertIn("asset_url('images/site/favicon-hx-64.png')", base)
+        self.assertNotIn("asset_url('images/site/favicon-32.png')", base)
+        self.assertNotIn("asset_url('images/site/favicon-64.png')", base)
         self.assertIn("asset_url('images/site/brand-mark-104.png')", base)
         self.assertIn('class="nav-brand-icon"', base)
         self.assertNotIn('<svg class="nav-brand-icon"', base)
@@ -660,8 +662,8 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("margin-left: 4px;", nav_brand.group("body"))
 
         for path, expected_size in (
-            (FAVICON_32, (32, 32)),
-            (FAVICON_64, (64, 64)),
+            (FAVICON_HX_32, (32, 32)),
+            (FAVICON_HX_64, (64, 64)),
             (BRAND_MARK_104, (104, 48)),
             (BRAND_SOURCE_512, (512, 512)),
         ):
@@ -669,11 +671,12 @@ class HomepageEffectsPerformanceTests(TestCase):
             self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
             self.assertEqual(struct.unpack(">II", data[16:24]), expected_size)
 
-        with Image.open(FAVICON_64).convert("RGBA") as favicon:
+        with Image.open(FAVICON_HX_64).convert("RGBA") as favicon:
             alpha_bbox = favicon.getchannel("A").getbbox()
             self.assertIsNotNone(alpha_bbox)
-            self.assertGreaterEqual(alpha_bbox[2] - alpha_bbox[0], 60)
-            self.assertGreaterEqual(alpha_bbox[3] - alpha_bbox[1], 50)
+            self.assertGreaterEqual(alpha_bbox[2] - alpha_bbox[0], 58)
+            self.assertGreaterEqual(alpha_bbox[3] - alpha_bbox[1], 38)
+            self.assertLessEqual(alpha_bbox[3] - alpha_bbox[1], 46)
 
     def test_page_images_reserve_layout_and_decode_asynchronously(self) -> None:
         home = HOME_HTML.read_text()
