@@ -616,6 +616,23 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("Zhi Mang Xing", styles)
         self.assertIn("STXingkai", styles)
 
+    def test_homepage_headings_share_the_news_popover_typeface(self) -> None:
+        styles = STYLES_CSS.read_text()
+
+        for selector in (".news-title", ".news-popover-title", ".section-title"):
+            block = re.search(
+                r"(?m)^" + re.escape(selector) + r"\s*\{(?P<body>.*?)\n\}",
+                styles,
+                re.S,
+            )
+            self.assertIsNotNone(block)
+            self.assertIn("font-family: var(--font-display);", block.group("body"))
+
+        news_title = re.search(r"\.news-title\s*\{(?P<body>.*?)\n\}", styles, re.S)
+        self.assertIsNotNone(news_title)
+        self.assertIn("font-weight: 600;", news_title.group("body"))
+        self.assertIn("letter-spacing: -0.01em;", news_title.group("body"))
+
     def test_self_hosted_fonts_are_preloaded_without_third_party_requests(self) -> None:
         base = BASE_HTML.read_text()
         home = HOME_HTML.read_text()
