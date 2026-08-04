@@ -906,7 +906,10 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn('href="http://www.cs.zju.edu.cn/"', template)
         self.assertIn('class="yuquan-gate-silhouette"', template)
         self.assertIn('preserveAspectRatio="none"', template)
-        self.assertIn('fill="currentColor" mask="url(#yuquanGateMask)"', template)
+        self.assertIn('id="yuquanGateGradient"', template)
+        self.assertIn('class="yuquan-gate-gradient-start"', template)
+        self.assertIn('class="yuquan-gate-gradient-end"', template)
+        self.assertIn('fill="url(#yuquanGateGradient)" mask="url(#yuquanGateMask)"', template)
         self.assertIn('id="locationMapTrigger"', template)
         self.assertIn('aria-haspopup="dialog"', template)
         self.assertIn('id="locationMapPopover"', template)
@@ -929,6 +932,9 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn(".location-map-frame-shell", styles)
         self.assertIn(".profile-location", styles)
         self.assertIn(".campus-gate-link", styles)
+        self.assertIn(".yuquan-gate-gradient-start", styles)
+        self.assertIn("stop-color: var(--accent-400)", styles)
+        self.assertIn("stop-color: var(--accent-600)", styles)
         self.assertIn("@media (prefers-reduced-motion: reduce)", styles)
 
     def test_upload_editors_share_anchored_popover_and_segmented_visibility(self) -> None:

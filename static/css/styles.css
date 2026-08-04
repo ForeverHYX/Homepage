@@ -1092,6 +1092,14 @@ a { color: inherit; text-decoration: none; }
     transition: transform 0.18s ease, filter 0.18s ease;
 }
 
+.yuquan-gate-gradient-start {
+    stop-color: var(--accent-400);
+}
+
+.yuquan-gate-gradient-end {
+    stop-color: var(--accent-600);
+}
+
 .campus-gate-link:hover,
 .campus-gate-link:focus-visible {
     color: var(--accent-link-strong);

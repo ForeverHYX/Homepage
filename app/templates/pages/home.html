@@ -40,12 +40,16 @@
                     <a class="campus-gate-link" href="http://www.cs.zju.edu.cn/" target="_blank" rel="noopener noreferrer" title="Zhejiang University College of Computer Science and Technology" aria-label="Visit Zhejiang University College of Computer Science and Technology">
                         <svg class="yuquan-gate-silhouette" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 72" preserveAspectRatio="none" aria-hidden="true" focusable="false">
                             <defs>
+                                <linearGradient id="yuquanGateGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop class="yuquan-gate-gradient-start" offset="0%"/>
+                                    <stop class="yuquan-gate-gradient-end" offset="100%"/>
+                                </linearGradient>
                                 <mask id="yuquanGateMask" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="72">
                                     <rect width="120" height="72" fill="white"/>
                                     <path d="M40 23h5v9h-5zM50 23h5v9h-5zM65 23h5v9h-5zM75 23h5v9h-5z" fill="black" opacity=".38"/>
                                 </mask>
                             </defs>
-                            <g fill="currentColor" mask="url(#yuquanGateMask)">
+                            <g fill="url(#yuquanGateGradient)" mask="url(#yuquanGateMask)">
                                 <path d="M4 62V19h4v-5h4V9h15v5h4v5h4v43H4Zm81 0V19h4v-5h4V9h15v5h4v5h4v43H85Z"/>
                                 <path d="M28 18h64v4h4v17H24V22h4v-4Z"/>
                                 <path d="M29 37h7v25h-7zM56.5 37h7v25h-7zM84 37h7v25h-7z"/>
