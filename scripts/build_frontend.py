@@ -40,6 +40,7 @@ HEADER_MODULE_ORDER = (
     "core.js",
     "anchored-popover.js",
     "navigation-search.js",
+    "brand-theme.js",
     "accent-theme.js",
     "theme.js",
     "news-modal.js",

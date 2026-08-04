@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 LIGHTFIELD_JS = ROOT / "static" / "js" / "effects" / "lightfield.js"
 LIQUID_GLASS_JS = ROOT / "static" / "js" / "effects" / "liquid-glass.js"
 SITE_HEADER_JS = ROOT / "static" / "js" / "components" / "site-header.js"
+BRAND_THEME_JS = ROOT / "static" / "js" / "src" / "site-header" / "brand-theme.js"
+SITE_HEADER_INDEX_JS = ROOT / "static" / "js" / "src" / "site-header" / "index.js"
 LOCATION_MAP_JS = ROOT / "static" / "js" / "components" / "location-map.js"
 UPLOAD_MANAGER_JS = ROOT / "static" / "js" / "components" / "upload-manager.js"
 STYLES_CSS = ROOT / "static" / "css" / "styles.css"
@@ -677,6 +679,22 @@ class HomepageEffectsPerformanceTests(TestCase):
             self.assertGreaterEqual(alpha_bbox[2] - alpha_bbox[0], 58)
             self.assertGreaterEqual(alpha_bbox[3] - alpha_bbox[1], 38)
             self.assertLessEqual(alpha_bbox[3] - alpha_bbox[1], 46)
+
+    def test_brand_mark_and_favicon_follow_the_active_accent_palette(self) -> None:
+        source = BRAND_THEME_JS.read_text()
+        index = SITE_HEADER_INDEX_JS.read_text()
+        build = (ROOT / "scripts" / "build_frontend.py").read_text()
+
+        self.assertIn('document.addEventListener("homepage:accentchange", scheduleRender)', source)
+        self.assertIn('brandThemeColor(styles, "--accent-500"', source)
+        self.assertIn('brandThemeColor(styles, "--accent-cyan-400"', source)
+        self.assertIn('brandThemeColor(styles, "--accent-vivid-400"', source)
+        self.assertIn('context.globalCompositeOperation = "source-in"', source)
+        self.assertIn('canvas.toDataURL("image/png")', source)
+        self.assertIn('document.querySelectorAll(\'link[rel="icon"][type="image/png"]\')', source)
+        self.assertIn('import { initBrandTheme } from "./brand-theme.js";', index)
+        self.assertLess(index.index("initBrandTheme();"), index.index("initAccentTheme();"))
+        self.assertIn('"brand-theme.js",', build)
 
     def test_page_images_reserve_layout_and_decode_asynchronously(self) -> None:
         home = HOME_HTML.read_text()
