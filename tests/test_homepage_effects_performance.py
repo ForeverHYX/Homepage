@@ -890,7 +890,22 @@ class HomepageEffectsPerformanceTests(TestCase):
         styles = STYLES_CSS.read_text()
 
         self.assertIn("Zhejiang University, Yuquan Campus", template)
-        self.assertIn("Hangzhou, 310027, China", template)
+        self.assertIn("38 Zheda Road, Hangzhou 310027, China", template)
+        self.assertIn('<span class="location-copy">', template)
+        self.assertIn("<span>Zhejiang University</span>", template)
+        self.assertIn("<span>Yuquan Campus</span>", template)
+        self.assertIn(
+            '<span class="location-affiliation">College of Computer Science and Technology</span>',
+            template,
+        )
+        self.assertNotIn(
+            "<span>Zhejiang University, Yuquan Campus,<br>Hangzhou, 310027, China</span>",
+            template,
+        )
+        self.assertIn('class="campus-gate-link"', template)
+        self.assertIn('href="http://www.cs.zju.edu.cn/"', template)
+        self.assertIn('class="yuquan-gate-silhouette"', template)
+        self.assertIn('fill="currentColor" mask="url(#yuquanGateMask)"', template)
         self.assertIn('id="locationMapTrigger"', template)
         self.assertIn('aria-haspopup="dialog"', template)
         self.assertIn('id="locationMapPopover"', template)
@@ -911,6 +926,8 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn(".location-map-popover", styles)
         self.assertIn("width: min(420px, calc(100vw - 24px))", styles)
         self.assertIn(".location-map-frame-shell", styles)
+        self.assertIn(".profile-location", styles)
+        self.assertIn(".campus-gate-link", styles)
         self.assertIn("@media (prefers-reduced-motion: reduce)", styles)
 
     def test_upload_editors_share_anchored_popover_and_segmented_visibility(self) -> None:
