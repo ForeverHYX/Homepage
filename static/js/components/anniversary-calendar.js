@@ -1,5 +1,5 @@
 /**
- * Anniversary Calendar — vanilla JS port of anniversary-calendar.tsx
+ * Calendar — anniversaries and conference deadlines.
  * Renders into #anniversaryCalendarMount (upload page sidebar).
  * Depends on window.__ANNIVERSARY (from anniversary-data.js).
  */
@@ -10,6 +10,7 @@
   var MONTH_ABBR = ["Jan.", "Feb.", "Mar.", "Apr.", "May.", "June.", "July", "Aug.", "Sept.", "Oct.", "Nov.", "Dec."];
   var WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
   var getAnniversariesForMonth = window.__ANNIVERSARY.getAnniversariesForMonth;
+  var getPendingConferenceDeadlines = window.__ANNIVERSARY.getPendingConferenceDeadlines || function () { return []; };
   var YEAR_MIN = window.__ANNIVERSARY.ANNIVERSARY_YEAR_MIN;
   var YEAR_MAX = window.__ANNIVERSARY.ANNIVERSARY_YEAR_MAX;
 
@@ -30,7 +31,11 @@
       '<div class="card home-liquid-card anniversary-card">' +
         '<span class="home-liquid-warp" aria-hidden="true"></span>' +
         '<div class="home-liquid-body anniversary-body">' +
-          '<h3 class="anniversary-card-title">Anniversaries</h3>' +
+          '<h3 class="anniversary-card-title">Calendar</h3>' +
+          '<div class="anniversary-legend" aria-label="Calendar event legend">' +
+            '<span class="anniversary-legend-item"><span class="anniversary-legend-swatch is-anniversary" aria-hidden="true"></span>Anniversary</span>' +
+            '<span class="anniversary-legend-item"><span class="anniversary-legend-swatch is-deadline" aria-hidden="true"></span>Conference DDL</span>' +
+          '</div>' +
           '<div class="anniversary-year-row">' +
             '<button type="button" class="anniversary-nav-btn" id="annPrevYear" aria-label="Previous year">&lsaquo;</button>' +
             '<span class="anniversary-year-text" id="annYearText"></span>' +
@@ -45,6 +50,7 @@
             '<span class="anniversary-month-text" id="annMonthText"></span>' +
             '<button type="button" class="anniversary-nav-btn" id="annNextMonth" aria-label="Next month">&rsaquo;</button>' +
           '</div>' +
+          '<div class="anniversary-pending" id="annPending" hidden></div>' +
         '</div>' +
       '</div>';
     var wh = document.getElementById("annWeekdays");
@@ -81,11 +87,22 @@
     for (var d = 1; d <= total; d++) {
       (function (day) {
         var ev = events.get(day);
-        var cell = document.createElement("span");
-        cell.className = "anniversary-day" + (ev ? " is-important" : "");
+        var isDeadline = ev && ev.kind === "deadline" && ev.url;
+        var cell = document.createElement(isDeadline ? "a" : "span");
+        cell.className = "anniversary-day" + (ev ? " is-important" : "") + (isDeadline ? " is-deadline" : "");
         cell.textContent = day;
         if (ev) {
-          cell.tabIndex = 0;
+          if (isDeadline) {
+            cell.href = ev.url;
+            cell.target = "_blank";
+            cell.rel = "noopener noreferrer";
+            cell.setAttribute(
+              "aria-label",
+              ev.title + ", " + ev.desc.replace(/\n/g, ". ") + ". Open the official conference website in a new tab."
+            );
+          } else {
+            cell.tabIndex = 0;
+          }
           cell.addEventListener("mouseenter", function (e) { showTooltip(e, ev); });
           cell.addEventListener("mouseleave", hideTooltip);
           cell.addEventListener("focus", function (e) { showTooltip(e, ev); });
@@ -94,6 +111,35 @@
         grid.appendChild(cell);
       })(d);
     }
+    renderPendingDeadlines();
+  }
+
+  function renderPendingDeadlines() {
+    var pending = document.getElementById("annPending");
+    var deadlines = getPendingConferenceDeadlines();
+    var shouldShow = (viewYear === 2026 || viewYear === 2027) && deadlines.length > 0;
+    pending.hidden = !shouldShow;
+    pending.innerHTML = "";
+    if (!shouldShow) return;
+
+    var label = document.createElement("span");
+    label.className = "anniversary-pending-label";
+    label.textContent = "2027 DDL · TBA";
+    pending.appendChild(label);
+
+    var links = document.createElement("span");
+    links.className = "anniversary-pending-links";
+    deadlines.forEach(function (deadline) {
+      var link = document.createElement("a");
+      link.className = "anniversary-pending-link";
+      link.href = deadline.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = deadline.title;
+      link.setAttribute("aria-label", deadline.title + " 2027 deadline not announced; open the conference website in a new tab");
+      links.appendChild(link);
+    });
+    pending.appendChild(links);
   }
 
   // Tooltip — portaled to body to escape overflow:hidden / isolation:isolate
@@ -115,11 +161,12 @@
         '<div class="anniversary-tooltip-desc"></div>';
       document.body.appendChild(tooltipEl);
     }
+    tooltipEl.className = "anniversary-tooltip" + (event.kind === "deadline" ? " is-deadline" : "");
     tooltipEl.setAttribute("data-placement", preferAbove ? "above" : "below");
     tooltipEl.style.left = (rect.left + rect.width / 2) + "px";
     tooltipEl.style.top = (preferAbove ? rect.top : rect.bottom) + "px";
     tooltipEl.querySelector(".anniversary-tooltip-title").textContent = event.title;
-    tooltipEl.querySelector(".anniversary-tooltip-desc").textContent = event.desc;
+    tooltipEl.querySelector(".anniversary-tooltip-desc").textContent = event.desc + (event.kind === "deadline" ? "\nClick to open the official conference website." : "");
   }
   function hideTooltip() {
     if (tooltipEl) tooltipEl.remove();

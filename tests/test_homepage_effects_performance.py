@@ -590,6 +590,63 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIn("navHoverGlow", source)
         self.assertIn("hasPagePointer", source)
 
+    def test_calendar_includes_linked_2026_and_2027_conference_deadlines(self) -> None:
+        calendar = (ROOT / "static/js/components/anniversary-calendar.js").read_text()
+        data = (ROOT / "static/js/components/anniversary-data.js").read_text()
+        styles = STYLES_CSS.read_text()
+
+        self.assertIn('<h3 class="anniversary-card-title">Calendar</h3>', calendar)
+        self.assertIn("Conference DDL", calendar)
+        self.assertIn('document.createElement(isDeadline ? "a" : "span")', calendar)
+        self.assertIn('cell.target = "_blank"', calendar)
+        self.assertIn('cell.rel = "noopener noreferrer"', calendar)
+        self.assertIn("is-deadline", calendar)
+        self.assertIn("getPendingConferenceDeadlines", calendar)
+        self.assertIn("2027 DDL · TBA", calendar)
+
+        expected_deadlines = (
+            (2025, 2, 12, "ASPLOS 2026"),
+            (2025, 7, 1, "HPCA 2026"),
+            (2025, 7, 20, "ASPLOS 2026"),
+            (2025, 10, 17, "ISCA 2026"),
+            (2025, 10, 19, "DAC 2026"),
+            (2026, 3, 7, "MICRO 2026"),
+            (2026, 3, 14, "ICCAD 2026"),
+            (2026, 3, 15, "ASPLOS 2027"),
+            (2026, 6, 31, "HPCA 2027"),
+            (2026, 8, 9, "ASPLOS 2027"),
+        )
+        for year, month, day, title in expected_deadlines:
+            pattern = (
+                rf"year:\s*{year},\s*month:\s*{month},\s*day:\s*{day},"
+                rf'\s*title:\s*"{re.escape(title)}"'
+            )
+            self.assertRegex(data, pattern)
+
+        for conference in ("ISCA", "MICRO", "HPCA", "ASPLOS", "DAC", "ICCAD"):
+            self.assertIn(conference, data)
+        for official_url in (
+            "https://iscaconf.org/isca2026/submit/callforpapers.php",
+            "https://microarch.org/micro59/submit/papers.php",
+            "https://2026.hpca-conf.org/track/hpca-2026-main-conference#Call-for-Papers",
+            "https://www.asplos-conference.org/asplos2027/cfp/",
+            "https://dac.com/2026/research-manuscript-submissions",
+            "https://iccad.com/2026/events/paper-submission-deadline",
+        ):
+            self.assertIn(official_url, data)
+
+        deadline_block = re.search(
+            r"^\.anniversary-day\.is-deadline\s*\{(?P<body>.*?)\n\}",
+            styles,
+            re.S | re.M,
+        )
+        self.assertIsNotNone(deadline_block)
+        self.assertIn(
+            "linear-gradient(135deg, var(--warning), var(--danger))",
+            deadline_block.group("body"),
+        )
+        self.assertIn("box-shadow: var(--button-warning-shadow)", deadline_block.group("body"))
+
     def test_profile_name_uses_handwritten_font_stack(self) -> None:
         styles = STYLES_CSS.read_text()
         base = BASE_HTML.read_text()

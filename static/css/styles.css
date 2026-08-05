@@ -6170,6 +6170,39 @@ footer {
     gap: 14px;
 }
 
+.anniversary-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+.anniversary-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.anniversary-legend-swatch {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--anniv-grad);
+    box-shadow: 0 1px 4px rgba(var(--accent-600-rgb), 0.28);
+}
+
+.anniversary-legend-swatch.is-deadline {
+    border-radius: 3px;
+    background: linear-gradient(135deg, var(--warning), var(--danger));
+    box-shadow: var(--button-warning-shadow);
+}
+
 .anniversary-year-row,
 .anniversary-month-row {
     display: flex;
@@ -6311,6 +6344,80 @@ footer {
     box-shadow: 0 4px 14px rgba(var(--accent-600-rgb), 0.42);
 }
 
+.anniversary-day.is-deadline {
+    color: #fff;
+    border: 1px solid color-mix(in srgb, var(--warning) 42%, transparent);
+    border-radius: var(--button-radius);
+    background: linear-gradient(135deg, var(--warning), var(--danger));
+    box-shadow: var(--button-warning-shadow);
+    cursor: pointer;
+    text-decoration: none;
+    -webkit-text-fill-color: #fff;
+}
+
+.anniversary-day.is-deadline:hover,
+.anniversary-day.is-deadline:focus {
+    color: #fff;
+    border-color: color-mix(in srgb, var(--warning) 64%, transparent);
+    box-shadow:
+        var(--button-warning-shadow),
+        0 5px 14px color-mix(in srgb, var(--danger) 28%, transparent);
+    filter: brightness(1.08);
+    -webkit-text-fill-color: #fff;
+}
+
+.anniversary-pending {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    padding-top: 2px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.anniversary-pending[hidden] {
+    display: none;
+}
+
+.anniversary-pending-label {
+    font-weight: 700;
+    letter-spacing: 0.025em;
+}
+
+.anniversary-pending-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+
+.anniversary-pending-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 25px;
+    padding: 3px 8px;
+    color: var(--button-warning-color);
+    border: 1px solid var(--button-warning-border);
+    border-radius: var(--button-radius);
+    background: var(--button-warning-background);
+    box-shadow: var(--button-warning-shadow);
+    font-weight: 700;
+    text-decoration: none;
+    -webkit-text-fill-color: currentColor;
+    transition: transform 0.15s, color 0.2s, border-color 0.2s, background 0.2s, filter 0.2s;
+}
+
+.anniversary-pending-link:hover,
+.anniversary-pending-link:focus {
+    color: #fff;
+    border-color: color-mix(in srgb, var(--warning) 42%, transparent);
+    background: linear-gradient(135deg, var(--warning), var(--danger));
+    transform: translateY(-1px);
+    -webkit-text-fill-color: #fff;
+}
+
 /* Solid, high-contrast tooltip rendered as a real DOM element with
    position: fixed so it escapes any parent overflow: hidden. */
 .anniversary-tooltip {
@@ -6333,6 +6440,19 @@ footer {
 
 .anniversary-tooltip[data-placement="below"] {
     transform: translate(-50%, 14px);
+}
+
+.anniversary-tooltip.is-deadline {
+    background: linear-gradient(135deg, var(--warning), var(--danger));
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--danger) 42%, transparent);
+}
+
+.anniversary-tooltip.is-deadline[data-placement="above"]::after {
+    border-top-color: var(--danger);
+}
+
+.anniversary-tooltip.is-deadline[data-placement="below"]::after {
+    border-bottom-color: var(--warning);
 }
 
 .anniversary-tooltip-title {
@@ -6482,6 +6602,10 @@ footer {
         background: #fff7ed !important;
     }
 
+    .anniversary-pending-link {
+        background: #fff7ed;
+    }
+
     .daily-action-button.daily-action-like:not(.is-active):not(:hover):not(:active):not(:disabled) {
         color: var(--accent-700);
         background: var(--accent-50) !important;
@@ -6490,6 +6614,10 @@ footer {
 
     [data-theme="dark"] .daily-action-button.daily-action-dislike {
         background: #431407 !important;
+    }
+
+    [data-theme="dark"] .anniversary-pending-link {
+        background: #431407;
     }
 
     [data-theme="dark"] .daily-action-button.daily-action-like:not(.is-active):not(:hover):not(:active):not(:disabled) {
@@ -6542,6 +6670,12 @@ footer {
         border-color: #9a3412;
     }
 
+    .anniversary-pending-link {
+        color: #7c2d12;
+        background: #fff7ed;
+        border-color: #9a3412;
+    }
+
     .daily-action-button.daily-action-like:not(.is-active):not(:hover):not(:active):not(:disabled) {
         color: var(--accent-800);
         background: var(--accent-50);
@@ -6549,6 +6683,12 @@ footer {
     }
 
     [data-theme="dark"] .daily-action-button.daily-action-dislike {
+        color: #fed7aa;
+        background: #431407;
+        border-color: #fdba74;
+    }
+
+    [data-theme="dark"] .anniversary-pending-link {
         color: #fed7aa;
         background: #431407;
         border-color: #fdba74;
@@ -6603,7 +6743,9 @@ footer {
     .article-tag-chip,
     .daily-action-button,
     .btn,
-    .daily-archive-card .anniversary-grid-wrap {
+    .daily-archive-card .anniversary-grid-wrap,
+    .anniversary-day.is-deadline,
+    .anniversary-pending-link {
         color: CanvasText;
         background: Canvas;
         border: 1px solid CanvasText;
@@ -6622,6 +6764,15 @@ footer {
     .daily-action-button.daily-action-like:active,
     .daily-action-button.daily-action-like:disabled,
     .daily-action-button.feedback.is-active {
+        color: HighlightText;
+        background: Highlight;
+        border-color: Highlight;
+        -webkit-text-fill-color: HighlightText;
+    }
+
+    .anniversary-day.is-deadline,
+    .anniversary-pending-link:hover,
+    .anniversary-pending-link:focus {
         color: HighlightText;
         background: Highlight;
         border-color: Highlight;

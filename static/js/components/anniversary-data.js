@@ -14,6 +14,94 @@
     2034: { month: 8, day: 20 },
     2035: { month: 8, day: 10 }
   };
+  const CONFERENCE_DEADLINES = [
+    {
+      year: 2025,
+      month: 2,
+      day: 12,
+      title: "ASPLOS 2026",
+      desc: "Spring-cycle full paper deadline · 11:59 PM ET",
+      url: "https://www.asplos-conference.org/asplos2026/cfp/"
+    },
+    {
+      year: 2025,
+      month: 7,
+      day: 1,
+      title: "HPCA 2026",
+      desc: "Main-track paper deadline · 23:59 UTC",
+      url: "https://2026.hpca-conf.org/track/hpca-2026-main-conference#Call-for-Papers"
+    },
+    {
+      year: 2025,
+      month: 7,
+      day: 20,
+      title: "ASPLOS 2026",
+      desc: "Summer-cycle full paper deadline · 11:59 PM ET",
+      url: "https://www.asplos-conference.org/asplos2026/cfp/"
+    },
+    {
+      year: 2025,
+      month: 10,
+      day: 17,
+      title: "ISCA 2026",
+      desc: "Main-track full paper deadline · 11:59 PM AoE",
+      url: "https://iscaconf.org/isca2026/submit/callforpapers.php"
+    },
+    {
+      year: 2025,
+      month: 10,
+      day: 19,
+      title: "DAC 2026",
+      desc: "Research manuscript deadline (extended) · 5:00 PM PT",
+      url: "https://dac.com/2026/research-manuscript-submissions"
+    },
+    {
+      year: 2026,
+      month: 3,
+      day: 7,
+      title: "MICRO 2026",
+      desc: "Full paper deadline · 11:59 PM EDT",
+      url: "https://microarch.org/micro59/submit/papers.php"
+    },
+    {
+      year: 2026,
+      month: 3,
+      day: 14,
+      title: "ICCAD 2026",
+      desc: "Regular paper deadline · 11:59 PM AoE",
+      url: "https://iccad.com/2026/events/paper-submission-deadline"
+    },
+    {
+      year: 2026,
+      month: 3,
+      day: 15,
+      title: "ASPLOS 2027",
+      desc: "April-cycle full paper deadline · 11:59 PM AoE",
+      url: "https://www.asplos-conference.org/asplos2027/cfp/"
+    },
+    {
+      year: 2026,
+      month: 6,
+      day: 31,
+      title: "HPCA 2027",
+      desc: "Main-track paper deadline · 11:59 PM AoE",
+      url: "https://conf.researchr.org/track/hpca-2027/hpca-2027-main-conference"
+    },
+    {
+      year: 2026,
+      month: 8,
+      day: 9,
+      title: "ASPLOS 2027",
+      desc: "September-cycle full paper deadline · 11:59 PM AoE",
+      url: "https://www.asplos-conference.org/asplos2027/cfp/"
+    }
+  ];
+  const PENDING_2027_DEADLINES = [
+    { title: "ISCA", url: "https://iscaconf.org/" },
+    { title: "MICRO", url: "https://microarch.org/" },
+    { title: "DAC", url: "https://www.dac.com/" },
+    { title: "ICCAD", url: "https://iccad.com/" }
+  ];
   const MS_PER_DAY = 864e5;
   function daysBetweenUtc(a, b) {
     return Math.round((b.getTime() - a.getTime()) / MS_PER_DAY);
@@ -55,19 +143,34 @@
       if (qixi && qixi.month === month && qixi.day === day) {
         events.push({ title: "\u4E03\u5915\u8282", desc: "\u4E2D\u56FD\u60C5\u4EBA\u8282" });
       }
+      for (const deadline of CONFERENCE_DEADLINES) {
+        if (deadline.year === year && deadline.month === month && deadline.day === day) {
+          events.push(deadline);
+        }
+      }
       if (events.length > 0) {
         const title = events.map((e) => e.title).join(" \xB7 ");
         const desc = events.map((e) => `${e.title}\uFF1A${e.desc}`).join("\n");
-        result.set(day, { title, desc });
+        const linkedEvent = events.find((event) => event.url);
+        result.set(day, {
+          title,
+          desc,
+          kind: linkedEvent ? "deadline" : "anniversary",
+          url: linkedEvent ? linkedEvent.url : ""
+        });
       }
     }
     return result;
+  }
+  function getPendingConferenceDeadlines() {
+    return PENDING_2027_DEADLINES.map((deadline) => ({ ...deadline }));
   }
   const ANNIVERSARY_YEAR_MIN = START_DATE.getUTCFullYear();
   const ANNIVERSARY_YEAR_MAX = 2035;
   // Expose to global scope
   window.__ANNIVERSARY = {
     getAnniversariesForMonth,
+    getPendingConferenceDeadlines,
     ANNIVERSARY_YEAR_MIN,
     ANNIVERSARY_YEAR_MAX,
   };
