@@ -9,7 +9,6 @@ from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
 from app.config import BASE_DIR, ENABLE_API_DOCS, limiter
-from app.services.visitor_stats import record_visit
 from app.routers import auth, media, pages, upload
 from app.templating import templates
 
@@ -66,34 +65,6 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
-
-def _request_client_ip(request: Request) -> str:
-    """Use the address forwarded by the local Nginx proxy when available."""
-    forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded:
-        return forwarded.split(",", 1)[0].strip()
-    real_ip = request.headers.get("x-real-ip")
-    if real_ip:
-        return real_ip.strip()
-    return request.client.host if request.client else ""
-
-
-def _is_trackable_page(request: Request) -> bool:
-    if request.method != "GET" or "text/html" not in request.headers.get("accept", ""):
-        return False
-    path = request.url.path
-    if path.startswith(("/api/", "/static/", "/uploads/", "/share/")):
-        return False
-    return path not in {"/login", "/upload", "/robots.txt", "/sitemap.xml"}
-
-
-@app.middleware("http")
-async def track_public_page_views(request: Request, call_next):
-    response = await call_next(request)
-    if _is_trackable_page(request) and response.status_code < 400:
-        record_visit(_request_client_ip(request))
-    return response
 
 
 if __name__ == "__main__":

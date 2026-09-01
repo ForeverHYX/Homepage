@@ -33,7 +33,6 @@ from app.gallery_thumbnail_utils import (
 from app.services.content import build_home_payload, build_publications_payload
 from app.services.gallery import build_gallery_payload
 from app.services.search import build_search_index
-from app.services.visitor_stats import get_summary as get_visitor_summary
 
 router = APIRouter()
 
@@ -280,15 +279,6 @@ def _daily_item_for_article_slug(slug: str) -> tuple[dict[str, Any] | None, str]
 def home_api() -> Any:
     payload = _build_home_payload()
     return JSONResponse(payload, headers={"Cache-Control": "public, max-age=60"})
-
-
-@router.get("/api/site/visits")
-def visitor_stats_api() -> Any:
-    """Return the total view count and anonymised location heat-map points."""
-    return JSONResponse(
-        get_visitor_summary(),
-        headers={"Cache-Control": "public, max-age=60, stale-while-revalidate=300"},
-    )
 
 
 @router.get("/api/site/news")

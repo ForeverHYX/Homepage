@@ -1,6 +1,6 @@
 {
-  "css/styles.css": "/static/css/styles.css?v=29970e55bf2c",
-  "css/styles.min.css": "/static/css/styles.min.css?v=d6910d40b044",
+  "css/styles.css": "/static/css/styles.css?v=7287acab6569",
+  "css/styles.min.css": "/static/css/styles.min.css?v=f89ab5db4183",
   "fonts/dancing-script-latin-v29.woff2": "/static/fonts/dancing-script-latin-v29.woff2?v=ee95af0ab393",
   "fonts/fonts.css": "/static/fonts/fonts.css?v=f8f7dbd26c1c",
   "fonts/jetbrains-mono-latin-v24.woff2": "/static/fonts/jetbrains-mono-latin-v24.woff2?v=2c32b9b3ee35",
@@ -37,8 +37,6 @@
   "js/components/site-header.min.js": "/static/js/components/site-header.min.js?v=c7b7dd4ce443",
   "js/components/upload-manager.js": "/static/js/components/upload-manager.js?v=cffc8cf7cf99",
   "js/components/upload-manager.min.js": "/static/js/components/upload-manager.min.js?v=c64eb090a949",
-  "js/components/visitor-stats.js": "/static/js/components/visitor-stats.js?v=5e473f79103a",
-  "js/components/visitor-stats.min.js": "/static/js/components/visitor-stats.min.js?v=5307e2db9a14",
   "js/effects/lightfield.js": "/static/js/effects/lightfield.js?v=55bb92647f1c",
   "js/effects/lightfield.min.js": "/static/js/effects/lightfield.min.js?v=72704821796c",
   "js/effects/liquid-glass.js": "/static/js/effects/liquid-glass.js?v=057342c8342d",

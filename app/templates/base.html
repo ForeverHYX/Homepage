@@ -212,34 +212,11 @@
             <div style="margin-top:10px">
                 <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;font-size:13px">浙ICP备2023041507号-1</a>
             </div>
-            <div class="footer-visit-stat">
-                <button type="button" class="footer-visit-trigger" id="visitorStatsTrigger" aria-label="Show visitor locations" aria-expanded="false" aria-haspopup="dialog" aria-controls="visitorStatsPopover">
-                    <span class="footer-visit-label">total views</span>
-                    <span class="footer-visit-count" id="totalViewsCount" aria-live="polite">—</span>
-                </button>
-            </div>
         </div>
     </footer>
-    <section id="visitorStatsPopover" class="anchored-popover card home-liquid-card visitor-stats-popover" role="dialog" aria-labelledby="visitorStatsTitle" hidden inert>
-        <span class="home-liquid-warp" aria-hidden="true"></span>
-        <div class="home-liquid-body visitor-stats-surface">
-            <header class="visitor-stats-header">
-                <div>
-                    <p class="popover-eyebrow">Visitor locations</p>
-                    <h2 class="visitor-stats-title" id="visitorStatsTitle">IP heat map</h2>
-                </div>
-                <button type="button" class="popover-close-btn" id="visitorStatsClose" aria-label="Close visitor heat map">&times;</button>
-            </header>
-            <div class="visitor-stats-map-shell">
-                <div id="visitorStatsMap" class="visitor-stats-map" role="img" aria-label="Aggregated visitor locations"></div>
-            </div>
-            <p class="visitor-stats-status" id="visitorStatsStatus" role="status">Loading location data&hellip;</p>
-        </div>
-    </section>
     <!-- Search dropdown portal target -->
     <script src="{{ asset_url('js/effects/lightfield.min.js') }}" defer></script>
     <script src="{{ asset_url('js/components/site-header.min.js') }}" defer></script>
-    <script src="{{ asset_url('js/components/visitor-stats.min.js') }}" defer></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

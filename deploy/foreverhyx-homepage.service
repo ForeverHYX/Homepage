@@ -8,7 +8,6 @@ WorkingDirectory=/root/newhomepage
 Environment=HOMEPAGE_CONTENT_DIR=/root/newhomepage/content
 Environment=HOMEPAGE_UPLOAD_DIR=/root/newhomepage/uploads
 Environment=HOMEPAGE_SHARE_LINK_FILE=/root/newhomepage/.share-links.json
-Environment=HOMEPAGE_STATS_DB=/root/newhomepage/data/visitor-stats.sqlite3
 Environment=HOMEPAGE_COOKIE_SECURE=true
 Environment=HOMEPAGE_USE_X_ACCEL_REDIRECT=true
 Environment=HOMEPAGE_ENABLE_API_DOCS=false
