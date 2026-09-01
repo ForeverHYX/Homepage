@@ -91,14 +91,24 @@
 
     var loaded = false;
     var loading = false;
+    var statsPromise = null;
     var closeTimer = 0;
     var pinned = false;
+
+    function getStats() {
+      if (statsPromise) return statsPromise;
+      statsPromise = fetch("/api/site/visits", { headers: { Accept: "application/json" }, credentials: "same-origin" }).then(function (response) {
+        if (!response.ok) throw new Error("stats unavailable");
+        return response.json();
+      });
+      return statsPromise;
+    }
 
     function loadStats() {
       if (loading || loaded) return;
       loading = true;
       Promise.all([
-        fetch("/api/site/visits", { headers: { Accept: "application/json" }, credentials: "same-origin" }).then(function (response) { if (!response.ok) throw new Error("stats unavailable"); return response.json(); }),
+        getStats(),
         loadLeaflet(),
       ]).then(function (results) {
         var payload = results[0];
@@ -139,7 +149,9 @@
       pinned = true; open(event.detail === 0);
     });
     closeButton.addEventListener("click", function () { close(true); });
-    loadStats();
+    getStats().then(function (payload) {
+      count.textContent = Number(payload.total_views || 0).toLocaleString();
+    }).catch(function () { status.textContent = "Visitor statistics are temporarily unavailable"; });
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initVisitorStats, { passive: true });
