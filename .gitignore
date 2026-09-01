@@ -26,3 +26,7 @@ uvicorn.log
 .sessions.json
 .share-links.json
 artifacts/
+
+# Runtime visitor statistics
+data/*
+!data/.gitkeep

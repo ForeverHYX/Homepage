@@ -8,9 +8,9 @@
 
 .edu-timeline-item {
     display: grid;
-    /* Preserve the 190px lead-in while shifting the marker left so it sits
-       midway between the date text and the education content. */
-    grid-template-columns: 110px 80px 1fr;
+    /* Keep the 190px content lead-in while centering the marker in the visual
+       gap between the full date label and the education description. */
+    grid-template-columns: 154px 36px 1fr;
     align-items: start;
     position: relative;
 }
@@ -23,7 +23,7 @@
 .edu-timeline-item::after {
     content: '';
     position: absolute;
-    left: calc(110px + 39px);
+    left: calc(154px + 17px);
     top: 22px;
     bottom: -32px;
     width: 2px;
@@ -122,6 +122,19 @@
     color: var(--text);
     line-height: 1.65;
     margin: 0;
+}
+
+.edu-degree,
+.edu-program {
+    display: block;
+}
+
+.edu-degree {
+    font-size: 0.9em;
+}
+
+.edu-program {
+    font-style: italic;
 }
 
 .edu-role a {
