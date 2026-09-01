@@ -2,79 +2,81 @@
 (function () {
   "use strict";
 
-  var WORLD = [
-    "M75 105 115 70 185 65 220 95 205 135 170 145 145 180 105 165 90 135Z",
-    "M225 245 275 225 315 245 305 290 270 315 245 285Z",
-    "M410 105 455 72 515 80 540 115 505 145 465 135 435 165 405 145Z",
-    "M500 165 555 155 600 185 585 220 540 230 505 205Z",
-    "M620 105 675 82 735 98 765 130 730 160 685 150 650 180 615 150Z",
-    "M705 215 760 200 805 230 790 270 745 285 710 255Z",
-    "M835 330 900 315 945 350 925 390 870 400 835 370Z",
-    "M400 330 445 300 475 335 460 390 430 430 395 400Z",
-  ];
+  var LEAFLET_VERSION = "1.9.4";
+  var leafletPromise = null;
 
   function qs(id) { return document.getElementById(id); }
 
-  function project(point) {
-    return {
-      x: ((Number(point.lon) + 180) / 360) * 1000,
-      y: ((90 - Number(point.lat)) / 180) * 500,
-    };
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve(window.L);
+    if (leafletPromise) return leafletPromise;
+    leafletPromise = new Promise(function (resolve, reject) {
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "https://unpkg.com/leaflet@" + LEAFLET_VERSION + "/dist/leaflet.css";
+      css.crossOrigin = "anonymous";
+      document.head.appendChild(css);
+      var script = document.createElement("script");
+      script.src = "https://unpkg.com/leaflet@" + LEAFLET_VERSION + "/dist/leaflet.js";
+      script.async = true;
+      script.onload = function () { resolve(window.L); };
+      script.onerror = function () { reject(new Error("Leaflet unavailable")); };
+      document.head.appendChild(script);
+    });
+    return leafletPromise;
   }
 
-  function renderMap(svg, points) {
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-    var ns = "http://www.w3.org/2000/svg";
-    var defs = document.createElementNS(ns, "defs");
-    defs.innerHTML = '<filter id="visitorHeatBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8"/></filter>';
-    svg.appendChild(defs);
-    var grid = document.createElementNS(ns, "g");
-    grid.setAttribute("class", "visitor-map-grid");
-    for (var lon = -120; lon <= 120; lon += 60) {
-      var meridian = document.createElementNS(ns, "path");
-      meridian.setAttribute("d", "M" + ((lon + 180) / 360 * 1000) + " 0V500");
-      grid.appendChild(meridian);
-    }
-    for (var lat = -60; lat <= 60; lat += 30) {
-      var parallel = document.createElementNS(ns, "path");
-      parallel.setAttribute("d", "M0 " + ((90 - lat) / 180 * 500) + "H1000");
-      grid.appendChild(parallel);
-    }
-    svg.appendChild(grid);
-    var continents = document.createElementNS(ns, "g");
-    continents.setAttribute("class", "visitor-map-continents");
-    WORLD.forEach(function (d) {
-      var path = document.createElementNS(ns, "path");
-      path.setAttribute("d", d);
-      continents.appendChild(path);
-    });
-    svg.appendChild(continents);
+  function themeColor(name, fallback) {
+    var value = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  }
 
+  function renderMap(map, points) {
+    if (map._visitorLayer) map.removeLayer(map._visitorLayer);
+    var L = window.L;
+    var accent = themeColor("--accent-500", "#3b82f6");
+    var accentStrong = themeColor("--accent-link-strong", accent);
+    var layer = L.layerGroup();
     var maxWeight = points.reduce(function (max, point) { return Math.max(max, point.weight || 1); }, 1);
     points.forEach(function (point) {
-      var projected = project(point);
-      if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return;
+      var lat = Number(point.lat);
+      var lon = Number(point.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return;
       var intensity = Math.max(0.28, Math.min(1, (point.weight || 1) / maxWeight));
-      var radius = 8 + intensity * 15;
-      var glow = document.createElementNS(ns, "circle");
-      glow.setAttribute("class", "visitor-map-point-glow");
-      glow.setAttribute("cx", projected.x);
-      glow.setAttribute("cy", projected.y);
-      glow.setAttribute("r", radius * 1.8);
-      glow.setAttribute("opacity", (0.18 + intensity * 0.2).toFixed(2));
-      glow.setAttribute("filter", "url(#visitorHeatBlur)");
-      svg.appendChild(glow);
-      var dot = document.createElementNS(ns, "circle");
-      dot.setAttribute("class", "visitor-map-point");
-      dot.setAttribute("cx", projected.x);
-      dot.setAttribute("cy", projected.y);
-      dot.setAttribute("r", radius.toFixed(1));
-      dot.setAttribute("opacity", (0.38 + intensity * 0.52).toFixed(2));
-      dot.setAttribute("tabindex", "0");
-      dot.setAttribute("role", "img");
-      dot.setAttribute("aria-label", (point.label || "Visitor location") + ", " + point.weight + " views");
-      svg.appendChild(dot);
+      var marker = L.circleMarker([lat, lon], {
+        radius: 7 + intensity * 10,
+        color: accentStrong,
+        weight: 1.5,
+        fillColor: accent,
+        fillOpacity: 0.34 + intensity * 0.48,
+      });
+      marker.bindTooltip((point.label || "Visitor location") + " · " + (point.weight || 1) + " views", { direction: "top", opacity: 0.95 });
+      layer.addLayer(marker);
     });
+    layer.addTo(map);
+    map._visitorLayer = layer;
+    if (points.length) {
+      var bounds = L.latLngBounds(points.map(function (point) { return [Number(point.lat), Number(point.lon)]; }));
+      if (bounds.isValid()) map.fitBounds(bounds, { padding: [24, 24], maxZoom: 4 });
+    } else {
+      map.setView([25, 0], 2);
+    }
+  }
+
+  function initLeafletMap(container, points) {
+    if (!window.L) return Promise.reject(new Error("Leaflet unavailable"));
+    var map = container._visitorMap;
+    if (!map) {
+      map = window.L.map(container, { worldCopyJump: true, minZoom: 2, maxZoom: 7, zoomControl: true, attributionControl: true });
+      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>',
+      }).addTo(map);
+      container._visitorMap = map;
+    }
+    renderMap(map, points);
+    window.setTimeout(function () { map.invalidateSize(); }, 40);
+    return Promise.resolve(map);
   }
 
   function initVisitorStats() {
@@ -83,9 +85,9 @@
     var closeButton = qs("visitorStatsClose");
     var count = qs("totalViewsCount");
     var status = qs("visitorStatsStatus");
-    var map = qs("visitorStatsMap");
+    var mapContainer = qs("visitorStatsMap");
     var controller = window.HomepageAnchoredPopover;
-    if (!trigger || !popover || !closeButton || !count || !status || !map || !controller) return;
+    if (!trigger || !popover || !closeButton || !count || !status || !mapContainer || !controller) return;
 
     var loaded = false;
     var loading = false;
@@ -95,22 +97,25 @@
     function loadStats() {
       if (loading || loaded) return;
       loading = true;
-      fetch("/api/site/visits", { headers: { Accept: "application/json" }, credentials: "same-origin" })
-        .then(function (response) { if (!response.ok) throw new Error("stats unavailable"); return response.json(); })
-        .then(function (payload) {
-          count.textContent = Number(payload.total_views || 0).toLocaleString();
-          renderMap(map, Array.isArray(payload.points) ? payload.points : []);
+      Promise.all([
+        fetch("/api/site/visits", { headers: { Accept: "application/json" }, credentials: "same-origin" }).then(function (response) { if (!response.ok) throw new Error("stats unavailable"); return response.json(); }),
+        loadLeaflet(),
+      ]).then(function (results) {
+        var payload = results[0];
+        count.textContent = Number(payload.total_views || 0).toLocaleString();
+        return initLeafletMap(mapContainer, Array.isArray(payload.points) ? payload.points : []).then(function () {
           status.textContent = payload.points && payload.points.length ? "Locations are grouped by city" : "Location data is warming up";
           loaded = true;
-        })
-        .catch(function () { status.textContent = "Heat map is temporarily unavailable"; })
-        .finally(function () { loading = false; });
+        });
+      }).catch(function () { status.textContent = "Real map is temporarily unavailable"; }).finally(function () { loading = false; });
     }
 
     function clearClose() { if (closeTimer) { window.clearTimeout(closeTimer); closeTimer = 0; } }
     function open(focusClose) {
-      clearClose(); loadStats();
+      clearClose();
       controller.open(popover, trigger, { placement: "top-end", initialFocus: focusClose ? closeButton : null });
+      loadStats();
+      if (mapContainer._visitorMap) window.setTimeout(function () { mapContainer._visitorMap.invalidateSize(); }, 30);
     }
     function close(restore) { clearClose(); pinned = false; controller.close(popover, restore); }
     function scheduleClose() {
