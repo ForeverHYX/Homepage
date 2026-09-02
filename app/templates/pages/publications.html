@@ -39,10 +39,16 @@
                                         {% if publication.artifact_badges %}
                                         <div class="publication-artifact-badges" aria-label="Artifact badges">
                                             {% for badge in publication.artifact_badges %}
-                                            <span class="publication-artifact-badge publication-artifact-{{ badge.slug }}" title="{{ badge.label }}">
-                                                {{ badge.icon_html|safe }}
+                                            {% if badge.image_path %}
+                                            <span class="publication-artifact-badge publication-artifact-badge-official publication-artifact-{{ badge.slug }}" role="img" aria-label="{{ badge.label }}" title="{{ badge.label }}">
+                                                <img src="{{ asset_url(badge.image_path) }}" width="104" height="104" alt="" loading="lazy" decoding="async">
+                                                <span class="visually-hidden">{{ badge.label }}</span>
+                                            </span>
+                                            {% else %}
+                                            <span class="publication-artifact-badge publication-artifact-badge-text publication-artifact-{{ badge.slug }}" title="{{ badge.label }}">
                                                 <span>{{ badge.label }}</span>
                                             </span>
+                                            {% endif %}
                                             {% endfor %}
                                         </div>
                                         {% endif %}

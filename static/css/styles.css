@@ -2920,16 +2920,38 @@ a { color: inherit; text-decoration: none; }
     position: relative;
     display: flex;
     flex: 0 0 100%;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
     width: 100%;
-    margin-top: 1px;
+    margin-top: 2px;
 }
 
 .publication-artifact-badge {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.publication-artifact-badge-official {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.publication-artifact-badge-official img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.publication-artifact-badge-text {
     gap: 5px;
     min-height: 24px;
     max-width: 100%;
@@ -2947,13 +2969,7 @@ a { color: inherit; text-decoration: none; }
     text-align: left;
 }
 
-.publication-artifact-badge svg {
-    flex: 0 0 auto;
-    width: 15px;
-    height: 15px;
-}
-
-[data-theme="dark"] .publication-artifact-badge {
+[data-theme="dark"] .publication-artifact-badge-text {
     color: color-mix(in srgb, var(--conference-badge-accent) 62%, #fff);
     background: rgba(var(--conference-badge-rgb), .18);
     border-color: rgba(var(--conference-badge-rgb), .52);
@@ -2961,18 +2977,22 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 640px) {
-    .publication-artifact-badges {
-        flex-direction: row;
-        flex-wrap: wrap;
+    .publication-artifact-badge-official {
+        width: 36px;
+        height: 36px;
     }
 }
 
 @media (forced-colors: active) {
-    .publication-artifact-badge {
+    .publication-artifact-badge-text {
         color: ButtonText;
         background: ButtonFace;
         border: 1px solid ButtonText;
         box-shadow: none;
+    }
+
+    .publication-artifact-badge-official {
+        forced-color-adjust: none;
     }
 }
 /* --- Prose Typography --- */

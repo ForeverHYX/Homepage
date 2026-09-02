@@ -1,6 +1,6 @@
 {
-  "css/styles.css": "/static/css/styles.css?v=367e94b29c4c",
-  "css/styles.min.css": "/static/css/styles.min.css?v=08b6765ca900",
+  "css/styles.css": "/static/css/styles.css?v=171d0e7007bb",
+  "css/styles.min.css": "/static/css/styles.min.css?v=93978023db80",
   "fonts/dancing-script-latin-v29.woff2": "/static/fonts/dancing-script-latin-v29.woff2?v=ee95af0ab393",
   "fonts/fonts.css": "/static/fonts/fonts.css?v=f8f7dbd26c1c",
   "fonts/jetbrains-mono-latin-v24.woff2": "/static/fonts/jetbrains-mono-latin-v24.woff2?v=2c32b9b3ee35",
@@ -10,6 +10,9 @@
   "fonts/zhi-mang-xing-hyx-v19.woff2": "/static/fonts/zhi-mang-xing-hyx-v19.woff2?v=7de77c1b4df5",
   "images/articles/homepage-data-flow.svg": "/static/images/articles/homepage-data-flow.svg?v=9532509c990c",
   "images/articles/homepage-system-architecture.svg": "/static/images/articles/homepage-system-architecture.svg?v=89b96d431e10",
+  "images/publication-badges/artifacts_available.jpg": "/static/images/publication-badges/artifacts_available.jpg?v=fcba69c55f1f",
+  "images/publication-badges/artifacts_evaluated_functional.jpg": "/static/images/publication-badges/artifacts_evaluated_functional.jpg?v=d5307e79dbe9",
+  "images/publication-badges/results_reproduced.jpg": "/static/images/publication-badges/results_reproduced.jpg?v=6a2469efbe54",
   "images/site/brand-mark-104.png": "/static/images/site/brand-mark-104.png?v=f63e1ca41904",
   "images/site/cuhk-logo-104.png": "/static/images/site/cuhk-logo-104.png?v=ee43b92e30b4",
   "images/site/cuhk-logo-156.png": "/static/images/site/cuhk-logo-156.png?v=7648936e7257",

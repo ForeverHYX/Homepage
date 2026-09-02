@@ -6,6 +6,8 @@ import re
 from html import escape
 from typing import Any
 
+from app.assets import asset_url
+
 
 # Ordered and deliberately data-driven so new architecture venues can be added
 # without changing the publication parser or templates.
@@ -57,26 +59,10 @@ ARTIFACT_BADGE_LABELS = {
     "reproduced": ("results-reproduced", "Results Reproduced"),
 }
 
-ARTIFACT_BADGE_ICONS = {
-    "artifact-available": (
-        '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" '
-        'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-        'stroke-linejoin="round"><path d="M4 7h16v13H4z"/>'
-        '<path d="M3 4h18v3H3z"/><path d="M9 11h6"/></svg>'
-    ),
-    "artifact-functional": (
-        '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" '
-        'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-        'stroke-linejoin="round"><circle cx="12" cy="12" r="9"/>'
-        '<path d="m8 12 2.5 2.5L16 9"/></svg>'
-    ),
-    "results-reproduced": (
-        '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" '
-        'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-        'stroke-linejoin="round"><path d="M20 7v5h-5"/>'
-        '<path d="M4 17v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.2-2L20 9"/>'
-        '<path d="M17.9 15A7 7 0 0 1 6.7 17L4 15"/></svg>'
-    ),
+ARTIFACT_BADGE_IMAGES = {
+    "artifact-available": "images/publication-badges/artifacts_available.jpg",
+    "artifact-functional": "images/publication-badges/artifacts_evaluated_functional.jpg",
+    "results-reproduced": "images/publication-badges/results_reproduced.jpg",
 }
 
 
@@ -109,7 +95,7 @@ def parse_artifact_badges(value: str) -> list[dict[str, str]]:
             {
                 "slug": slug,
                 "label": label,
-                "icon_html": ARTIFACT_BADGE_ICONS.get(slug, ""),
+                "image_path": ARTIFACT_BADGE_IMAGES.get(slug, ""),
             }
         )
     return badges
@@ -122,11 +108,23 @@ def render_artifact_badges(badges: list[dict[str, str]]) -> str:
     for badge in badges:
         label = escape(str(badge["label"]))
         slug = escape(str(badge["slug"]), quote=True)
-        icon = str(badge.get("icon_html", ""))
-        rendered.append(
-            f'<span class="publication-artifact-badge publication-artifact-{slug}" '
-            f'title="{label}">{icon}<span>{label}</span></span>'
-        )
+        image_path = str(badge.get("image_path", ""))
+        if image_path:
+            image_src = escape(asset_url(image_path), quote=True)
+            rendered.append(
+                '<span class="publication-artifact-badge '
+                f'publication-artifact-badge-official publication-artifact-{slug}" '
+                f'role="img" aria-label="{label}" title="{label}">'
+                f'<img src="{image_src}" width="104" height="104" alt="" '
+                'loading="lazy" decoding="async">'
+                f'<span class="visually-hidden">{label}</span></span>'
+            )
+        else:
+            rendered.append(
+                '<span class="publication-artifact-badge '
+                f'publication-artifact-badge-text publication-artifact-{slug}" '
+                f'title="{label}"><span>{label}</span></span>'
+            )
     return (
         '<div class="publication-artifact-badges" aria-label="Artifact badges">'
         f"{''.join(rendered)}</div>"
