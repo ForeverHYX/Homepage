@@ -6,7 +6,9 @@
 
 ```mermaid
 flowchart LR
-    User[用户浏览器] -->|HTTPS / HTTP2| Nginx[Nginx]
+    User[用户浏览器] -->|TCP 443| UFW[UFW 新连接上限]
+    UFW --> Gate[Nginx stream SNI 白名单]
+    Gate -->|PROXY protocol / TLS 8443| Nginx[Nginx HTTP]
     Nginx -->|/static 指纹资源| Static[(/root/newhomepage/static)]
     Nginx -->|HTML、/api、上传授权| Gunicorn[Gunicorn master]
     Gunicorn --> Worker[1 个 Uvicorn worker]
@@ -19,37 +21,22 @@ flowchart LR
 
 Nginx 直接服务静态文件。上传 URL 先经过 FastAPI 的公开/登录/token 判定，再用 `X-Accel-Redirect` 交回 Nginx internal alias，因此 Python worker 不传输文件主体。动态页面由一个预加载 worker 服务，以减少重复内存并保持文件会话模型一致。
 
-同一台机器还承载其他虚拟主机时，必须保留配置中的 HTTP/HTTPS
-`default_server`。未知 Host 会在 HTTP 层返回 `444`，未知 TLS SNI 会在握手阶段通过
-`ssl_reject_handshake` 立即拒绝，避免其他历史虚拟主机成为默认入口并耗尽连接。
+443 先由 `deploy/nginx-main-hardening.conf` 的 stream 层预读 ClientHello。只有
+`foreverhyx.top` 和 `www.foreverhyx.top` 会转发到本机 8443；停用子域与未知
+SNI 会立即连接失败。预读限制为 2 秒，转发空闲限制为 3 秒，真实 IP
+通过 PROXY protocol 传给 HTTP 层。该配置同时将每个 worker 的连接容量设为
+16384，并抑制攻击造成的 stream error log 洪泛。
 
-生产机的 `/etc/nginx/nginx.conf` 还应至少使用以下连接保护参数：
-
-```nginx
-worker_rlimit_nofile 65535;
-worker_shutdown_timeout 10s;
-
-events {
-    worker_connections 4096;
-    multi_accept on;
-}
-
-http {
-    client_header_timeout 10s;
-    client_body_timeout 15s;
-    send_timeout 10s;
-    keepalive_timeout 15s;
-    keepalive_requests 200;
-    reset_timedout_connection on;
-    # ...现有配置与 include...
-}
-```
+因源站公网带宽为 3 Mbps，`deploy/ufw-homepage-rate-limit.rules` 还对新建
+443 TCP 连接设置全局 100/s、突发 200 的上限。已建立连接不受影响。两组规则
+必须分别放在 `/etc/ufw/before.rules` 与 `/etc/ufw/before6.rules` 的 loopback
+`ACCEPT` 之后，并在更改前保留备份。
 
 ## 前置条件
 
 - DNS 已指向服务器。
 - `/etc/letsencrypt/live/foreverhyx.top/` 已有证书；首次部署可先用 Certbot 获取。
-- 服务器已安装 `python3-venv`、Nginx、Git。
+- 服务器已安装 `python3-venv`、Nginx、Git 和 `libnginx-mod-stream`。
 - GitHub deploy key 或 SSH key 可读取仓库。
 - `.env` 中有真实 bcrypt 哈希；绝不使用示例占位符。
 
@@ -84,20 +71,26 @@ HOMEPAGE_ENABLE_API_DOCS=false
 安装配置：
 
 ```bash
+apt-get install -y --no-install-recommends libnginx-mod-stream
 install -m 0644 deploy/foreverhyx-homepage.service \
   /etc/systemd/system/foreverhyx-homepage.service
+install -m 0644 deploy/nginx-main-hardening.conf /etc/nginx/nginx.conf
 install -m 0644 deploy/nginx-foreverhyx.conf \
-  /etc/nginx/sites-available/foreverhyx-homepage
-ln -sfn /etc/nginx/sites-available/foreverhyx-homepage \
-  /etc/nginx/sites-enabled/foreverhyx-homepage
+  /etc/nginx/sites-available/foreverhyx.conf
+ln -sfn /etc/nginx/sites-available/foreverhyx.conf \
+  /etc/nginx/sites-enabled/foreverhyx.conf
 .venv/bin/python scripts/doctor.py --production
 nginx -t
 systemctl daemon-reload
 systemctl enable --now foreverhyx-homepage
-systemctl reload nginx
+systemctl restart nginx
 ```
 
 `deploy/nginx-foreverhyx.conf` 顶部包含 `map` 和限流 zone，必须在 Nginx `http` 上下文中 include（标准 `sites-enabled/*` 正是这个位置），不能放进另一个 `server {}`。
+停用的历史子域配置不应保留 `.conf` 后缀，否则仍会被 `conf.d/*.conf`
+加载。安装主配置前，还应按上文位置合并 UFW IPv4/IPv6 规则，用
+`iptables-restore --test --noflush` 和 `ip6tables-restore --test --noflush` 验证后再执行
+`ufw reload`。
 
 ## 每次发布前
 

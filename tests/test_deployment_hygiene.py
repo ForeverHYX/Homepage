@@ -56,16 +56,47 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("server_name foreverhyx.top;", nginx)
         self.assertEqual(nginx.count("server_name foreverhyx.top www.foreverhyx.top;"), 1)
 
-    def test_saved_nginx_config_rejects_unknown_hosts_before_other_virtual_hosts(self) -> None:
+    def test_saved_nginx_config_uses_loopback_tls_backend(self) -> None:
         nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")
 
         self.assertIn("listen 80 default_server;", nginx)
         self.assertIn("listen [::]:80 default_server;", nginx)
-        self.assertIn("listen 443 ssl http2 default_server;", nginx)
-        self.assertIn("listen [::]:443 ssl http2 default_server;", nginx)
+        self.assertIn(
+            "listen 127.0.0.1:8443 ssl http2 proxy_protocol default_server;",
+            nginx,
+        )
+        self.assertEqual(
+            nginx.count("listen 127.0.0.1:8443 ssl http2 proxy_protocol;"),
+            2,
+        )
+        self.assertNotIn("listen 443 ssl", nginx)
         self.assertIn("ssl_reject_handshake on;", nginx)
         self.assertIn("server_name _;", nginx)
         self.assertIn("return 444;", nginx)
+
+    def test_saved_nginx_main_config_gates_tls_to_live_names(self) -> None:
+        nginx = (ROOT / "deploy" / "nginx-main-hardening.conf").read_text(encoding="utf-8")
+
+        self.assertIn("worker_connections 16384;", nginx)
+        self.assertIn("real_ip_header proxy_protocol;", nginx)
+        self.assertIn("foreverhyx.top     127.0.0.1:8443;", nginx)
+        self.assertIn("www.foreverhyx.top 127.0.0.1:8443;", nginx)
+        self.assertNotIn("v.foreverhyx.top", nginx)
+        self.assertIn("default            127.0.0.1:1;", nginx)
+        self.assertIn("ssl_preread on;", nginx)
+        self.assertIn("preread_timeout 2s;", nginx)
+        self.assertIn("proxy_timeout 3s;", nginx)
+        self.assertIn("proxy_protocol on;", nginx)
+
+    def test_saved_ufw_rules_cap_new_tls_connections_for_both_ip_families(self) -> None:
+        rules = (ROOT / "deploy" / "ufw-homepage-rate-limit.rules").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("-A ufw-before-input -p tcp --dport 443", rules)
+        self.assertIn("-A ufw6-before-input -p tcp --dport 443", rules)
+        self.assertEqual(rules.count("--limit 100/second --limit-burst 200"), 2)
+        self.assertEqual(rules.count("--ctstate NEW -j DROP"), 2)
 
     def test_saved_nginx_config_rate_limits_only_proxied_requests(self) -> None:
         nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")

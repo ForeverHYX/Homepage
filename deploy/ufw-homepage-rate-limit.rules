@@ -1,0 +1,9 @@
+# Add the IPv4 pair immediately after the loopback ACCEPT rules in
+# /etc/ufw/before.rules. The first match admits a bounded global rate and the
+# second drops excess NEW connections before TLS can consume origin bandwidth.
+-A ufw-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 100/second --limit-burst 200 -j ACCEPT
+-A ufw-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -j DROP
+
+# Add the IPv6 pair at the same position in /etc/ufw/before6.rules.
+-A ufw6-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 100/second --limit-burst 200 -j ACCEPT
+-A ufw6-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -j DROP
