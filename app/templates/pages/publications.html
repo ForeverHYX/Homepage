@@ -40,7 +40,7 @@
                                         <div class="publication-artifact-badges" aria-label="Artifact badges">
                                             {% for badge in publication.artifact_badges %}
                                             {% if badge.image_path %}
-                                            <span class="publication-artifact-badge publication-artifact-badge-official publication-artifact-{{ badge.slug }}" role="img" aria-label="{{ badge.label }}" title="{{ badge.label }}">
+                                            <span class="publication-artifact-badge publication-artifact-badge-official publication-artifact-{{ badge.slug }}" role="img" aria-label="{{ badge.label }}" data-label="{{ badge.label }}" tabindex="0">
                                                 <img src="{{ asset_url(badge.image_path) }}" width="104" height="104" alt="" loading="lazy" decoding="async">
                                                 <span class="visually-hidden">{{ badge.label }}</span>
                                             </span>

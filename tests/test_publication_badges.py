@@ -53,7 +53,8 @@ authors: **Y. Hong**
         self.assertIn("publication-conference-micro", publication["html"])
         self.assertIn("publication-artifact-badges", publication["html"])
         self.assertIn("publication-artifact-badge-official", publication["html"])
-        self.assertIn("images/publication-badges/artifacts_available.jpg", publication["html"])
+        self.assertIn("images/publication-badges/artifacts_available.png", publication["html"])
+        self.assertIn('data-label="Artifact Available"', publication["html"])
         self.assertNotIn("<svg", publication["html"])
 
     def test_micro_artifact_badges_render_on_home_and_publications_pages(self) -> None:
@@ -67,17 +68,29 @@ authors: **Y. Hong**
             self.assertIn("Artifact Functional", response.text)
             self.assertIn("Results Reproduced", response.text)
             self.assertIn("publication-artifact-badge-official", response.text)
-            self.assertIn("images/publication-badges/artifacts_available.jpg", response.text)
+            self.assertIn("images/publication-badges/artifacts_available.png", response.text)
 
-    def test_official_artifact_badges_are_horizontal_without_recoloring_venues(self) -> None:
+    def test_official_artifact_badges_are_horizontal_and_match_index_blue(self) -> None:
         root = Path(__file__).resolve().parents[1]
         styles = (root / "static/css/src/35-publication-badges.css").read_text(encoding="utf-8")
 
         badge_row = styles.split(".publication-artifact-badges {", 1)[1].split("}", 1)[0]
         self.assertIn("flex-direction: row", badge_row)
         self.assertIn("flex-wrap: nowrap", badge_row)
-        self.assertIn("--conference-badge-accent: #b42346", styles)
-        self.assertIn("--conference-badge-accent: #4338ca", styles)
-        self.assertIn("--conference-badge-accent: #047857", styles)
-        self.assertIn("--conference-badge-accent: #7e22ce", styles)
-        self.assertIn("--conference-badge-accent: #c2410c", styles)
+        self.assertNotIn(".publication-conference-micro {", styles)
+        self.assertNotIn('[class*="publication-conference-"] .publication-venue-label', styles)
+        self.assertIn(".publication-artifact-badge-official:hover img", styles)
+        self.assertIn("content: attr(data-label)", styles)
+        self.assertIn("background: #fff", styles)
+
+    def test_transparent_official_badges_are_rgba_pngs(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        for filename in (
+            "artifacts_available.png",
+            "artifacts_evaluated_functional.png",
+            "results_reproduced.png",
+        ):
+            image = (root / "static/images/publication-badges" / filename).read_bytes()
+            self.assertEqual(image[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(image[24], 8)
+            self.assertEqual(image[25], 6)

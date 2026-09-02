@@ -60,9 +60,9 @@ ARTIFACT_BADGE_LABELS = {
 }
 
 ARTIFACT_BADGE_IMAGES = {
-    "artifact-available": "images/publication-badges/artifacts_available.jpg",
-    "artifact-functional": "images/publication-badges/artifacts_evaluated_functional.jpg",
-    "results-reproduced": "images/publication-badges/results_reproduced.jpg",
+    "artifact-available": "images/publication-badges/artifacts_available.png",
+    "artifact-functional": "images/publication-badges/artifacts_evaluated_functional.png",
+    "results-reproduced": "images/publication-badges/results_reproduced.png",
 }
 
 
@@ -114,7 +114,7 @@ def render_artifact_badges(badges: list[dict[str, str]]) -> str:
             rendered.append(
                 '<span class="publication-artifact-badge '
                 f'publication-artifact-badge-official publication-artifact-{slug}" '
-                f'role="img" aria-label="{label}" title="{label}">'
+                f'role="img" aria-label="{label}" data-label="{label}" tabindex="0">'
                 f'<img src="{image_src}" width="104" height="104" alt="" '
                 'loading="lazy" decoding="async">'
                 f'<span class="visually-hidden">{label}</span></span>'
