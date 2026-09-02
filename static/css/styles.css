@@ -2917,6 +2917,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .publication-artifact-badges {
+    position: relative;
     display: flex;
     flex: 0 0 100%;
     flex-direction: column;

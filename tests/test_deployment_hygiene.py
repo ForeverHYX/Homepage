@@ -68,8 +68,16 @@ class DeploymentHygieneTests(TestCase):
 
         static_location = nginx.split("location /static/ {", 1)[1].split("}", 1)[0]
         uploads_location = nginx.split("location /uploads/ {", 1)[1].split("}", 1)[0]
+        self.assertIn("open_file_cache off;", static_location)
         self.assertNotIn("limit_req", static_location)
         self.assertNotIn("limit_req", uploads_location)
+
+    def test_frontend_build_replaces_generated_assets_atomically(self) -> None:
+        build_script = (ROOT / "scripts" / "build_frontend.py").read_text(encoding="utf-8")
+
+        self.assertIn("def _atomic_write_bytes", build_script)
+        self.assertIn("os.replace(temporary, path)", build_script)
+        self.assertIn("_atomic_write_bytes(compressed_path, buffer.getvalue())", build_script)
 
     def test_production_css_is_reproducibly_minified_without_reordering(self) -> None:
         script = ROOT / "scripts" / "build_static_css.py"

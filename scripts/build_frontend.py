@@ -14,6 +14,7 @@ import gzip
 import hashlib
 import io
 import json
+import os
 import re
 from pathlib import Path
 
@@ -58,6 +59,20 @@ OPTIMIZED_VARIABLE_FONTS = {
         "opsz": (12, 32),
     },
 }
+
+
+def _atomic_write_bytes(path: Path, data: bytes) -> None:
+    """Replace a generated asset without exposing partial bytes to Nginx."""
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        temporary.write_bytes(data)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _atomic_write_text(path: Path, data: str) -> None:
+    _atomic_write_bytes(path, data.encode("utf-8"))
 
 
 def strip_css_comments(source: str) -> str:
@@ -107,8 +122,8 @@ def _source_files(directory: Path, pattern: str) -> list[Path]:
 def build_css() -> None:
     sources = _source_files(CSS_SOURCE_DIR, "*.css")
     bundle = "".join(path.read_text(encoding="utf-8") for path in sources)
-    CSS_BUNDLE.write_text(bundle, encoding="utf-8")
-    CSS_MINIFIED.write_text(minify_css(bundle), encoding="utf-8")
+    _atomic_write_text(CSS_BUNDLE, bundle)
+    _atomic_write_text(CSS_MINIFIED, minify_css(bundle))
 
 
 def build_fonts() -> None:
@@ -137,7 +152,7 @@ def build_font_styles() -> None:
         fingerprint,
         source,
     )
-    FONT_STYLES.write_text(rendered, encoding="utf-8")
+    _atomic_write_text(FONT_STYLES, rendered)
 
 
 def _classic_javascript(source: str) -> str:
@@ -163,8 +178,8 @@ def build_site_header() -> None:
         f"{body}\n"
         "})();\n"
     )
-    HEADER_BUNDLE.write_text(bundle, encoding="utf-8")
-    HEADER_MINIFIED.write_text(rjsmin.jsmin(bundle).rstrip() + "\n", encoding="utf-8")
+    _atomic_write_text(HEADER_BUNDLE, bundle)
+    _atomic_write_text(HEADER_MINIFIED, rjsmin.jsmin(bundle).rstrip() + "\n")
 
 
 def build_javascript() -> None:
@@ -175,7 +190,7 @@ def build_javascript() -> None:
                 continue
             target_path = source_path.with_name(f"{source_path.stem}.min.js")
             source = source_path.read_text(encoding="utf-8")
-            target_path.write_text(rjsmin.jsmin(source).rstrip() + "\n", encoding="utf-8")
+            _atomic_write_text(target_path, rjsmin.jsmin(source).rstrip() + "\n")
 
 
 def _manifest_files() -> list[Path]:
@@ -203,9 +218,9 @@ def build_manifest() -> dict[str, str]:
         relative = path.relative_to(STATIC_DIR).as_posix()
         digest = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
         manifest[relative] = f"/static/{relative}?v={digest}"
-    ASSET_MANIFEST.write_text(
+    _atomic_write_text(
+        ASSET_MANIFEST,
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
     )
     return manifest
 
@@ -240,7 +255,7 @@ def build_precompressed_assets() -> None:
             mtime=0,
         ) as gzip_file:
             gzip_file.write(path.read_bytes())
-        compressed_path.write_bytes(buffer.getvalue())
+        _atomic_write_bytes(compressed_path, buffer.getvalue())
 
 
 def _generated_paths() -> set[Path]:
