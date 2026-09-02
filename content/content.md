@@ -17,6 +17,7 @@ type: conference
 title: FlashGPU-sim: Enabling GPU Modeling for Modern Architectures and AI Workloads
 venue: In Proceedings of the 59th Annual IEEE/ACM International Symposium on Microarchitecture (MICRO59)
 venue_short: MICRO59
+badges: Artifact Available | Artifact Functional | Results Reproduced
 authors: S. Yu, **Y. Hong**, G. Qiu, F. Gu, C. Geng, Z. Wang, C. Zhang, and B. Yu.
 keywords: GPU Modeling | GPU Microarchitecture | Simulation
 paper:

@@ -54,7 +54,9 @@ Education 支持专用时间线渲染。普通 Markdown 支持 fenced code、表
 type: conference
 title: Paper Title
 venue: Full Conference Name
-venue_short: CONF 2026
+venue_short: MICRO 2026
+conference: MICRO
+badges: Artifact Available | Artifact Functional | Results Reproduced
 authors: A. Author, **Your Name**, B. Author
 keywords: GPU | Architecture | Simulation
 paper: https://example.com/paper.pdf
@@ -63,6 +65,8 @@ github: https://github.com/example/repo
 ```
 
 - `type` 常用 `conference` 或 `journal`。
+- `conference` 或 `badge_style` 可显式选择会议 badge 样式；省略时会从 `venue_short`、`venue` 自动识别。目前内置 MICRO、ISCA、HPCA、ASPLOS、CGO。
+- `badges`（兼容 `artifact_badges`、`artifacts`）用 `|`、逗号或分号分隔，显示在 Cx/Tx 与会议简称下方。标准名称包括 `Artifact Available`、`Artifact Functional`、`Results Reproduced`。
 - `keywords` 用 `|` 分隔，驱动 `/publications` filter。
 - `paper`、`github` 可留空；分别控制论文和 GitHub 仓库胶囊链接，空链接不会输出胶囊。
 - 旧的 `code` 字段仍兼容，并作为 `github` 的别名解析。

@@ -8,6 +8,11 @@ from markdown.treeprocessors import Treeprocessor
 from markdown.extensions import Extension
 from app.config import CONTENT_DIR
 from app.cache import cache_by_mtime
+from app.publication_badges import (
+    parse_artifact_badges,
+    render_artifact_badges,
+    resolve_conference_style,
+)
 
 
 class PdfTreeprocessor(Treeprocessor):
@@ -116,6 +121,18 @@ def _build_publication(fields: dict[str, str], counters: dict[str, int]) -> dict
     publication_kind = _publication_kind(fields, venue)
     index_label = _publication_index_label(publication_kind, counters)
     venue_label = _publication_venue_label(fields, venue)
+    conference_style = resolve_conference_style(
+        fields.get("badge_style", ""),
+        fields.get("conference", ""),
+        venue_label,
+        venue,
+    )
+    artifact_badges = parse_artifact_badges(
+        fields.get(
+            "badges",
+            fields.get("artifact_badges", fields.get("artifacts", "")),
+        )
+    )
     github = (
         fields.get("github")
         or fields.get("repository")
@@ -134,6 +151,8 @@ def _build_publication(fields: dict[str, str], counters: dict[str, int]) -> dict
         "kind": publication_kind,
         "index_label": index_label,
         "venue_label": venue_label,
+        "conference_style": conference_style,
+        "artifact_badges": artifact_badges,
         "paper": fields.get("paper", "").strip(),
         "github": github,
         "code": fields.get("code", "").strip(),
@@ -147,6 +166,8 @@ def _render_publication_data(publication: dict[str, object]) -> str:
     publication_kind = str(publication["kind"])
     index_label = str(publication["index_label"])
     venue_label = str(publication["venue_label"])
+    conference_style = str(publication.get("conference_style", ""))
+    artifact_badges = list(publication.get("artifact_badges", []))
     keywords = list(publication["keywords"])
 
     badge_html = f'<span class="publication-badge publication-index publication-index-{publication_kind}">{escape(index_label)}</span>'
@@ -154,6 +175,12 @@ def _render_publication_data(publication: dict[str, object]) -> str:
         badge_html += (
             f'<span class="publication-badge publication-venue-label">{escape(venue_label)}</span>'
         )
+    badge_html += render_artifact_badges(artifact_badges)
+    conference_class = (
+        f" publication-conference-{escape(conference_style, quote=True)}"
+        if conference_style
+        else ""
+    )
 
     tag_html = "".join(
         f'<span class="publication-keyword">{escape(keyword)}</span>' for keyword in keywords
@@ -184,7 +211,7 @@ def _render_publication_data(publication: dict[str, object]) -> str:
     return (
         '<article class="publication-entry">'
         '<div class="publication-heading">'
-        f'<div class="publication-badges">{badge_html}</div>'
+        f'<div class="publication-badges{conference_class}">{badge_html}</div>'
         '<div class="publication-copy">'
         f'<div class="publication-title"><strong>{title_html}</strong></div>'
         f'<div class="publication-venue"><em>{venue_html}</em></div>'

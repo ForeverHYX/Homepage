@@ -1,0 +1,103 @@
+/* --- Conference-aware artifact badges ---------------------------------- */
+.publication-badges {
+    --conference-badge-accent: var(--accent-600);
+    --conference-badge-rgb: var(--accent-600-rgb);
+}
+
+.publication-conference-micro {
+    --conference-badge-accent: #b42346;
+    --conference-badge-rgb: 180, 35, 70;
+}
+
+.publication-conference-isca {
+    --conference-badge-accent: #4338ca;
+    --conference-badge-rgb: 67, 56, 202;
+}
+
+.publication-conference-hpca {
+    --conference-badge-accent: #047857;
+    --conference-badge-rgb: 4, 120, 87;
+}
+
+.publication-conference-asplos {
+    --conference-badge-accent: #7e22ce;
+    --conference-badge-rgb: 126, 34, 206;
+}
+
+.publication-conference-cgo {
+    --conference-badge-accent: #c2410c;
+    --conference-badge-rgb: 194, 65, 12;
+}
+
+.publication-badges[class*="publication-conference-"] .publication-venue-label {
+    color: #fff;
+    border-color: color-mix(in srgb, var(--conference-badge-accent) 78%, #000);
+    background:
+        linear-gradient(
+            145deg,
+            color-mix(in srgb, var(--conference-badge-accent) 82%, #fff),
+            var(--conference-badge-accent)
+        );
+    box-shadow:
+        0 4px 11px rgba(var(--conference-badge-rgb), .24),
+        inset 0 1px 0 rgba(255, 255, 255, .25);
+}
+
+.publication-artifact-badges {
+    display: flex;
+    flex: 0 0 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    width: 100%;
+    margin-top: 1px;
+}
+
+.publication-artifact-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 24px;
+    max-width: 100%;
+    padding: 3px 8px 3px 6px;
+    border: 1px solid rgba(var(--conference-badge-rgb), .32);
+    border-radius: 8px;
+    color: var(--conference-badge-accent);
+    background: rgba(var(--conference-badge-rgb), .09);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45);
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 750;
+    line-height: 1.15;
+    letter-spacing: .01em;
+    text-align: left;
+}
+
+.publication-artifact-badge svg {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+}
+
+[data-theme="dark"] .publication-artifact-badge {
+    color: color-mix(in srgb, var(--conference-badge-accent) 62%, #fff);
+    background: rgba(var(--conference-badge-rgb), .18);
+    border-color: rgba(var(--conference-badge-rgb), .52);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+@media (max-width: 640px) {
+    .publication-artifact-badges {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+@media (forced-colors: active) {
+    .publication-artifact-badge {
+        color: ButtonText;
+        background: ButtonFace;
+        border: 1px solid ButtonText;
+        box-shadow: none;
+    }
+}

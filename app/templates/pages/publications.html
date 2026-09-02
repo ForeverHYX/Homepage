@@ -31,10 +31,20 @@
                         <div class="home-glass-body publication-page-card-body prose">
                             <article class="publication-entry">
                                 <div class="publication-heading">
-                                    <div class="publication-badges">
+                                    <div class="publication-badges{% if publication.conference_style %} publication-conference-{{ publication.conference_style }}{% endif %}">
                                         <span class="publication-badge publication-index publication-index-{{ publication.kind }}">{{ publication.index_label }}</span>
                                         {% if publication.venue_label %}
                                         <span class="publication-badge publication-venue-label">{{ publication.venue_label }}</span>
+                                        {% endif %}
+                                        {% if publication.artifact_badges %}
+                                        <div class="publication-artifact-badges" aria-label="Artifact badges">
+                                            {% for badge in publication.artifact_badges %}
+                                            <span class="publication-artifact-badge publication-artifact-{{ badge.slug }}" title="{{ badge.label }}">
+                                                {{ badge.icon_html|safe }}
+                                                <span>{{ badge.label }}</span>
+                                            </span>
+                                            {% endfor %}
+                                        </div>
                                         {% endif %}
                                     </div>
                                     <div class="publication-copy">
