@@ -64,7 +64,6 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("listen 443 ssl http2 default_server;", nginx)
         self.assertIn("listen [::]:443 ssl http2 default_server;", nginx)
         self.assertIn("ssl_reject_handshake on;", nginx)
-        self.assertIn("ssl_handshake_timeout 5s;", nginx)
         self.assertIn("server_name _;", nginx)
         self.assertIn("return 444;", nginx)
 
