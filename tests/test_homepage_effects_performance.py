@@ -30,6 +30,9 @@ BRAND_SOURCE_512 = ROOT / "assets" / "images" / "forever-hyx-512.png"
 ZJU_LOGO_52 = ROOT / "static" / "images" / "site" / "zju-logo-52.png"
 ZJU_LOGO_104 = ROOT / "static" / "images" / "site" / "zju-logo-104.png"
 ZJU_LOGO_156 = ROOT / "static" / "images" / "site" / "zju-logo-156.png"
+CUHK_LOGO_52 = ROOT / "static" / "images" / "site" / "cuhk-logo-52.png"
+CUHK_LOGO_104 = ROOT / "static" / "images" / "site" / "cuhk-logo-104.png"
+CUHK_LOGO_156 = ROOT / "static" / "images" / "site" / "cuhk-logo-156.png"
 FONT_CSS = ROOT / "static" / "fonts" / "fonts.css"
 SOURCE_SANS_FONT = ROOT / "static" / "fonts" / "source-sans-3-latin-v19.woff2"
 SOURCE_SERIF_FONT = ROOT / "static" / "fonts" / "source-serif-4-latin-v14.woff2"
@@ -801,6 +804,49 @@ class HomepageEffectsPerformanceTests(TestCase):
             self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
             self.assertEqual(struct.unpack(">II", data[16:24]), (expected_size, expected_size))
 
+    def test_cuhk_education_logo_uses_compact_density_matched_assets(self) -> None:
+        html = parse_education_timeline(
+            "- **Chinese University of Hong Kong** | 2027 - 2031(expected)\n"
+            "  *Doctor of Philosophy, Computer Science and Engineering*\n"
+            "  ![CUHK](/uploads/cuhk.png)"
+        )
+
+        self.assertIn(asset_url("images/site/cuhk-logo-52.png"), html)
+        self.assertIn(f"{asset_url('images/site/cuhk-logo-104.png')} 2x", html)
+        self.assertIn(f"{asset_url('images/site/cuhk-logo-156.png')} 3x", html)
+        self.assertNotIn('src="/uploads/cuhk.png"', html)
+
+        for path, expected_size in (
+            (CUHK_LOGO_52, 52),
+            (CUHK_LOGO_104, 104),
+            (CUHK_LOGO_156, 156),
+        ):
+            data = path.read_bytes()
+            self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+            self.assertEqual(struct.unpack(">II", data[16:24]), (expected_size, expected_size))
+
+    def test_education_degree_and_program_render_on_separate_lines(self) -> None:
+        html = parse_education_timeline(
+            "- **Zhejiang University** | 2023 - 2027(expected)\n"
+            "  *Bachelor of Engineering, Information Security*"
+        )
+
+        self.assertIn('<span class="edu-degree">Bachelor of Engineering</span>', html)
+        self.assertIn('<span class="edu-program">Information Security</span>', html)
+
+    def test_education_role_does_not_split_commas_inside_markdown_links(self) -> None:
+        html = parse_education_timeline(
+            "- **Example University** | 2027 - 2031(expected)\n"
+            "  *[Doctor of Philosophy, Honours](https://example.com/program,a), Computer Science*"
+        )
+
+        self.assertIn(
+            '<span class="edu-degree"><a href="https://example.com/program,a" '
+            'class="link-styled">Doctor of Philosophy, Honours</a></span>',
+            html,
+        )
+        self.assertIn('<span class="edu-program">Computer Science</span>', html)
+
     def test_education_date_aligns_with_section_content_on_desktop(self) -> None:
         styles = STYLES_CSS.read_text()
         item_rule = re.search(r"\.edu-timeline-item\s*\{(?P<body>.*?)\n\}", styles, re.S)
@@ -812,11 +858,11 @@ class HomepageEffectsPerformanceTests(TestCase):
         self.assertIsNotNone(item_rule)
         self.assertIsNotNone(date_rule)
         self.assertIsNotNone(connector_rule)
-        self.assertIn("grid-template-columns: 110px 80px 1fr;", item_rule.group("body"))
+        self.assertIn("grid-template-columns: 154px 36px 1fr;", item_rule.group("body"))
         self.assertIn("text-align: left;", date_rule.group("body"))
         self.assertIn("white-space: nowrap;", date_rule.group("body"))
         self.assertNotIn("text-align: right;", date_rule.group("body"))
-        self.assertIn("left: calc(110px + 39px);", connector_rule.group("body"))
+        self.assertIn("left: calc(154px + 17px);", connector_rule.group("body"))
 
     def test_education_logo_overrides_generic_prose_image_style(self) -> None:
         styles = STYLES_CSS.read_text()

@@ -10,8 +10,34 @@ _RESPONSIVE_LOGOS = {
             f"{asset_url('images/site/zju-logo-104.png')} 2x, "
             f"{asset_url('images/site/zju-logo-156.png')} 3x"
         ),
-    }
+    },
+    "/uploads/cuhk.png": {
+        "src": asset_url("images/site/cuhk-logo-52.png"),
+        "srcset": (
+            f"{asset_url('images/site/cuhk-logo-52.png')} 1x, "
+            f"{asset_url('images/site/cuhk-logo-104.png')} 2x, "
+            f"{asset_url('images/site/cuhk-logo-156.png')} 3x"
+        ),
+    },
 }
+
+
+def _split_role_text(role_text: str) -> list[str]:
+    """Split degree and program without breaking inline Markdown links."""
+    square_depth = 0
+    round_depth = 0
+    for index, char in enumerate(role_text):
+        if char == "[":
+            square_depth += 1
+        elif char == "]" and square_depth:
+            square_depth -= 1
+        elif char == "(" and square_depth == 0:
+            round_depth += 1
+        elif char == ")" and round_depth:
+            round_depth -= 1
+        elif char == "," and square_depth == 0 and round_depth == 0:
+            return [role_text[:index].strip(), role_text[index + 1 :].strip()]
+    return [role_text.strip()]
 
 
 def _render_education_logo(logo: dict[str, str]) -> str:
@@ -119,19 +145,28 @@ def parse_education_timeline(raw_markdown: str) -> str:
             logo_imgs = "".join(_render_education_logo(logo) for logo in entry["logos"])
             logos_html = f'<div class="edu-logo-group">{logo_imgs}</div>'
 
-        # Role (support markdown links in role text)
+        # Role (support markdown links and a degree/program pair separated by a comma)
         role_text = entry["role"]
         if role_text:
+            role_parts = _split_role_text(role_text)
+
             # Convert inline markdown links [text](url)
-            role_text = _re.sub(
-                r"\[([^\]]+)\]\(([^)]+)\)",
-                r'<a href="\2" class="link-styled">\1</a>',
-                role_text,
-            )
-            # Convert bold
-            role_text = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", role_text)
-            # Convert italic
-            role_text = _re.sub(r"\*(.+?)\*", r"<em>\1</em>", role_text)
+            for index, part in enumerate(role_parts):
+                part = _re.sub(
+                    r"\[([^\]]+)\]\(([^)]+)\)",
+                    r'<a href="\2" class="link-styled">\1</a>',
+                    part,
+                )
+                part = _re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", part)
+                role_parts[index] = _re.sub(r"\*(.+?)\*", r"<em>\1</em>", part)
+
+            if len(role_parts) == 2 and all(role_parts):
+                role_text = (
+                    f'<span class="edu-degree">{role_parts[0]}</span>'
+                    f'<span class="edu-program">{role_parts[1]}</span>'
+                )
+            else:
+                role_text = role_parts[0]
 
         role_html = f'<p class="edu-role">{role_text}</p>' if role_text else ""
 
