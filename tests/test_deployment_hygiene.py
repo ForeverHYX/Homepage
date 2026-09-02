@@ -56,6 +56,18 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("server_name foreverhyx.top;", nginx)
         self.assertEqual(nginx.count("server_name foreverhyx.top www.foreverhyx.top;"), 1)
 
+    def test_saved_nginx_config_rejects_unknown_hosts_before_other_virtual_hosts(self) -> None:
+        nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")
+
+        self.assertIn("listen 80 default_server;", nginx)
+        self.assertIn("listen [::]:80 default_server;", nginx)
+        self.assertIn("listen 443 ssl http2 default_server;", nginx)
+        self.assertIn("listen [::]:443 ssl http2 default_server;", nginx)
+        self.assertIn("ssl_reject_handshake on;", nginx)
+        self.assertIn("ssl_handshake_timeout 5s;", nginx)
+        self.assertIn("server_name _;", nginx)
+        self.assertIn("return 444;", nginx)
+
     def test_saved_nginx_config_rate_limits_only_proxied_requests(self) -> None:
         nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")
 

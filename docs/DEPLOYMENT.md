@@ -19,6 +19,35 @@ flowchart LR
 
 Nginx 直接服务静态文件。上传 URL 先经过 FastAPI 的公开/登录/token 判定，再用 `X-Accel-Redirect` 交回 Nginx internal alias，因此 Python worker 不传输文件主体。动态页面由一个预加载 worker 服务，以减少重复内存并保持文件会话模型一致。
 
+同一台机器还承载其他虚拟主机时，必须保留配置中的 HTTP/HTTPS
+`default_server`。未知 Host 会在 HTTP 层返回 `444`，未知 TLS SNI 会在握手阶段通过
+`ssl_reject_handshake` 立即拒绝，避免其他历史虚拟主机成为默认入口并耗尽连接。
+默认 HTTPS 主机还将 `ssl_handshake_timeout` 设为 5 秒，防止不完整的 TLS
+握手长时占用 worker 连接。
+
+生产机的 `/etc/nginx/nginx.conf` 还应至少使用以下连接保护参数：
+
+```nginx
+worker_rlimit_nofile 65535;
+worker_shutdown_timeout 10s;
+
+events {
+    worker_connections 4096;
+    multi_accept on;
+}
+
+http {
+    client_header_timeout 10s;
+    client_body_timeout 15s;
+    send_timeout 10s;
+    ssl_handshake_timeout 5s;
+    keepalive_timeout 15s;
+    keepalive_requests 200;
+    reset_timedout_connection on;
+    # ...现有配置与 include...
+}
+```
+
 ## 前置条件
 
 - DNS 已指向服务器。
