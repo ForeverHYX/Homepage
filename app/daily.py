@@ -853,19 +853,12 @@ def _normalize_item(
 
 
 def _card_summary(headline: str, key_points: list[dict[str, str]]) -> str:
-    """One short English line for list cards: first sentence, clipped if needed."""
-    text = headline or (key_points[0]["text"] if key_points else "")
-    if not text:
-        return ""
-    if len(text) <= 150:
-        return text
-    first_sentence = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
-    if len(first_sentence) <= 160 and first_sentence != text:
-        return first_sentence
-    cut = text[:150].rsplit(" ", 1)[0].rstrip(" ,;:-–—")
-    if not cut:
-        cut = text[:150]
-    return cut if cut.endswith((".", "!", "?")) else cut + "…"
+    """A flowing English paragraph for list cards: the headline plus the first
+    few key points (about 3-4 sentences), never force-truncated."""
+    texts = [headline] if headline else []
+    remaining = 3 if headline else 4
+    texts.extend(point["text"] for point in key_points[:remaining])
+    return " ".join(text for text in texts if text)
 
 
 def _brief_text(value: Any) -> str:
