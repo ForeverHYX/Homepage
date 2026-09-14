@@ -854,9 +854,9 @@ def _normalize_item(
 
 def _card_summary(headline: str, key_points: list[dict[str, str]]) -> str:
     """A flowing English paragraph for list cards: the headline plus the first
-    few key points (about 3-4 sentences), never force-truncated."""
+    couple of key points (about 3 sentences), never force-truncated."""
     texts = [headline] if headline else []
-    remaining = 3 if headline else 4
+    remaining = 2 if headline else 3
     texts.extend(point["text"] for point in key_points[:remaining])
     return " ".join(text for text in texts if text)
 
