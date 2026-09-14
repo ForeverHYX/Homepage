@@ -783,6 +783,12 @@ def _normalize_item(
     keywords = _keywords_for_item(item, section_labels)
     authors = _string_list(item.get("authors"))
     affiliations = _string_list(item.get("affiliations"))
+    headline = _brief_text(item.get("headline"))
+    key_points = _brief_points(item.get("key_points"))
+    key_figure = _brief_figure(item.get("key_figure"))
+    section_summaries = _brief_sections(item.get("section_summaries"))
+    figure_explanations = _brief_figures(item.get("figure_explanations"))
+    brief_tldr = headline or (key_points[0]["text"] if key_points else "")
 
     normalized = {
         "id": item_id,
@@ -799,7 +805,12 @@ def _normalize_item(
             section, section.replace("_", " ").title() if section else "Daily"
         ),
         "keywords": keywords,
-        "tldr": _english_tldr(item, is_repository=is_repository, keywords=keywords),
+        "tldr": brief_tldr or _english_tldr(item, is_repository=is_repository, keywords=keywords),
+        "headline": headline,
+        "key_points": key_points,
+        "key_figure": key_figure,
+        "section_summaries": section_summaries,
+        "figure_explanations": figure_explanations,
         "paper_url": paper_url or "",
         "pdf_url": pdf_url,
         "code_urls": code_urls,
@@ -835,6 +846,72 @@ def _normalize_item(
         "paper_links": normalized["paper_links"],
     }
     return normalized
+
+
+def _brief_text(value: Any) -> str:
+    return " ".join(str(value or "").split()).strip()
+
+
+def _brief_points(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    points = []
+    for entry in value:
+        if not isinstance(entry, dict):
+            continue
+        text = _brief_text(entry.get("text"))
+        if not text:
+            continue
+        points.append({"label": _brief_text(entry.get("label")) or "Note", "text": text})
+    return points[:6]
+
+
+def _brief_figure(value: Any) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    caption = _brief_text(value.get("caption"))
+    explanation = _brief_text(value.get("explanation"))
+    if not caption and not explanation:
+        return {}
+    return {
+        "label": _brief_text(value.get("label")) or "Figure",
+        "caption": caption,
+        "explanation": explanation,
+    }
+
+
+def _brief_sections(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    sections = []
+    for entry in value:
+        if not isinstance(entry, dict):
+            continue
+        title = _brief_text(entry.get("title"))
+        summary = _brief_text(entry.get("summary"))
+        if title and summary:
+            sections.append({"title": title, "summary": summary})
+    return sections[:8]
+
+
+def _brief_figures(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    figures = []
+    for entry in value:
+        if not isinstance(entry, dict):
+            continue
+        caption = _brief_text(entry.get("caption"))
+        if not caption:
+            continue
+        figures.append(
+            {
+                "label": _brief_text(entry.get("label")) or "Figure",
+                "caption": caption,
+                "explanation": _brief_text(entry.get("explanation")),
+            }
+        )
+    return figures[:8]
 
 
 def _keywords_for_item(item: dict[str, Any], section_labels: dict[str, str]) -> list[str]:

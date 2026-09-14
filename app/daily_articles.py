@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-import json
-import os
 import re
 from pathlib import Path
 from typing import Any
-from urllib.request import Request, urlopen
 
 
 DAILY_ARTICLES_DIR = Path(__file__).resolve().parent.parent / "content" / "daily" / "articles"
-DEFAULT_OPENAI_BASE_URL = "https://opencode.ai/zen/go/v1"
-DEFAULT_OPENAI_MODEL = "deepseek-v4-flash"
-ARTICLE_GENERATOR_VERSION = "2"
+# Version 3 renders directly from the quick-read brief fields (headline,
+# key_points, key_figure, section_summaries, figure_explanations) that the
+# daily recommender workflow now ships in recommendations.json. Items without
+# those fields keep version 2 so previously generated articles stay cached.
+ARTICLE_GENERATOR_VERSION = "3"
 ARTICLE_GENERATOR_MARKER = f"Daily-Article-Version: {ARTICLE_GENERATOR_VERSION}"
+LEGACY_ARTICLE_MARKER = "Daily-Article-Version: 2"
 REQUIRED_SECTIONS = (
     "## Core Idea",
     "## What Is New",
@@ -47,15 +47,42 @@ def ensure_daily_article_markdown(
     output_dir.mkdir(parents=True, exist_ok=True)
     slug = daily_article_slug(item, run_date)
     path = output_dir / f"{slug}.md"
-    if _is_current_daily_article(path):
+    if _is_current_daily_article(path, _required_article_version(item)):
         return path
 
-    markdown_text = _llm_daily_article_markdown(item, run_date) or generate_daily_article_markdown(
-        item, run_date
-    )
-    markdown_text = _ensure_generator_marker(markdown_text)
+    markdown_text = generate_daily_article_markdown(item, run_date)
+    markdown_text = _ensure_generator_marker(markdown_text, _required_article_version(item))
     path.write_text(markdown_text, encoding="utf-8")
     return path
+
+
+def _required_article_version(item: dict[str, Any]) -> str:
+    return ARTICLE_GENERATOR_VERSION if _has_brief(item) else "2"
+
+
+def _has_brief(item: dict[str, Any]) -> bool:
+    return bool(_clean_text(item.get("headline")) or _brief_points(item.get("key_points")))
+
+
+def _brief_points(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    points = []
+    for entry in value:
+        if not isinstance(entry, dict):
+            continue
+        text = _clean_text(entry.get("text"))
+        if text:
+            points.append({"label": _clean_text(entry.get("label")) or "Note", "text": text})
+    return points
+
+
+def _point_text(points: list[dict[str, str]], label: str) -> str:
+    lowered = label.lower()
+    for point in points:
+        if point["label"].strip().lower() == lowered:
+            return point["text"]
+    return ""
 
 
 def generate_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
@@ -67,112 +94,146 @@ def generate_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
         or _clean_text(item.get("tldr"))
         or "No abstract is available in the daily payload."
     )
+    headline = _clean_text(item.get("headline"))
+    key_points = _brief_points(item.get("key_points"))
     tldr = _clean_text(item.get("tldr")) or abstract
+    summary_line = headline or tldr
     source_url = _source_url(item)
-    figure_markdown = _figure_markdown(item)
+
+    brief_sections = [
+        entry
+        for entry in (item.get("section_summaries") or [])
+        if isinstance(entry, dict) and _clean_text(entry.get("title")) and _clean_text(entry.get("summary"))
+    ]
+    brief_figures = [
+        entry
+        for entry in (item.get("figure_explanations") or [])
+        if isinstance(entry, dict) and _clean_text(entry.get("caption"))
+    ]
+    key_figure = item.get("key_figure") if isinstance(item.get("key_figure"), dict) else {}
+
+    figure_markdown = _key_figure_markdown(key_figure) or _figure_markdown(item)
     code_markdown = _code_markdown(item)
     formula = _formula_for(item)
+    source_line = _source_line(item)
 
+    parts = [
+        f"# {title}",
+        "",
+        f"Date: {_safe_date(run_date)}",
+        "Author: Yixun Hong",
+        f"Tags: {', '.join(tags)}",
+        f"Abstract: {_single_line(_abstract_line(summary_line, abstract))}",
+        "",
+        source_line,
+        "",
+        "## Core Idea",
+        "",
+        headline or _core_idea_text(item, tldr),
+        "",
+        _profile_relevance_text(item),
+        "",
+        "## What Is New",
+        "",
+        _key_points_markdown(key_points) or _innovation_text(item),
+        "",
+        "## Methodology",
+        "",
+        _methodology_with_brief(item, key_points, brief_sections),
+        "",
+        formula,
+        "",
+        "## Figure To Read First",
+        "",
+        figure_markdown,
+        "",
+        "## Minimal Mental Model",
+        "",
+        code_markdown,
+        "",
+        "## Why It Matters",
+        "",
+        _why_it_matters_with_brief(item, key_points),
+        "",
+    ]
+    if brief_sections:
+        parts.extend(["## Section Map", "", _section_map_markdown(brief_sections), ""])
+    if brief_figures:
+        parts.extend(["## Figure Notes", "", _figure_notes_markdown(brief_figures), ""])
+    markdown = "\n".join(parts)
+    return _ensure_generator_marker(markdown, _required_article_version(item))
+
+
+def _key_points_markdown(points: list[dict[str, str]]) -> str:
+    if not points:
+        return ""
+    return "\n".join(f"- **{point['label']}:** {point['text']}" for point in points)
+
+
+def _methodology_with_brief(
+    item: dict[str, Any],
+    key_points: list[dict[str, str]],
+    brief_sections: list[dict[str, Any]],
+) -> str:
+    method = _point_text(key_points, "Method")
+    evidence = _point_text(key_points, "Evidence")
+    lines = []
+    if method:
+        lines.append(f"Mechanism: {method}")
+    else:
+        lines.append(_methodology_text(item))
+    if evidence:
+        lines.append(f"Evidence: {evidence}")
+    if brief_sections:
+        lines.append(
+            "Deep-read the paper section by section with the per-section summaries under Section Map."
+        )
+    return "\n\n".join(lines)
+
+
+def _why_it_matters_with_brief(item: dict[str, Any], key_points: list[dict[str, str]]) -> str:
+    impact = _point_text(key_points, "Impact")
+    limitation = _point_text(key_points, "Limitation")
+    lines = []
+    if impact:
+        lines.append(f"Impact: {impact}")
+    if limitation:
+        lines.append(f"Limitation: {limitation}")
+    if not lines:
+        lines.append(_why_it_matters(item))
+    return "\n\n".join(lines)
+
+
+def _key_figure_markdown(figure: dict[str, Any]) -> str:
+    label = _clean_text(figure.get("label")) or "Figure"
+    caption = _clean_text(figure.get("caption"))
+    explanation = _clean_text(figure.get("explanation"))
+    if not caption and not explanation:
+        return ""
+    lines = [f"**{label}** — {caption}" if caption else f"**{label}**"]
+    if explanation:
+        lines.append(f"Why it matters: {explanation}")
+    return "\n\n".join(lines)
+
+
+def _section_map_markdown(sections: list[dict[str, Any]]) -> str:
     return "\n".join(
-        [
-            f"# {title}",
-            "",
-            f"Date: {_safe_date(run_date)}",
-            "Author: Yixun Hong",
-            f"Tags: {', '.join(tags)}",
-            f"Abstract: {_single_line(_abstract_line(tldr, abstract))}",
-            f"<!-- {ARTICLE_GENERATOR_MARKER} -->",
-            "",
-            source_url,
-            "",
-            "## Core Idea",
-            "",
-            _core_idea_text(item, tldr),
-            "",
-            _profile_relevance_text(item),
-            "",
-            "## What Is New",
-            "",
-            _innovation_text(item),
-            "",
-            "## Methodology",
-            "",
-            _methodology_text(item),
-            "",
-            formula,
-            "",
-            "## Figure To Read First",
-            "",
-            figure_markdown,
-            "",
-            "## Minimal Mental Model",
-            "",
-            code_markdown,
-            "",
-            "## Why It Matters",
-            "",
-            _why_it_matters(item),
-            "",
-        ]
+        f"- **{_clean_text(entry.get('title'))}** — {_clean_text(entry.get('summary'))}"
+        for entry in sections
     )
 
 
-def _llm_daily_article_markdown(item: dict[str, Any], run_date: str) -> str:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not api_key:
-        return ""
-    base_url = os.getenv("OPENAI_BASE_URL", DEFAULT_OPENAI_BASE_URL).rstrip("/")
-    model = os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
-    endpoint = f"{base_url}/chat/completions"
-    prompt = _llm_prompt(item, run_date)
-    request = Request(
-        endpoint,
-        data=json.dumps(
-            {
-                "model": model,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": (
-                            "You write concise English research notes for a personal academic homepage. "
-                            "Return Markdown only. Follow the requested frontmatter-like format exactly."
-                        ),
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                "temperature": 0.25,
-            }
-        ).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-    )
-    try:
-        with urlopen(request, timeout=35) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-        content = str(payload["choices"][0]["message"]["content"]).strip()
-    except Exception:
-        return ""
-    if not content.startswith("# "):
-        return ""
-    if not all(marker in content for marker in REQUIRED_SECTIONS):
-        return ""
-    return _ensure_generator_marker(content.rstrip() + "\n")
-
-
-def _llm_prompt(item: dict[str, Any], run_date: str) -> str:
-    return (
-        "Generate a short Markdown article for this daily recommendation. "
-        "It must be readable in a few minutes and use this homepage format:\n"
-        "# Title\n\nDate: YYYY-MM-DD\nAuthor: Yixun Hong\nTags: Daily, Paper-or-Repository, ...\nAbstract: one sentence\n\n"
-        "Then include exactly these sections: Core Idea, What Is New, Methodology, Figure To Read First, Minimal Mental Model, Why It Matters.\n"
-        "The article must explain the core idea, innovation, methodology, and why it matters for computer architecture or systems research. "
-        "Include one compact formula or text code block. Include a figure callout using the provided PDF/repository/paper links when actual figure images are not available. "
-        "Do not be long.\n\n"
-        f"Run date: {run_date}\n"
-        f"Payload:\n{json.dumps(item, ensure_ascii=False, indent=2)}"
-    )
+def _figure_notes_markdown(figures: list[dict[str, Any]]) -> str:
+    lines = []
+    for entry in figures:
+        label = _clean_text(entry.get("label")) or "Figure"
+        caption = _clean_text(entry.get("caption"))
+        explanation = _clean_text(entry.get("explanation"))
+        line = f"- **{label}** — {caption}" if caption else f"- **{label}**"
+        if explanation:
+            line = f"{line}: {explanation}"
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def _figure_markdown(item: dict[str, Any]) -> str:
@@ -279,6 +340,19 @@ def _source_url(item: dict[str, Any]) -> str:
     return _clean_text(item.get("paper_url")) or _clean_text(item.get("repository_url")) or "#"
 
 
+def _source_line(item: dict[str, Any]) -> str:
+    # Explicit markdown links: bare URLs are not auto-linked by the blog renderer.
+    source_url = _source_url(item)
+    parts = [f"[Open source]({source_url})"] if source_url and source_url != "#" else []
+    if item.get("item_type") != "repository":
+        pdf_url = _clean_text(item.get("pdf_url")) or _pdf_url_from_id(_clean_text(item.get("id")))
+        if pdf_url and not pdf_url.endswith(".pdf"):
+            pdf_url = pdf_url.rstrip("/") + ".pdf"
+        if pdf_url:
+            parts.append(f"[Original PDF]({pdf_url})")
+    return " · ".join(parts)
+
+
 def _pdf_url_from_id(item_id: str) -> str:
     if re.fullmatch(r"\d{4}\.\d{4,5}(?:v\d+)?", item_id):
         return f"https://arxiv.org/pdf/{item_id}.pdf"
@@ -381,21 +455,21 @@ def _clip_text(value: str, limit: int) -> str:
     return clipped or text[:limit].rstrip()
 
 
-def _is_current_daily_article(path: Path) -> bool:
+def _is_current_daily_article(path: Path, required_version: str) -> bool:
     try:
         if not path.exists() or path.stat().st_size <= 0:
             return False
         text = path.read_text(encoding="utf-8")
     except OSError:
         return False
-    return ARTICLE_GENERATOR_MARKER in text and all(
+    return f"Daily-Article-Version: {required_version}" in text and all(
         section in text for section in REQUIRED_SECTIONS
     )
 
 
-def _ensure_generator_marker(markdown_text: str) -> str:
+def _ensure_generator_marker(markdown_text: str, version: str) -> str:
     text = markdown_text.rstrip() + "\n"
-    if ARTICLE_GENERATOR_MARKER in text:
+    if f"Daily-Article-Version: {version}" in text:
         return text
     lines = text.splitlines()
     insert_at = 0
@@ -403,7 +477,7 @@ def _ensure_generator_marker(markdown_text: str) -> str:
         if line.strip().lower().startswith("abstract:"):
             insert_at = index + 1
             break
-    marker = f"<!-- {ARTICLE_GENERATOR_MARKER} -->"
+    marker = f"<!-- Daily-Article-Version: {version} -->"
     if insert_at:
         lines.insert(insert_at, marker)
         return "\n".join(lines).rstrip() + "\n"
