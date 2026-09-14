@@ -6,12 +6,12 @@ from typing import Any
 
 
 DAILY_ARTICLES_DIR = Path(__file__).resolve().parent.parent / "content" / "daily" / "articles"
-# Version 4 renders the guide sections in Simplified Chinese from the
-# bilingual brief fields (headline_zh, key_points_zh, explanation_zh) that
-# the daily recommender workflow ships alongside the English brief. Version 3
-# was English-only quick-read briefs; version 2 is the legacy format. Items
+# Version 5 = version 4 plus abs-page furniture filtering in section
+# summaries (Submission history / BibTeX / Bookmark ... never appear).
+# Version 4 rendered Chinese guides from bilingual brief fields, version 3
+# was English-only quick-read briefs, version 2 is the legacy format. Items
 # without the newer fields keep their previously cached article version.
-ARTICLE_GENERATOR_VERSION = "4"
+ARTICLE_GENERATOR_VERSION = "5"
 ARTICLE_GENERATOR_MARKER = f"Daily-Article-Version: {ARTICLE_GENERATOR_VERSION}"
 LEGACY_ARTICLE_MARKER = "Daily-Article-Version: 2"
 REQUIRED_SECTIONS = (
@@ -60,7 +60,7 @@ def ensure_daily_article_markdown(
 
 def _required_article_version(item: dict[str, Any]) -> str:
     if _has_chinese_brief(item):
-        return "4"
+        return "5"
     if _has_brief(item):
         return "3"
     return "2"
