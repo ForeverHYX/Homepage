@@ -785,10 +785,12 @@ def _normalize_item(
     affiliations = _string_list(item.get("affiliations"))
     headline = _brief_text(item.get("headline"))
     key_points = _brief_points(item.get("key_points"))
+    key_points_zh = _brief_points(item.get("key_points_zh"))
     key_figure = _brief_figure(item.get("key_figure"))
+    headline_zh = _brief_text(item.get("headline_zh"))
     section_summaries = _brief_sections(item.get("section_summaries"))
     figure_explanations = _brief_figures(item.get("figure_explanations"))
-    brief_tldr = headline or (key_points[0]["text"] if key_points else "")
+    brief_tldr = _card_summary(headline, key_points)
 
     normalized = {
         "id": item_id,
@@ -807,7 +809,9 @@ def _normalize_item(
         "keywords": keywords,
         "tldr": brief_tldr or _english_tldr(item, is_repository=is_repository, keywords=keywords),
         "headline": headline,
+        "headline_zh": headline_zh,
         "key_points": key_points,
+        "key_points_zh": key_points_zh,
         "key_figure": key_figure,
         "section_summaries": section_summaries,
         "figure_explanations": figure_explanations,
@@ -848,6 +852,22 @@ def _normalize_item(
     return normalized
 
 
+def _card_summary(headline: str, key_points: list[dict[str, str]]) -> str:
+    """One short English line for list cards: first sentence, clipped if needed."""
+    text = headline or (key_points[0]["text"] if key_points else "")
+    if not text:
+        return ""
+    if len(text) <= 150:
+        return text
+    first_sentence = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+    if len(first_sentence) <= 160 and first_sentence != text:
+        return first_sentence
+    cut = text[:150].rsplit(" ", 1)[0].rstrip(" ,;:-–—")
+    if not cut:
+        cut = text[:150]
+    return cut if cut.endswith((".", "!", "?")) else cut + "…"
+
+
 def _brief_text(value: Any) -> str:
     return " ".join(str(value or "").split()).strip()
 
@@ -877,6 +897,7 @@ def _brief_figure(value: Any) -> dict[str, str]:
         "label": _brief_text(value.get("label")) or "Figure",
         "caption": caption,
         "explanation": explanation,
+        "explanation_zh": _brief_text(value.get("explanation_zh")),
     }
 
 
