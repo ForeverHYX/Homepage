@@ -894,6 +894,18 @@ def _brief_figure(value: Any) -> dict[str, str]:
     }
 
 
+ABS_PAGE_SECTION_TITLES = frozenset(
+    {
+        "submission history",
+        "access paper",
+        "current browse context",
+        "references & citations",
+        "bibtex formatted citation",
+        "bookmark",
+    }
+)
+
+
 def _brief_sections(value: Any) -> list[dict[str, str]]:
     if not isinstance(value, list):
         return []
@@ -903,8 +915,13 @@ def _brief_sections(value: Any) -> list[dict[str, str]]:
             continue
         title = _brief_text(entry.get("title"))
         summary = _brief_text(entry.get("summary"))
-        if title and summary:
-            sections.append({"title": title, "summary": summary})
+        if not title or not summary:
+            continue
+        if title.strip().lower().rstrip(":") in ABS_PAGE_SECTION_TITLES:
+            continue
+        if "no content extracted" in summary.lower() or "no content available" in summary.lower():
+            continue
+        sections.append({"title": title, "summary": summary})
     return sections[:8]
 
 
