@@ -24,7 +24,7 @@ venue_short: MICRO59
 badges: Artifact Available | Artifact Functional | Results Reproduced
 authors: S. Yu, **Y. Hong**, G. Qiu, F. Gu, C. Geng, Z. Wang, C. Zhang, and B. Yu.
 keywords: GPU Modeling | GPU Microarchitecture | Simulation
-paper:
+paper: https://arxiv.org/abs/2609.15311
 github: https://github.com/FlashGPU-Sim/FlashGPU-Sim
 :::
 
