@@ -1,4 +1,4 @@
-fastapi==0.115.8
+fastapi==0.141.1
 uvicorn[standard]==0.30.6
 gunicorn==23.0.0
 markdown==3.7
@@ -10,3 +10,4 @@ bcrypt==4.3.0
 passlib==1.7.4
 slowapi==0.1.10
 httpx==0.28.1
+starlette==1.6.0

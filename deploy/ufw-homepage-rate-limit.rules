@@ -1,9 +1,9 @@
-# Add the IPv4 pair immediately after the loopback ACCEPT rules in
-# /etc/ufw/before.rules. The first match admits a bounded global rate and the
-# second drops excess NEW connections before TLS can consume origin bandwidth.
--A ufw-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 100/second --limit-burst 200 -j ACCEPT
+# /daily harvesting is blocked at the nginx layer with the JS cookie gate.
+# A generous 443 NEW-connection cap (500/s, burst 250) stays in before.rules
+# so a distributed connect-flood cannot spend the whole egress pipe on TLS
+# handshake bytes. Dropped SYNs cost zero egress; raise or remove the pair
+# here and in /etc/ufw/before.rules + before6.rules when the flood ends.
+-A ufw-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 500/second --limit-burst 250 -j ACCEPT
 -A ufw-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -j DROP
-
-# Add the IPv6 pair at the same position in /etc/ufw/before6.rules.
--A ufw6-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 100/second --limit-burst 200 -j ACCEPT
+-A ufw6-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -m limit --limit 500/second --limit-burst 250 -j ACCEPT
 -A ufw6-before-input -p tcp --dport 443 -m conntrack --ctstate NEW -j DROP

@@ -14,6 +14,8 @@ class DeploymentHygieneTests(TestCase):
         service = (ROOT / "deploy" / "foreverhyx-homepage.service").read_text(encoding="utf-8")
 
         self.assertIn("--workers 1", service)
+        self.assertIn("User=homepage", service)
+        self.assertIn("ProtectSystem=strict", service)
         self.assertIn("--preload", service)
         self.assertIn("ExecReload=/bin/kill -s HUP $MAINPID", service)
         self.assertIn("KillSignal=SIGTERM", service)
@@ -21,7 +23,7 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("Environment=HOMEPAGE_USE_X_ACCEL_REDIRECT=true", service)
         self.assertIn("Environment=HOMEPAGE_ENABLE_API_DOCS=false", service)
         self.assertIn(
-            "Environment=HOMEPAGE_SHARE_LINK_FILE=/root/newhomepage/.share-links.json",
+            "Environment=HOMEPAGE_SHARE_LINK_FILE=/srv/homepage/.share-links.json",
             service,
         )
         self.assertNotIn("--access-logfile", service)
@@ -30,7 +32,10 @@ class DeploymentHygieneTests(TestCase):
     def test_saved_nginx_config_disables_homepage_access_log(self) -> None:
         nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")
 
-        self.assertIn("client_max_body_size 100M;\n    access_log off;", nginx)
+        self.assertIn(
+            "client_max_body_size 100M;\n    send_timeout 5s;\n    include /etc/nginx/snippets/cf-real-ip.conf;\n    access_log off;",
+            nginx,
+        )
         self.assertNotIn("/_next/", nginx)
         self.assertIn("gzip_static on;", nginx)
         self.assertIn("map $arg_v $homepage_static_cache_control", nginx)
@@ -45,7 +50,7 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("proxy_pass http://127.0.0.1:8000;", uploads_location)
         self.assertNotIn("alias ", uploads_location)
         self.assertIn("internal;", internal_location)
-        self.assertIn("alias /root/newhomepage/uploads/;", internal_location)
+        self.assertIn("alias /srv/homepage/uploads/;", internal_location)
         self.assertIn("open_file_cache off;", internal_location)
 
     def test_saved_nginx_config_canonicalizes_https_www_with_permanent_redirect(self) -> None:
@@ -62,11 +67,11 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("listen 80 default_server;", nginx)
         self.assertIn("listen [::]:80 default_server;", nginx)
         self.assertIn(
-            "listen 127.0.0.1:8443 ssl http2 proxy_protocol default_server;",
+            "listen 127.0.0.1:8443 ssl proxy_protocol default_server;",
             nginx,
         )
         self.assertEqual(
-            nginx.count("listen 127.0.0.1:8443 ssl http2 proxy_protocol;"),
+            nginx.count("listen 127.0.0.1:8443 ssl proxy_protocol;"),
             2,
         )
         self.assertNotIn("listen 443 ssl", nginx)
@@ -88,14 +93,21 @@ class DeploymentHygieneTests(TestCase):
         self.assertIn("proxy_timeout 3s;", nginx)
         self.assertIn("proxy_protocol on;", nginx)
 
-    def test_saved_ufw_rules_cap_new_tls_connections_for_both_ip_families(self) -> None:
-        rules = (ROOT / "deploy" / "ufw-homepage-rate-limit.rules").read_text(
-            encoding="utf-8"
-        )
+    def test_saved_nginx_config_gates_daily_filtered_views(self) -> None:
+        nginx = (ROOT / "deploy" / "nginx-foreverhyx.conf").read_text(encoding="utf-8")
 
-        self.assertIn("-A ufw-before-input -p tcp --dport 443", rules)
-        self.assertIn("-A ufw6-before-input -p tcp --dport 443", rules)
-        self.assertEqual(rules.count("--limit 100/second --limit-burst 200"), 2)
+        self.assertIn("map $http_cookie $daily_gate_passed", nginx)
+        self.assertIn('map "$daily_has_filter$daily_gate_passed" $daily_gate_decision', nginx)
+        daily_location = nginx.split("location = /daily {", 1)[1].split("\n    }", 1)[0]
+        self.assertIn("if ($daily_gate_decision) {", daily_location)
+        self.assertIn("daily_v=ok", daily_location)
+        self.assertIn("proxy_pass http://127.0.0.1:8000;", daily_location)
+        self.assertNotIn("daily_global", nginx)
+
+    def test_saved_ufw_rules_cap_new_tls_connections_for_both_ip_families(self) -> None:
+        rules = (ROOT / "deploy" / "ufw-homepage-rate-limit.rules").read_text(encoding="utf-8")
+
+        self.assertEqual(rules.count("--limit 500/second --limit-burst 250"), 2)
         self.assertEqual(rules.count("--ctstate NEW -j DROP"), 2)
 
     def test_saved_nginx_config_rate_limits_only_proxied_requests(self) -> None:

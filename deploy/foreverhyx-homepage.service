@@ -4,15 +4,17 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root/newhomepage
-Environment=HOMEPAGE_CONTENT_DIR=/root/newhomepage/content
-Environment=HOMEPAGE_UPLOAD_DIR=/root/newhomepage/uploads
-Environment=HOMEPAGE_SHARE_LINK_FILE=/root/newhomepage/.share-links.json
+User=homepage
+Group=homepage
+WorkingDirectory=/srv/homepage
+Environment=HOMEPAGE_CONTENT_DIR=/srv/homepage/content
+Environment=HOMEPAGE_UPLOAD_DIR=/srv/homepage/uploads
+Environment=HOMEPAGE_SHARE_LINK_FILE=/srv/homepage/.share-links.json
 Environment=HOMEPAGE_COOKIE_SECURE=true
 Environment=HOMEPAGE_USE_X_ACCEL_REDIRECT=true
 Environment=HOMEPAGE_ENABLE_API_DOCS=false
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/root/newhomepage/.venv/bin/gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 --workers 1 --preload --timeout 60 --graceful-timeout 30 --error-logfile /var/log/nginx/homepage_error.log
+ExecStart=/srv/homepage/.venv/bin/gunicorn app.main:app -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 --workers 1 --preload --timeout 60 --graceful-timeout 30 --error-logfile /var/log/homepage/error.log
 # HUP recycles workers from the preloaded master; deploy new code with restart.
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=always
@@ -21,6 +23,15 @@ TimeoutStopSec=35
 KillSignal=SIGTERM
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/homepage /var/log/homepage
+ProtectHome=yes
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
 LimitNOFILE=4096
 
 [Install]

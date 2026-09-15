@@ -63,7 +63,7 @@ class GalleryThumbnailTests(TestCase):
             finally:
                 os.umask(previous_umask)
 
-            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
+            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v3.webp"
             self.assertEqual(writer_mock.call_count, 1)
             self.assertTrue(all(result == thumbnail for result in results))
             self.assertTrue(thumbnail.exists())
@@ -96,16 +96,16 @@ class GalleryThumbnailTests(TestCase):
 
             images = payload["albums"][0]["images"]
             full_images = payload["albums"][0]["full_images"]
-            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
+            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v3.webp"
             self.assertEqual(len(images), 1)
             self.assertTrue(
-                images[0].startswith("/uploads/_thumbs/Graduation/photo.webp.v2.webp?v=2-")
+                images[0].startswith("/uploads/_thumbs/Graduation/photo.webp.v3.webp?v=3-")
             )
             self.assertEqual(full_images, ["/uploads/Graduation/photo.webp"])
             self.assertTrue(thumbnail.exists())
 
             with Image.open(thumbnail) as img:
-                self.assertLessEqual(max(img.size), 1200)
+                self.assertLessEqual(max(img.size), 480)
 
     def test_focused_gallery_preserves_original_image_quality(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -123,7 +123,7 @@ class GalleryThumbnailTests(TestCase):
 
             images = payload["albums"][0]["images"]
             full_images = payload["albums"][0]["full_images"]
-            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
+            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v3.webp"
             self.assertEqual(images, ["/uploads/Graduation/photo.webp"])
             self.assertEqual(full_images, ["/uploads/Graduation/photo.webp"])
             self.assertFalse(thumbnail.exists())
@@ -185,14 +185,14 @@ class GalleryThumbnailTests(TestCase):
             image_urls = payload["albums"][0]["images"]
             self.assertEqual(len(image_urls), 2)
             self.assertTrue(
-                image_urls[0].startswith("/uploads/_thumbs/Graduation/photo.jpg.v2.webp?v=2-")
+                image_urls[0].startswith("/uploads/_thumbs/Graduation/photo.jpg.v3.webp?v=3-")
             )
             self.assertTrue(
-                image_urls[1].startswith("/uploads/_thumbs/Graduation/photo.png.v2.webp?v=2-")
+                image_urls[1].startswith("/uploads/_thumbs/Graduation/photo.png.v3.webp?v=3-")
             )
             thumbnail_paths = [
-                upload_dir / "_thumbs" / "Graduation" / "photo.jpg.v2.webp",
-                upload_dir / "_thumbs" / "Graduation" / "photo.png.v2.webp",
+                upload_dir / "_thumbs" / "Graduation" / "photo.jpg.v3.webp",
+                upload_dir / "_thumbs" / "Graduation" / "photo.png.v3.webp",
             ]
             self.assertTrue(all(path.exists() for path in thumbnail_paths))
             self.assertNotEqual(
@@ -223,7 +223,7 @@ class GalleryThumbnailTests(TestCase):
             album = payload["albums"][0]
             self.assertTrue(
                 album["images"][0].startswith(
-                    "/uploads/_thumbs/Trip%20%3F%23/photo%20%3F%23%2001.webp.v2.webp?v=2-"
+                    "/uploads/_thumbs/Trip%20%3F%23/photo%20%3F%23%2001.webp.v3.webp?v=3-"
                 )
             )
             original_url = "/uploads/Trip%20%3F%23/photo%20%3F%23%2001.webp"
@@ -299,7 +299,7 @@ class GalleryThumbnailTests(TestCase):
                 generation.result(timeout=2)
                 deletion.result(timeout=2)
 
-            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
+            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v3.webp"
             self.assertFalse(source.exists())
             self.assertFalse(thumbnail.exists())
 
@@ -331,7 +331,7 @@ class GalleryThumbnailTests(TestCase):
                 payload["albums"][0]["images"],
                 ["/uploads/Graduation/photo.webp"],
             )
-            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
+            thumbnail = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v3.webp"
             self.assertFalse(thumbnail.exists())
             print_mock.assert_called_once()
             self.assertEqual(
@@ -365,7 +365,7 @@ class GalleryThumbnailTests(TestCase):
                     source,
                 )
 
-            expected_path = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v2.webp"
+            expected_path = upload_dir / "_thumbs" / "Graduation" / "photo.webp.v3.webp"
             self.assertIsNone(thumbnail)
             self.assertFalse(expected_path.exists())
             print_mock.assert_called_once()
@@ -422,7 +422,7 @@ class GalleryThumbnailTests(TestCase):
             self.assertEqual(next_pending, [])
             self.assertTrue(
                 warm_payload["albums"][0]["images"][0].startswith(
-                    "/uploads/_thumbs/Graduation/photo.webp.v2.webp?v=2-"
+                    "/uploads/_thumbs/Graduation/photo.webp.v3.webp?v=3-"
                 )
             )
 
@@ -501,7 +501,7 @@ class GalleryThumbnailTests(TestCase):
                 [original_url],
             )
             self.assertFalse(
-                (upload_dir / "_thumbs" / "Graduation" / "animation.gif.v2.webp").exists()
+                (upload_dir / "_thumbs" / "Graduation" / "animation.gif.v3.webp").exists()
             )
 
     def test_gallery_autoscroll_has_one_visibility_aware_scheduler(self) -> None:
