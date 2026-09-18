@@ -747,6 +747,7 @@
     gap: 5px;
 }
 
+.prose a.publication-link-paper,
 .prose a.publication-link-github {
     color: var(--button-primary-soft-color);
     background: var(--button-primary-soft-background);
@@ -755,6 +756,8 @@
     -webkit-text-fill-color: currentColor;
 }
 
+.prose a.publication-link-paper:hover,
+.prose a.publication-link-paper:active,
 .prose a.publication-link-github:hover,
 .prose a.publication-link-github:active {
     color: var(--button-primary-color);
