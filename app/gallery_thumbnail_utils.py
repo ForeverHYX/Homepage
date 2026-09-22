@@ -13,11 +13,11 @@ from PIL import Image, ImageOps
 
 
 THUMBNAIL_DIR_NAME = "_thumbs"
-THUMBNAIL_MAX_DIMENSION = 480
-THUMBNAIL_QUALITY = 72
+THUMBNAIL_MAX_DIMENSION = 960
+THUMBNAIL_QUALITY = 92
 THUMBNAIL_FILE_MODE = 0o644
 THUMBNAIL_DIRECTORY_MODE = 0o755
-THUMBNAIL_CACHE_VERSION = 3
+THUMBNAIL_CACHE_VERSION = 5
 GALLERY_THUMBNAIL_SOURCE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 GALLERY_IMAGE_EXTENSIONS = GALLERY_THUMBNAIL_SOURCE_EXTENSIONS | {".gif"}
 
@@ -134,7 +134,7 @@ def _write_gallery_thumbnail(image_path: Path, temporary_path: Path) -> None:
             temporary_path,
             "WEBP",
             quality=THUMBNAIL_QUALITY,
-            method=4,
+            method=6,
         )
 
 

@@ -74,7 +74,7 @@ class GalleryVisibilityTests(TestCase):
                 )
                 self.assertTrue(
                     all(
-                        image_url.startswith("/uploads/_thumbs/") and "?v=3-" in image_url
+                        image_url.startswith("/uploads/_thumbs/") and "?v=5-" in image_url
                         for album in warm_response.json()["albums"]
                         for image_url in album["images"]
                     )
