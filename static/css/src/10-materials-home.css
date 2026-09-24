@@ -228,16 +228,6 @@
     position: relative;
 }
 
-.contact-icon .contact-icon-label {
-    display: inline-block;
-    min-width: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 20px;
-    letter-spacing: 0.02em;
-    text-align: center;
-}
-
 .contact-icon:hover {
     color: var(--accent-ink);
     background: rgba(var(--accent-500-rgb), 0.12);
