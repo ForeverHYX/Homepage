@@ -14,6 +14,7 @@ def _parse_about_info(path: Path) -> dict:
     default = {
         "email": "#",
         "github": "#",
+        "scholar": "#",
         "location": "Earth",
         "name": "Yixun Hong",
         "role": "Student / Researcher",
@@ -29,6 +30,8 @@ def _parse_about_info(path: Path) -> dict:
         info["email"] = match.group(1)
     if match := re.search(r"\((https://github[^)]+)\)", text):
         info["github"] = match.group(1)
+    if match := re.search(r"\((https://scholar\.google[^)]+)\)", text):
+        info["scholar"] = match.group(1)
 
     if "## Location" in text:
         parts = text.split("## Location")
